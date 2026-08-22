@@ -1,11 +1,13 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement and commit persisted Research Case state machine with revisioned audited transactional transitions and exhaustive persistence tests.
+Implement psychiatrist-only immediate Patient hard deletion: commit DB aggregate deletion, preserve clinical audit and Patient/Research Case linkage, then one best-effort file removal; verify residue, authorization, idempotency, and file-failure success.
 
 ## Core
-- server authority — only transition commands mutate persisted Research Case state under optimistic revision checks
+- hard-delete ordering — attributable audit and aggregate deletion commit before exactly one best-effort artifact-tree removal attempt
+- surviving audit — Patient and Research Case audit rows retain original linkage, payloads, provenance, and Psychiatrist-only read authorization
 - guarded audit — domain-result prerequisites, invalidation, revision increment, and provenance commit atomically
+- server authority — only transition commands mutate persisted Research Case state under optimistic revision checks
 - contract lockstep — route schemas generate published OpenAPI and browser types checked in tests
 - canonical identity — configured normalized identifier serializes to one encrypted UUID Patient and one Research Case
 - safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
@@ -111,8 +113,11 @@ Implement and commit persisted Research Case state machine with revisioned audit
 - ✓98 Patient and Research Case packet committed as b17de14. — verified by: git log and status; coverage: all 16 staged packet files committed and no uncommitted product changes remain.
 - ✓99 Shared Patient Registry backend/UI and focused verification pass. — verified by: Verifier: Prettier, targeted ESLint, TypeScript, 26 unit/component tests, PostgreSQL 16 Patient integration, OpenAPI drift check, production build, three-role Playwright E2E, and artifact scan; coverage: shared list/profile/create/search, duplicate overwrite, age display, all requested states, both Psychiatrist contexts, Administrator UI/API denial, keyboard submit/search, URL/log privacy, and generated contracts.
 - ✓100 Research Case workflow state machine passes static, contract, unit, browser-boundary, PostgreSQL transactional, and restart-persistence verification. — verified by: Prettier, ESLint, TypeScript, 8 server unit files, 19 web tests, OpenAPI drift check, and focused PostgreSQL 16 integration covering the full transition table, stale revisions, illegal skips, forged writes, BYPASSED assessments, invalidation, audit provenance, and restart persistence.
+- ✓101 Immediate Patient hard deletion passes focused aggregate, residue, audit readability, role, idempotency, and failed-file-removal verification. — verified by: Verifier: PostgreSQL 16 focused integration test; coverage: Patient, Research Case, assessments, domain results, operational files, audit files, Patient audits, transition audits, unauthenticated/Administrator/Psychiatrist roles, retry, and file failure.
+- ✓102 Patient hard-deletion packet passes final static, generated-contract, build, unit, PostgreSQL integration, privacy-scan, and diff verification. — verified by: Verifier: Prettier, ESLint, TypeScript, OpenAPI drift check, production builds, 8 server unit files, 19 web tests, 36 PostgreSQL integration tests, artifact privacy scan, and git diff check; coverage: migration 9 fresh/upgrade behavior, no soft-delete command, aggregate/file deletion, audit retention/read authorization, role matrix, idempotency, and failed file cleanup.
+- ✓103 Patient hard-deletion packet committed. — verified by: Verifier: git commit 6466aeb; coverage: all 13 staged packet files and no unrelated paths.
 
 ## Open
 
 ## Next
-Review the final scoped diff, ship the implementation files, commit the packet, and remove the temporary PostgreSQL container.
+Await the next implementation issue; protected CONTEXT progress tracker remains unchanged by repository rule.

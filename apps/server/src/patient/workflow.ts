@@ -37,7 +37,6 @@ export const WORKFLOW_COMMANDS = [
   "FINALIZE",
   "CREATE_REVISION_DRAFT",
   "REQUEST_REVISION_DDI_RECHECK",
-  "DELETE",
 ] as const;
 
 export type WorkflowCommand = (typeof WORKFLOW_COMMANDS)[number];
@@ -136,7 +135,6 @@ export const WORKFLOW_TRANSITIONS: readonly TransitionDefinition[] = Object.free
     from: "REVISION_DRAFT",
     to: "RECHECKING_FINAL_DDI",
   },
-  { command: "DELETE", from: "FINALIZED", to: "DELETED" },
 ]);
 
 const MODEL_TOOLS: Readonly<Record<WorkflowState, readonly string[]>> = Object.freeze({
@@ -222,6 +220,22 @@ interface ResultRow extends QueryResultRow {
   workflow_revision: string;
 }
 
+interface TransitionAuditRow extends QueryResultRow {
+  patient_id: string;
+  research_case_id: string;
+  command: WorkflowCommand;
+  from_state: WorkflowState;
+  to_state: WorkflowState;
+  from_revision: string;
+  to_revision: string;
+  input_revision: string;
+  actor_user_id: string | null;
+  request_id: string;
+  domain_result_ids: string[];
+  provenance: Readonly<Record<string, unknown>>;
+  occurred_at: Date;
+}
+
 interface Queryable {
   query<R extends QueryResultRow = QueryResultRow>(
     text: string,
@@ -241,6 +255,21 @@ export interface ResearchCaseWorkflow {
     readonly at: string;
     readonly reason: string;
   } | null;
+}
+
+export interface ResearchCaseTransitionAuditEvent {
+  readonly patientLink: { readonly patientId: string; readonly researchCaseId: string };
+  readonly command: WorkflowCommand;
+  readonly fromState: WorkflowState;
+  readonly toState: WorkflowState;
+  readonly fromRevision: number;
+  readonly toRevision: number;
+  readonly inputRevision: number;
+  readonly actorUserId: string | null;
+  readonly requestId: string;
+  readonly domainResultIds: readonly string[];
+  readonly provenance: Readonly<Record<string, unknown>>;
+  readonly occurredAt: string;
 }
 
 export class ResearchCaseNotFoundError extends Error {
@@ -280,6 +309,43 @@ export async function getResearchCaseWorkflow(
   const row = await caseByPatient(pool, patientId);
   if (!row) throw new ResearchCaseNotFoundError();
   return materializeWorkflow(pool, row);
+}
+
+export async function listResearchCaseTransitionAuditEvents(
+  pool: Pool,
+  actor: PatientActor,
+  patientId: string,
+): Promise<readonly ResearchCaseTransitionAuditEvent[]> {
+  requirePsychiatrist(actor);
+  const authorization = await pool.query(
+    `SELECT 1 FROM insight.users
+     WHERE id = $1 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'`,
+    [actor.id],
+  );
+  if (authorization.rowCount !== 1) throw new WorkflowTransitionError("Psychiatrist required.");
+  const result = await pool.query<TransitionAuditRow>(
+    `SELECT patient_id, research_case_id, command, from_state, to_state,
+            from_revision, to_revision, input_revision, actor_user_id, request_id,
+            domain_result_ids, provenance, occurred_at
+     FROM insight.research_case_transition_events
+     WHERE patient_id = $1
+     ORDER BY to_revision, occurred_at, id`,
+    [patientId],
+  );
+  return result.rows.map((row) => ({
+    patientLink: { patientId: row.patient_id, researchCaseId: row.research_case_id },
+    command: row.command,
+    fromState: row.from_state,
+    toState: row.to_state,
+    fromRevision: Number(row.from_revision),
+    toRevision: Number(row.to_revision),
+    inputRevision: Number(row.input_revision),
+    actorUserId: row.actor_user_id,
+    requestId: row.request_id,
+    domainResultIds: row.domain_result_ids,
+    provenance: row.provenance,
+    occurredAt: row.occurred_at.toISOString(),
+  }));
 }
 
 export async function transitionResearchCase(

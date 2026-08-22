@@ -136,7 +136,7 @@ test("Research Case workflow persistence and trust boundary", async (suite) => {
           workflow = await getResearchCaseWorkflow(pool, actor, patientId);
           assert.equal(workflow.state, "FINALIZED");
           assert.equal(workflow.revision, 12);
-          assert.deepEqual(workflow.allowedCommands, ["CREATE_REVISION_DRAFT", "DELETE"]);
+          assert.deepEqual(workflow.allowedCommands, ["CREATE_REVISION_DRAFT"]);
 
           workflow = await transition(pool, actor, patientId, "CREATE_REVISION_DRAFT", 12);
           workflow = await transition(
@@ -155,10 +155,6 @@ test("Research Case workflow persistence and trust boundary", async (suite) => {
             workflow.revision,
           );
           workflow = await transition(pool, actor, patientId, "FINALIZE", workflow.revision);
-          workflow = await transition(pool, actor, patientId, "DELETE", workflow.revision);
-          assert.equal(workflow.state, "DELETED");
-          assert.deepEqual(workflow.allowedCommands, []);
-
           const audit = await pool.query(
             `SELECT command, from_revision::integer, to_revision::integer,
                 cardinality(domain_result_ids)::integer AS result_count,
@@ -166,10 +162,10 @@ test("Research Case workflow persistence and trust boundary", async (suite) => {
          FROM insight.research_case_transition_events
          ORDER BY to_revision`,
           );
-          assert.equal(audit.rowCount, 16);
+          assert.equal(audit.rowCount, 15);
           assert.deepEqual(
             audit.rows.map(({ from_revision, to_revision }) => [from_revision, to_revision]),
-            Array.from({ length: 16 }, (_, index) => [index + 1, index + 2]),
+            Array.from({ length: 15 }, (_, index) => [index + 1, index + 2]),
           );
           assert.ok(
             audit.rows.every(({ actor_user_id, request_id }) => actor_user_id && request_id),
@@ -298,6 +294,14 @@ test("Research Case workflow persistence and trust boundary", async (suite) => {
           assert.equal(response.statusCode, 400);
           assert.equal(response.json().error.code, "INVALID_REQUEST");
         }
+        const removedSoftDelete = await app.inject({
+          method: "POST",
+          url: `/api/v1/patients/${patientId}/research-case/transitions`,
+          headers: unsafeHeaders(session),
+          payload: { schemaVersion: "1", command: "DELETE", expectedRevision: 1 },
+        });
+        assert.equal(removedSoftDelete.statusCode, 400);
+        assert.equal(removedSoftDelete.json().error.code, "INVALID_REQUEST");
         const missingResult = await app.inject({
           method: "POST",
           url: `/api/v1/patients/${patientId}/research-case/transitions`,

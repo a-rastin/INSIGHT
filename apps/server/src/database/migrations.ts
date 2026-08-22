@@ -650,6 +650,65 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_research_case_workflow_state();
     `,
   },
+  {
+    version: 9,
+    name: "patient_hard_deletion_audit",
+    sql: `
+      ALTER TABLE insight.patient_audit_events
+        DROP CONSTRAINT patient_audit_events_event_type_check;
+
+      ALTER TABLE insight.patient_audit_events
+        ADD CONSTRAINT patient_audit_events_event_type_check CHECK (event_type IN (
+          'PATIENT_CREATED', 'PATIENT_DEMOGRAPHICS_SAVED', 'PATIENT_DELETED'
+        )),
+        ALTER COLUMN after_values_ciphertext DROP NOT NULL,
+        ALTER COLUMN after_values_iv DROP NOT NULL,
+        ALTER COLUMN after_values_tag DROP NOT NULL;
+
+      ALTER TABLE insight.patient_audit_events
+        ADD CONSTRAINT patient_audit_events_after_values_presence_check CHECK (
+          (after_values_ciphertext IS NULL AND after_values_iv IS NULL AND after_values_tag IS NULL)
+          OR
+          (after_values_ciphertext IS NOT NULL AND after_values_iv IS NOT NULL AND after_values_tag IS NOT NULL)
+        );
+
+      INSERT INTO insight.patient_audit_events (
+        event_type, patient_id, research_case_id, target_version, actor_user_id, request_id,
+        before_values_ciphertext, before_values_iv, before_values_tag,
+        after_values_ciphertext, after_values_iv, after_values_tag,
+        encryption_key_version, occurred_at
+      )
+      SELECT 'PATIENT_DELETED', patient.id, research_case.id, patient.record_version + 1,
+             transition.actor_user_id, coalesce(transition.request_id, gen_random_uuid()),
+             audit.after_values_ciphertext, audit.after_values_iv, audit.after_values_tag,
+             NULL, NULL, NULL, audit.encryption_key_version,
+             coalesce(transition.occurred_at, clock_timestamp())
+      FROM insight.patients patient
+      JOIN insight.research_cases research_case
+        ON research_case.patient_id = patient.id
+       AND research_case.workflow_state = 'DELETED'
+      LEFT JOIN LATERAL (
+        SELECT after_values_ciphertext, after_values_iv, after_values_tag,
+               encryption_key_version
+        FROM insight.patient_audit_events
+        WHERE patient_id = patient.id AND after_values_ciphertext IS NOT NULL
+        ORDER BY target_version DESC, occurred_at DESC, id DESC
+        LIMIT 1
+      ) audit ON true
+      JOIN LATERAL (
+        SELECT actor_user_id, request_id, occurred_at
+        FROM insight.research_case_transition_events
+        WHERE patient_id = patient.id AND command = 'DELETE'
+        ORDER BY to_revision DESC, occurred_at DESC, id DESC
+        LIMIT 1
+      ) transition ON true;
+
+      DELETE FROM insight.patients patient
+      USING insight.research_cases research_case
+      WHERE research_case.patient_id = patient.id
+        AND research_case.workflow_state = 'DELETED';
+    `,
+  },
 ]);
 
 export function prepareMigrations(

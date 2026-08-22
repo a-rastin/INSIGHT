@@ -58,7 +58,15 @@ export interface AppOptions {
   readonly registerApiRoutes?: FastifyPluginAsync;
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
-  readonly patient?: { readonly officialIdentifier: OfficialIdentifierConfiguration };
+  readonly patient?: {
+    readonly officialIdentifier: OfficialIdentifierConfiguration;
+    readonly artifactRoot?: string;
+    readonly removePatientArtifacts?: (path: string) => Promise<void>;
+    readonly logArtifactRemovalFailure?: (event: {
+      readonly event: "PATIENT_ARTIFACT_REMOVAL_FAILED";
+      readonly requestId: string;
+    }) => void;
+  };
 }
 
 function errorBody(
@@ -260,6 +268,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           {
             pool: options.authentication.pool,
             officialIdentifier: options.patient.officialIdentifier,
+            artifactRoot: options.patient.artifactRoot ?? resolve("artifacts"),
+            removePatientArtifacts: options.patient.removePatientArtifacts,
+            logArtifactRemovalFailure: options.patient.logArtifactRemovalFailure,
           },
           (request) => requestSessions.get(request),
         ),

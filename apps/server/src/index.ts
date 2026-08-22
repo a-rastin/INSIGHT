@@ -31,7 +31,10 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       allowInsecureLoopbackCookie:
         env.NODE_ENV === "development" && ["127.0.0.1", "::1", "localhost"].includes(host),
     },
-    patient: { officialIdentifier: officialIdentifierConfigurationFromEnv(env) },
+    patient: {
+      officialIdentifier: officialIdentifierConfigurationFromEnv(env),
+      artifactRoot: resolve(env.INSIGHT_ARTIFACT_ROOT ?? "artifacts"),
+    },
   });
   try {
     await assertSchemaAtHead(pool);

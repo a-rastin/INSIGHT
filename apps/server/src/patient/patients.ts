@@ -1,4 +1,6 @@
 import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
+import { rm } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import type { Pool, PoolClient, QueryResult, QueryResultRow } from "pg";
 
@@ -52,15 +54,26 @@ export interface PatientSaveResult {
   readonly patient: PatientRecord;
 }
 
+export interface PatientDeletionResult {
+  readonly databaseStatus: "DELETED";
+  readonly artifactRemoval: "SUCCEEDED" | "FAILED";
+}
+
+export interface PatientDeletionOptions {
+  readonly artifactRoot: string;
+  readonly removeArtifacts?: (path: string) => Promise<void>;
+}
+
 export interface PatientAuditEvent {
-  readonly eventType: "PATIENT_CREATED" | "PATIENT_DEMOGRAPHICS_SAVED";
+  readonly eventType: "PATIENT_CREATED" | "PATIENT_DEMOGRAPHICS_SAVED" | "PATIENT_DELETED";
   readonly patientLink: {
     readonly patientId: string;
     readonly researchCaseId: string;
   };
   readonly targetVersion: number;
   readonly before: PatientDemographics | null;
-  readonly after: PatientDemographics;
+  readonly after: PatientDemographics | null;
+  readonly payloadReference: string | null;
   readonly actorUserId: string | null;
   readonly requestId: string;
   readonly occurredAt: string;
@@ -104,9 +117,10 @@ interface AuditRow extends QueryResultRow {
   before_values_ciphertext: Buffer | null;
   before_values_iv: Buffer | null;
   before_values_tag: Buffer | null;
-  after_values_ciphertext: Buffer;
-  after_values_iv: Buffer;
-  after_values_tag: Buffer;
+  after_values_ciphertext: Buffer | null;
+  after_values_iv: Buffer | null;
+  after_values_tag: Buffer | null;
+  payload_reference: string | null;
   key_material: Buffer;
   actor_user_id: string | null;
   request_id: string;
@@ -349,6 +363,45 @@ export async function getPatient(
   return materializeStoredPatient(row, key, now);
 }
 
+export async function deletePatient(
+  pool: Pool,
+  actor: PatientActor,
+  patientId: string,
+  requestId: string,
+  options: PatientDeletionOptions,
+  now = new Date(),
+): Promise<PatientDeletionResult> {
+  requirePsychiatrist(actor);
+  await withTransaction(pool, async (client) => {
+    const existing = await patientById(client, patientId);
+    if (!existing) return;
+
+    const keyMaterial = await encryptionKey(client, existing.encryption_key_version);
+    const demographics = decryptDemographics(existing, keyMaterial);
+    await auditPatientSave(
+      client,
+      "PATIENT_DELETED",
+      { ...existing, record_version: String(Number(existing.record_version) + 1) },
+      actor.id,
+      requestId,
+      demographics,
+      null,
+      { version: existing.encryption_key_version, key_material: keyMaterial },
+      now,
+    );
+    await client.query("DELETE FROM insight.patients WHERE id = $1", [patientId]);
+  });
+
+  try {
+    const removeArtifacts =
+      options.removeArtifacts ?? ((path: string) => rm(path, { recursive: true, force: true }));
+    await removeArtifacts(resolve(options.artifactRoot, "patients", patientId));
+    return { databaseStatus: "DELETED", artifactRemoval: "SUCCEEDED" };
+  } catch {
+    return { databaseStatus: "DELETED", artifactRemoval: "FAILED" };
+  }
+}
+
 export async function listPatientAuditEvents(
   pool: Pool,
   actor: PatientActor,
@@ -365,7 +418,8 @@ export async function listPatientAuditEvents(
     `SELECT a.event_type, a.patient_id, a.research_case_id, a.target_version,
             a.before_values_ciphertext, a.before_values_iv,
             a.before_values_tag, a.after_values_ciphertext, a.after_values_iv,
-            a.after_values_tag, k.key_material, a.actor_user_id, a.request_id, a.occurred_at
+            a.after_values_tag, a.payload_reference, k.key_material,
+            a.actor_user_id, a.request_id, a.occurred_at
      FROM insight.patient_audit_events a
      JOIN insight.application_encryption_keys k ON k.version = a.encryption_key_version
      WHERE a.patient_id = $1
@@ -388,15 +442,19 @@ export async function listPatientAuditEvents(
             "patient-audit",
           )
         : null,
-    after: decryptJson(
-      {
-        ciphertext: row.after_values_ciphertext,
-        iv: row.after_values_iv,
-        tag: row.after_values_tag,
-      },
-      row.key_material,
-      "patient-audit",
-    ),
+    after:
+      row.after_values_ciphertext && row.after_values_iv && row.after_values_tag
+        ? decryptJson(
+            {
+              ciphertext: row.after_values_ciphertext,
+              iv: row.after_values_iv,
+              tag: row.after_values_tag,
+            },
+            row.key_material,
+            "patient-audit",
+          )
+        : null,
+    payloadReference: row.payload_reference,
     actorUserId: row.actor_user_id,
     requestId: row.request_id,
     occurredAt: row.occurred_at.toISOString(),
@@ -684,12 +742,12 @@ async function auditPatientSave(
   actorUserId: string,
   requestId: string,
   before: PatientDemographics | null,
-  after: PatientDemographics,
+  after: PatientDemographics | null,
   key: EncryptionKeyRow,
   now: Date,
 ): Promise<void> {
   const encryptedBefore = before ? encryptJson(before, key.key_material, "patient-audit") : null;
-  const encryptedAfter = encryptJson(after, key.key_material, "patient-audit");
+  const encryptedAfter = after ? encryptJson(after, key.key_material, "patient-audit") : null;
   await client.query(
     `INSERT INTO insight.patient_audit_events (
        event_type, patient_id, research_case_id, target_version, actor_user_id, request_id,
@@ -707,9 +765,9 @@ async function auditPatientSave(
       encryptedBefore?.ciphertext ?? null,
       encryptedBefore?.iv ?? null,
       encryptedBefore?.tag ?? null,
-      encryptedAfter.ciphertext,
-      encryptedAfter.iv,
-      encryptedAfter.tag,
+      encryptedAfter?.ciphertext ?? null,
+      encryptedAfter?.iv ?? null,
+      encryptedAfter?.tag ?? null,
       key.version,
       now,
     ],

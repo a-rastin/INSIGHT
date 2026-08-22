@@ -2554,6 +2554,104 @@
           }
         }
       },
+      "delete": {
+        "operationId": "deletePatient",
+        "tags": ["patients"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "deletion"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "deletion": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["databaseStatus", "artifactRemoval"],
+                      "properties": {
+                        "databaseStatus": { "type": "string", "enum": ["DELETED"] },
+                        "artifactRemoval": { "type": "string", "enum": ["SUCCEEDED", "FAILED"] }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "operationId": "savePatientDemographics",
         "tags": ["patients"],
@@ -2822,8 +2920,7 @@
                               "COMPLETE_FINAL_DDI",
                               "FINALIZE",
                               "CREATE_REVISION_DRAFT",
-                              "REQUEST_REVISION_DDI_RECHECK",
-                              "DELETE"
+                              "REQUEST_REVISION_DDI_RECHECK"
                             ]
                           }
                         },
@@ -2942,8 +3039,7 @@
                       "COMPLETE_FINAL_DDI",
                       "FINALIZE",
                       "CREATE_REVISION_DRAFT",
-                      "REQUEST_REVISION_DDI_RECHECK",
-                      "DELETE"
+                      "REQUEST_REVISION_DDI_RECHECK"
                     ]
                   },
                   "expectedRevision": { "type": "integer", "minimum": 1 }
@@ -3040,8 +3136,7 @@
                               "COMPLETE_FINAL_DDI",
                               "FINALIZE",
                               "CREATE_REVISION_DRAFT",
-                              "REQUEST_REVISION_DDI_RECHECK",
-                              "DELETE"
+                              "REQUEST_REVISION_DDI_RECHECK"
                             ]
                           }
                         },

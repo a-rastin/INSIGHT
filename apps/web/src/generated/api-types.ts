@@ -270,7 +270,7 @@ export interface paths {
     get: operations["getPatientProfile"];
     put: operations["savePatientDemographics"];
     post?: never;
-    delete?: never;
+    delete: operations["deletePatient"];
     options?: never;
     head?: never;
     patch?: never;
@@ -1950,6 +1950,67 @@ export interface operations {
       };
     };
   };
+  deletePatient: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            deletion: {
+              /** @enum {string} */
+              databaseStatus: "DELETED";
+              /** @enum {string} */
+              artifactRemoval: "SUCCEEDED" | "FAILED";
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
   getResearchCaseWorkflow: {
     parameters: {
       query?: never;
@@ -2009,7 +2070,6 @@ export interface operations {
                 | "FINALIZE"
                 | "CREATE_REVISION_DRAFT"
                 | "REQUEST_REVISION_DDI_RECHECK"
-                | "DELETE"
               )[];
               modelAllowedTools: string[];
               lastInputInvalidation: null | {
@@ -2082,8 +2142,7 @@ export interface operations {
             | "COMPLETE_FINAL_DDI"
             | "FINALIZE"
             | "CREATE_REVISION_DRAFT"
-            | "REQUEST_REVISION_DDI_RECHECK"
-            | "DELETE";
+            | "REQUEST_REVISION_DDI_RECHECK";
           expectedRevision: number;
         };
       };
@@ -2137,7 +2196,6 @@ export interface operations {
                 | "FINALIZE"
                 | "CREATE_REVISION_DRAFT"
                 | "REQUEST_REVISION_DDI_RECHECK"
-                | "DELETE"
               )[];
               modelAllowedTools: string[];
               lastInputInvalidation: null | {

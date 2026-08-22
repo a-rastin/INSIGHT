@@ -22,7 +22,6 @@ const expected = new Map([
   ["READY_TO_FINALIZE:FINALIZE", "FINALIZED"],
   ["FINALIZED:CREATE_REVISION_DRAFT", "REVISION_DRAFT"],
   ["REVISION_DRAFT:REQUEST_REVISION_DDI_RECHECK", "RECHECKING_FINAL_DDI"],
-  ["FINALIZED:DELETE", "DELETED"],
 ]);
 
 test("Research Case transition table exhaustively permits only architecture edges", () => {

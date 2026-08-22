@@ -7,6 +7,7 @@ import {
   PatientInputError,
   PatientNotFoundError,
   createOrOverwritePatient,
+  deletePatient,
   getPatient,
   listPatients,
   savePatientDemographics,
@@ -31,6 +32,12 @@ import {
 interface PatientHttpOptions {
   readonly pool: Pool;
   readonly officialIdentifier: OfficialIdentifierConfiguration;
+  readonly artifactRoot: string;
+  readonly removePatientArtifacts?: (path: string) => Promise<void>;
+  readonly logArtifactRemovalFailure?: (event: {
+    readonly event: "PATIENT_ARTIFACT_REMOVAL_FAILED";
+    readonly requestId: string;
+  }) => void;
 }
 
 interface VersionedPatientInput extends PatientInput {
@@ -53,6 +60,24 @@ const NAME_PATTERN = "^[A-Za-z]+(?:[ '-][A-Za-z]+)*$";
 const DATE_PATTERN = "^\\d{4}-\\d{2}-\\d{2}$";
 
 const response = (schema: object) => ({ 200: schema, default: ApiErrorSchema });
+
+const deletionResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["schemaVersion", "deletion"],
+  properties: {
+    schemaVersion: { type: "string", const: CURRENT_SCHEMA_VERSION },
+    deletion: {
+      type: "object",
+      additionalProperties: false,
+      required: ["databaseStatus", "artifactRemoval"],
+      properties: {
+        databaseStatus: { type: "string", const: "DELETED" },
+        artifactRemoval: { type: "string", enum: ["SUCCEEDED", "FAILED"] },
+      },
+    },
+  },
+} as const;
 
 const patientParamsSchema = {
   type: "object",
@@ -327,6 +352,39 @@ export const patientRoutes =
         } catch (error) {
           return patientError(error, request, reply);
         }
+      },
+    );
+
+    api.delete<{ Params: { patientId: string } }>(
+      "/patients/:patientId",
+      {
+        schema: {
+          operationId: "deletePatient",
+          tags: ["patients"],
+          params: patientParamsSchema,
+          response: response(deletionResponseSchema),
+        },
+      },
+      async (request, reply) => {
+        const deletion = await deletePatient(
+          options.pool,
+          actor(getSession(request)!),
+          request.params.patientId,
+          request.id,
+          {
+            artifactRoot: options.artifactRoot,
+            removeArtifacts: options.removePatientArtifacts,
+          },
+        );
+        if (deletion.artifactRemoval === "FAILED") {
+          const event = {
+            event: "PATIENT_ARTIFACT_REMOVAL_FAILED" as const,
+            requestId: request.id,
+          };
+          if (options.logArtifactRemovalFailure) options.logArtifactRemovalFailure(event);
+          else console.error(JSON.stringify(event));
+        }
+        return reply.send({ schemaVersion: CURRENT_SCHEMA_VERSION, deletion });
       },
     );
 
