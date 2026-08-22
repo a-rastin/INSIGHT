@@ -236,6 +236,38 @@ export function parseVersionedContract<T extends TSchema>(schema: T, value: unkn
 export type JsonPrimitive = null | boolean | number | string;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
+export const ASSESSMENT_TYPES = ["DSM5TR", "PANSS", "CSSRS_RECENT"] as const;
+export const ASSESSMENT_STATUSES = [
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "BYPASSED",
+] as const;
+
+export const AssessmentTypeSchema = Type.Union(
+  ASSESSMENT_TYPES.map((value) => Type.Literal(value)),
+  { $id: "insight.assessment-type.v1" },
+);
+export type AssessmentType = Static<typeof AssessmentTypeSchema>;
+
+export const AssessmentStatusSchema = Type.Union(
+  ASSESSMENT_STATUSES.map((value) => Type.Literal(value)),
+  { $id: "insight.assessment-status.v1" },
+);
+export type AssessmentStatus = Static<typeof AssessmentStatusSchema>;
+
+export const AssessmentStateSchema = Type.Object(
+  {
+    researchCaseId: UuidSchema,
+    assessmentType: AssessmentTypeSchema,
+    status: AssessmentStatusSchema,
+    updatedByUserId: Type.Union([UuidSchema, Type.Null()]),
+    updatedAt: Type.Union([TimestampSchema, Type.Null()]),
+  },
+  { $id: "insight.assessment-state.v1", additionalProperties: false },
+);
+export type AssessmentState = Static<typeof AssessmentStateSchema>;
+
 export const DSM5TR_INSTRUMENT_PIN = Object.freeze({
   instrumentId: "DSM5TR_SCHIZOPHRENIA",
   instrumentVersion: "DSM-5-TR-2022",
@@ -507,6 +539,241 @@ export function calculateDsm5tr(answers: Dsm5trAnswers): Dsm5trCalculation {
     criteria,
     criterionASymptomCount: symptomCount,
     criterionAHasCoreSymptom: hasCoreSymptom,
+  };
+}
+
+export const CSSRS_SOURCE_SHA256 =
+  "8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2" as const;
+
+export const CSSRS_INSTRUMENT_PIN = Object.freeze({
+  instrumentId: "C_SSRS_SCREEN_RECENT",
+  instrumentVersion: `LOCAL-PDF-SHA256-${CSSRS_SOURCE_SHA256}`,
+  schemaVersion: "1.0.0",
+  calculationVersion: "1.0.0",
+  sourceReference: "medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf",
+  sourceSha256: CSSRS_SOURCE_SHA256,
+  reviewReference: "CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING",
+} as const);
+
+export const CSSRS_ACTIVATION_GATE = Object.freeze({
+  status: "INACTIVE",
+  permissionRecord: false,
+  trainingRecord: false,
+  transcriptionApproval: false,
+  clinicalReviewApproval: false,
+} as const);
+
+export const CSSRS_BANDS = Object.freeze({
+  LOW: { label: "Low", color: "#fff200" },
+  MODERATE: { label: "Moderate", color: "#ffbf00" },
+  HIGH: { label: "High", color: "#ff0000" },
+  NO_POSITIVE_RESPONSE: { label: "No positive response", color: "#6b7280" },
+} as const);
+
+export type CssrsBand = keyof typeof CSSRS_BANDS;
+
+export const CSSRS_DEFINITION = Object.freeze({
+  title: "C-SSRS Screen Version - Recent",
+  instruction: "Ask questions 1, 2, and 6. Ask questions 3 through 5 only when question 2 is Yes.",
+  questions: [
+    {
+      id: "Q1",
+      number: 1,
+      answerPath: "q1WishDead",
+      timeframe: "PAST_MONTH",
+      text: "Have you wished you were dead or wished you could go to sleep and not wake up?",
+    },
+    {
+      id: "Q2",
+      number: 2,
+      answerPath: "q2SuicidalThoughts",
+      timeframe: "PAST_MONTH",
+      text: "Have you actually had any thoughts of killing yourself?",
+    },
+    {
+      id: "Q3",
+      number: 3,
+      answerPath: "q3Method",
+      timeframe: "PAST_MONTH",
+      text: "Have you been thinking about how you might do this?",
+    },
+    {
+      id: "Q4",
+      number: 4,
+      answerPath: "q4Intent",
+      timeframe: "PAST_MONTH",
+      text: "Have you had these thoughts and had some intention of acting on them?",
+    },
+    {
+      id: "Q5",
+      number: 5,
+      answerPath: "q5Plan",
+      timeframe: "PAST_MONTH",
+      text: "Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?",
+    },
+    {
+      id: "Q6",
+      number: 6,
+      answerPath: "q6Behavior",
+      timeframe: "LIFETIME",
+      text: "Have you ever done anything, started to do anything, or prepared to do anything to end your life?",
+    },
+  ],
+  recencyFollowUp: {
+    id: "Q6_RECENCY",
+    answerPath: "q6WithinThreeMonths",
+    timeframe: "PAST_THREE_MONTHS",
+    text: "Was this within the past three months?",
+  },
+} as const);
+
+const cssrsQuestionSchema = Type.Object(
+  {
+    id: Type.Union([
+      Type.Literal("Q1"),
+      Type.Literal("Q2"),
+      Type.Literal("Q3"),
+      Type.Literal("Q4"),
+      Type.Literal("Q5"),
+      Type.Literal("Q6"),
+    ]),
+    number: Type.Integer({ minimum: 1, maximum: 6 }),
+    answerPath: Type.String({ minLength: 1, maxLength: 100 }),
+    timeframe: Type.Union([Type.Literal("PAST_MONTH"), Type.Literal("LIFETIME")]),
+    text: Type.String({ minLength: 1, maxLength: 300 }),
+  },
+  { additionalProperties: false },
+);
+
+export const CssrsDefinitionSchema = Type.Object(
+  {
+    title: Type.String({ minLength: 1, maxLength: 200 }),
+    instruction: Type.String({ minLength: 1, maxLength: 300 }),
+    questions: Type.Array(cssrsQuestionSchema, { minItems: 6, maxItems: 6 }),
+    recencyFollowUp: Type.Object(
+      {
+        id: Type.Literal("Q6_RECENCY"),
+        answerPath: Type.Literal("q6WithinThreeMonths"),
+        timeframe: Type.Literal("PAST_THREE_MONTHS"),
+        text: Type.String({ minLength: 1, maxLength: 200 }),
+      },
+      { additionalProperties: false },
+    ),
+  },
+  { $id: "insight.cssrs-definition.v1", additionalProperties: false },
+);
+
+export const CssrsAnswersSchema = Type.Object(
+  {
+    q1WishDead: Type.Optional(Type.Boolean()),
+    q2SuicidalThoughts: Type.Optional(Type.Boolean()),
+    q3Method: Type.Optional(Type.Boolean()),
+    q4Intent: Type.Optional(Type.Boolean()),
+    q5Plan: Type.Optional(Type.Boolean()),
+    q6Behavior: Type.Optional(Type.Boolean()),
+    q6WithinThreeMonths: Type.Optional(Type.Boolean()),
+  },
+  { $id: "insight.cssrs-answers.v1", additionalProperties: false },
+);
+export type CssrsAnswers = Static<typeof CssrsAnswersSchema>;
+
+export const CssrsBandSchema = Type.Union([
+  Type.Literal("LOW"),
+  Type.Literal("MODERATE"),
+  Type.Literal("HIGH"),
+  Type.Literal("NO_POSITIVE_RESPONSE"),
+]);
+
+export const CssrsCalculationSchema = Type.Object(
+  {
+    calculationVersion: Type.Literal(CSSRS_INSTRUMENT_PIN.calculationVersion),
+    status: Type.Union([Type.Literal("INCOMPLETE"), Type.Literal("COMPLETE")]),
+    band: Type.Union([CssrsBandSchema, Type.Null()]),
+    traversedBranch: Type.Union([
+      Type.Literal("Q2_UNANSWERED"),
+      Type.Literal("Q2_NO_SKIP_TO_Q6"),
+      Type.Literal("Q2_YES_ASK_Q3_TO_Q5"),
+    ]),
+    traversedQuestions: Type.Array(
+      Type.Union([
+        Type.Literal("Q1"),
+        Type.Literal("Q2"),
+        Type.Literal("Q3"),
+        Type.Literal("Q4"),
+        Type.Literal("Q5"),
+        Type.Literal("Q6"),
+        Type.Literal("Q6_RECENCY"),
+      ]),
+      { minItems: 3, maxItems: 7 },
+    ),
+  },
+  { $id: "insight.cssrs-calculation.v1", additionalProperties: false },
+);
+export type CssrsCalculation = Static<typeof CssrsCalculationSchema>;
+
+export function calculateCssrs(answers: CssrsAnswers): CssrsCalculation {
+  if (!isContract(CssrsAnswersSchema, answers)) throw new Error("Invalid C-SSRS answers.");
+  if (
+    answers.q2SuicidalThoughts !== true &&
+    [answers.q3Method, answers.q4Intent, answers.q5Plan].some((answer) => answer !== undefined)
+  ) {
+    throw new Error("C-SSRS questions 3 through 5 require a Yes answer to question 2.");
+  }
+  if (answers.q6Behavior !== true && answers.q6WithinThreeMonths !== undefined) {
+    throw new Error("C-SSRS question 6 recency requires a Yes answer to question 6.");
+  }
+
+  const traversedBranch =
+    answers.q2SuicidalThoughts === true
+      ? "Q2_YES_ASK_Q3_TO_Q5"
+      : answers.q2SuicidalThoughts === false
+        ? "Q2_NO_SKIP_TO_Q6"
+        : "Q2_UNANSWERED";
+  const traversedQuestions = [
+    "Q1",
+    "Q2",
+    ...(answers.q2SuicidalThoughts === true ? (["Q3", "Q4", "Q5"] as const) : []),
+    "Q6",
+    ...(answers.q6Behavior === true ? (["Q6_RECENCY"] as const) : []),
+  ] as CssrsCalculation["traversedQuestions"];
+  const complete =
+    answers.q1WishDead !== undefined &&
+    answers.q2SuicidalThoughts !== undefined &&
+    answers.q6Behavior !== undefined &&
+    (answers.q2SuicidalThoughts !== true ||
+      [answers.q3Method, answers.q4Intent, answers.q5Plan].every(
+        (answer) => answer !== undefined,
+      )) &&
+    (answers.q6Behavior !== true || answers.q6WithinThreeMonths !== undefined);
+
+  if (!complete) {
+    return {
+      calculationVersion: CSSRS_INSTRUMENT_PIN.calculationVersion,
+      status: "INCOMPLETE",
+      band: null,
+      traversedBranch,
+      traversedQuestions,
+    };
+  }
+
+  const band: CssrsBand =
+    answers.q4Intent === true ||
+    answers.q5Plan === true ||
+    (answers.q6Behavior === true && answers.q6WithinThreeMonths === true)
+      ? "HIGH"
+      : answers.q3Method === true ||
+          (answers.q6Behavior === true && answers.q6WithinThreeMonths === false)
+        ? "MODERATE"
+        : answers.q1WishDead === true || answers.q2SuicidalThoughts === true
+          ? "LOW"
+          : "NO_POSITIVE_RESPONSE";
+
+  return {
+    calculationVersion: CSSRS_INSTRUMENT_PIN.calculationVersion,
+    status: "COMPLETE",
+    band,
+    traversedBranch,
+    traversedQuestions,
   };
 }
 

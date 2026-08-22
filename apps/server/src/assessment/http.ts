@@ -1,5 +1,9 @@
 import {
   ApiErrorSchema,
+  AssessmentStatusSchema,
+  CSSRS_ACTIVATION_GATE,
+  CSSRS_DEFINITION,
+  CSSRS_INSTRUMENT_PIN,
   CURRENT_SCHEMA_VERSION,
   DSM5TR_DEFINITION,
   DSM5TR_INSTRUMENT_PIN,
@@ -7,6 +11,9 @@ import {
   Dsm5trCalculationSchema,
   Dsm5trDefinitionSchema,
   Dsm5trPsychiatristDecisionSchema,
+  CssrsAnswersSchema,
+  CssrsCalculationSchema,
+  CssrsDefinitionSchema,
   PANSS_DEFINITION,
   PANSS_INSTRUMENT_PIN,
   PanssAnswersSchema,
@@ -19,6 +26,12 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
 
 import type { SessionContext } from "../identity/sessions.js";
+import {
+  CssrsAssessmentConflictError,
+  CssrsAssessmentNotFoundError,
+  getCssrsAssessment,
+  saveCssrsAssessment,
+} from "./cssrs.js";
 import {
   Dsm5trAssessmentConflictError,
   Dsm5trAssessmentNotFoundError,
@@ -79,12 +92,8 @@ const nullableUuid = Type.Union([Type.String({ pattern: UUID_PATTERN }), Type.Nu
 const assessmentSchema = Type.Object(
   {
     researchCaseId: Type.String({ pattern: UUID_PATTERN }),
-    status: Type.Union([
-      Type.Literal("NOT_STARTED"),
-      Type.Literal("IN_PROGRESS"),
-      Type.Literal("COMPLETED"),
-      Type.Literal("BYPASSED"),
-    ]),
+    assessmentType: Type.Literal("DSM5TR"),
+    status: AssessmentStatusSchema,
     answers: Type.Union([Dsm5trAnswersSchema, Type.Null()]),
     calculation: Type.Union([Dsm5trCalculationSchema, Type.Null()]),
     psychiatristDecision: Type.Union([Dsm5trPsychiatristDecisionSchema, Type.Null()]),
@@ -142,12 +151,8 @@ const panssInstrumentPinSchema = Type.Object(
 const panssAssessmentSchema = Type.Object(
   {
     researchCaseId: Type.String({ pattern: UUID_PATTERN }),
-    status: Type.Union([
-      Type.Literal("NOT_STARTED"),
-      Type.Literal("IN_PROGRESS"),
-      Type.Literal("COMPLETED"),
-      Type.Literal("BYPASSED"),
-    ]),
+    assessmentType: Type.Literal("PANSS"),
+    status: AssessmentStatusSchema,
     answers: Type.Union([PanssAnswersSchema, Type.Null()]),
     calculation: Type.Union([PanssCalculationSchema, Type.Null()]),
     instrumentPin: panssInstrumentPinSchema,
@@ -164,6 +169,77 @@ const panssResponseSchema = Type.Object(
     schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
     definition: PanssDefinitionSchema,
     assessment: panssAssessmentSchema,
+  },
+  { additionalProperties: false },
+);
+
+const cssrsSaveSchema = Type.Union([
+  Type.Object(
+    {
+      schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+      mode: Type.Union([Type.Literal("SAVE"), Type.Literal("COMPLETE")]),
+      expectedRevision: Type.Integer({ minimum: 1 }),
+      answers: CssrsAnswersSchema,
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+      mode: Type.Literal("BYPASS"),
+      expectedRevision: Type.Integer({ minimum: 1 }),
+    },
+    { additionalProperties: false },
+  ),
+]);
+type CssrsSaveBody = Static<typeof cssrsSaveSchema>;
+
+const cssrsInstrumentPinSchema = Type.Object(
+  {
+    instrumentId: Type.Literal(CSSRS_INSTRUMENT_PIN.instrumentId),
+    instrumentVersion: Type.Literal(CSSRS_INSTRUMENT_PIN.instrumentVersion),
+    schemaVersion: Type.Literal(CSSRS_INSTRUMENT_PIN.schemaVersion),
+    calculationVersion: Type.Literal(CSSRS_INSTRUMENT_PIN.calculationVersion),
+    sourceReference: Type.Literal(CSSRS_INSTRUMENT_PIN.sourceReference),
+    sourceSha256: Type.Literal(CSSRS_INSTRUMENT_PIN.sourceSha256),
+    reviewReference: Type.Literal(CSSRS_INSTRUMENT_PIN.reviewReference),
+  },
+  { additionalProperties: false },
+);
+
+const cssrsActivationGateSchema = Type.Object(
+  {
+    status: Type.Literal(CSSRS_ACTIVATION_GATE.status),
+    permissionRecord: Type.Literal(false),
+    trainingRecord: Type.Literal(false),
+    transcriptionApproval: Type.Literal(false),
+    clinicalReviewApproval: Type.Literal(false),
+  },
+  { additionalProperties: false },
+);
+
+const cssrsAssessmentSchema = Type.Object(
+  {
+    researchCaseId: Type.String({ pattern: UUID_PATTERN }),
+    assessmentType: Type.Literal("CSSRS_RECENT"),
+    status: AssessmentStatusSchema,
+    answers: Type.Union([CssrsAnswersSchema, Type.Null()]),
+    calculation: Type.Union([CssrsCalculationSchema, Type.Null()]),
+    instrumentPin: cssrsInstrumentPinSchema,
+    activationGate: cssrsActivationGateSchema,
+    createdByUserId: nullableUuid,
+    updatedByUserId: nullableUuid,
+    createdAt: nullableTimestamp,
+    updatedAt: nullableTimestamp,
+  },
+  { additionalProperties: false },
+);
+
+const cssrsResponseSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+    definition: CssrsDefinitionSchema,
+    assessment: cssrsAssessmentSchema,
   },
   { additionalProperties: false },
 );
@@ -289,6 +365,64 @@ export const assessmentRoutes =
         }
       },
     );
+
+    api.get<{ Params: { patientId: string } }>(
+      "/patients/:patientId/research-case/cssrs-recent",
+      {
+        schema: {
+          operationId: "getCssrsRecentAssessment",
+          tags: ["assessments"],
+          params: paramsSchema,
+          response: { 200: cssrsResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const assessment = await getCssrsAssessment(
+            pool,
+            actor(getSession(request)!),
+            request.params.patientId,
+          );
+          return reply.send({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            definition: CSSRS_DEFINITION,
+            assessment,
+          });
+        } catch (error) {
+          return cssrsAssessmentError(error, request, reply);
+        }
+      },
+    );
+
+    api.put<{ Params: { patientId: string }; Body: CssrsSaveBody }>(
+      "/patients/:patientId/research-case/cssrs-recent",
+      {
+        schema: {
+          operationId: "saveCssrsRecentAssessment",
+          tags: ["assessments"],
+          params: paramsSchema,
+          body: cssrsSaveSchema,
+          response: { 200: cssrsResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const assessment = await saveCssrsAssessment(
+            pool,
+            actor(getSession(request)!),
+            request.params.patientId,
+            request.body,
+          );
+          return reply.send({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            definition: CSSRS_DEFINITION,
+            assessment,
+          });
+        } catch (error) {
+          return cssrsAssessmentError(error, request, reply);
+        }
+      },
+    );
   };
 
 function actor(session: SessionContext) {
@@ -310,6 +444,16 @@ async function panssAssessmentError(error: unknown, request: FastifyRequest, rep
     return reply.status(404).send(errorBody(request, 404, "ASSESSMENT_NOT_FOUND", error.message));
   }
   if (error instanceof PanssAssessmentConflictError) {
+    return reply.status(409).send(errorBody(request, 409, "ASSESSMENT_CONFLICT", error.message));
+  }
+  throw error;
+}
+
+async function cssrsAssessmentError(error: unknown, request: FastifyRequest, reply: FastifyReply) {
+  if (error instanceof CssrsAssessmentNotFoundError) {
+    return reply.status(404).send(errorBody(request, 404, "ASSESSMENT_NOT_FOUND", error.message));
+  }
+  if (error instanceof CssrsAssessmentConflictError) {
     return reply.status(409).send(errorBody(request, 409, "ASSESSMENT_CONFLICT", error.message));
   }
   throw error;

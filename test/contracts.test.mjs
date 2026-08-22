@@ -5,7 +5,12 @@ import test from "node:test";
 import Fastify from "fastify";
 
 import {
+  ASSESSMENT_STATUSES,
+  ASSESSMENT_TYPES,
   ApiErrorSchema,
+  AssessmentStateSchema,
+  AssessmentStatusSchema,
+  AssessmentTypeSchema,
   ContractValidationError,
   PaginationQuerySchema,
   ProvenanceSchema,
@@ -33,6 +38,25 @@ test("UUID, timestamp, role, and pagination schemas reject invalid values", () =
   assert.equal(isContract(RoleSchema, "admin"), false);
   assert.equal(isContract(PaginationQuerySchema, { limit: 0 }), false);
   assert.equal(isContract(PaginationQuerySchema, { limit: 25, extra: true }), false);
+});
+
+test("shared assessment contract keeps every state and type explicit", () => {
+  for (const type of ASSESSMENT_TYPES) assert.equal(isContract(AssessmentTypeSchema, type), true);
+  for (const status of ASSESSMENT_STATUSES) {
+    assert.equal(isContract(AssessmentStatusSchema, status), true);
+    assert.equal(
+      isContract(AssessmentStateSchema, {
+        researchCaseId: id,
+        assessmentType: "CSSRS_RECENT",
+        status,
+        updatedByUserId: id,
+        updatedAt: "2026-08-22T10:20:30Z",
+      }),
+      true,
+    );
+  }
+  assert.equal(isContract(AssessmentStatusSchema, "COMPLETE"), false);
+  assert.equal(isContract(AssessmentTypeSchema, "SUICIDE_RISK"), false);
 });
 
 test("versioned contracts reject unknown versions before payload validation", () => {

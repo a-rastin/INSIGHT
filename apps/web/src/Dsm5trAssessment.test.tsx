@@ -19,6 +19,7 @@ function assessmentResponse(overrides: Record<string, unknown> = {}) {
     definition: DSM5TR_DEFINITION,
     assessment: {
       researchCaseId,
+      assessmentType: "DSM5TR",
       status: "NOT_STARTED",
       answers: null,
       calculation: null,
@@ -124,6 +125,8 @@ describe("DSM-5-TR assessment flow", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bypass assessment" }));
     expect(await screen.findByRole("heading", { name: "Assessment bypassed" })).toBeTruthy();
+    expect(screen.getByText("Bypassed: no result")).toBeTruthy();
+    expect(screen.queryByText("Criteria met")).toBeNull();
     expect(writes.at(-1)).toEqual({ schemaVersion: "1", mode: "BYPASS", expectedRevision: 1 });
   });
 });

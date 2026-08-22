@@ -1,7 +1,7 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement and verify versioned DSM-5-TR assessment end to end without inventing clinical content.
+Deliver version-pinned, locally scored C-SSRS Screen Version - Recent with exact branch/answer persistence and all specified verification evidence.
 
 ## Core
 - clinical source integrity — use only repository-approved DSM schema, vectors, wording, and reviewer reference; missing material stays explicit
@@ -118,9 +118,10 @@ Implement and verify versioned DSM-5-TR assessment end to end without inventing 
 - ✓101 Immediate Patient hard deletion passes focused aggregate, residue, audit readability, role, idempotency, and failed-file-removal verification. — verified by: Verifier: PostgreSQL 16 focused integration test; coverage: Patient, Research Case, assessments, domain results, operational files, audit files, Patient audits, transition audits, unauthenticated/Administrator/Psychiatrist roles, retry, and file failure.
 - ✓102 Patient hard-deletion packet passes final static, generated-contract, build, unit, PostgreSQL integration, privacy-scan, and diff verification. — verified by: Verifier: Prettier, ESLint, TypeScript, OpenAPI drift check, production builds, 8 server unit files, 19 web tests, 36 PostgreSQL integration tests, artifact privacy scan, and git diff check; coverage: migration 9 fresh/upgrade behavior, no soft-delete command, aggregate/file deletion, audit retention/read authorization, role matrix, idempotency, and failed file cleanup.
 - ✓103 Patient hard-deletion packet committed. — verified by: Verifier: git commit 6466aeb; coverage: all 13 staged packet files and no unrelated paths.
+- ✓104 C-SSRS source identity, wording, branch, timeframes, colors, and activation gaps confirmed. — verified by: Verifier: sha256sum, pdfinfo, pdftotext, rendered-page visual inspection, ADR-022, source audit; coverage: complete one-page source and all six questions.
 
 ## Open
 - ?04 Governed DSM-5-TR criterion wording, deterministic calculation rules, reviewer-approved golden vectors, and reviewer sign-off reference are absent from allowed repository paths. — settled by: User supplies approved artifact paths/content and sign-off reference.
 
 ## Next
-Wait for governed clinical source artifact and reviewer vectors; do not invent them.
+Audit diff, run final build/format/artifact checks, then commit only packet files.

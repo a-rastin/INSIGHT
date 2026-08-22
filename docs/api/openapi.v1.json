@@ -4759,6 +4759,718 @@
           }
         }
       }
+    },
+    "/api/v1/patients/{patientId}/research-case/cssrs-recent": {
+      "get": {
+        "operationId": "getCssrsRecentAssessment",
+        "tags": ["assessments"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "definition", "assessment"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "definition": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["title", "instruction", "questions", "recencyFollowUp"],
+                      "properties": {
+                        "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "instruction": { "minLength": 1, "maxLength": 300, "type": "string" },
+                        "questions": {
+                          "minItems": 6,
+                          "maxItems": 6,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["id", "number", "answerPath", "timeframe", "text"],
+                            "properties": {
+                              "id": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["Q1"] },
+                                  { "type": "string", "enum": ["Q2"] },
+                                  { "type": "string", "enum": ["Q3"] },
+                                  { "type": "string", "enum": ["Q4"] },
+                                  { "type": "string", "enum": ["Q5"] },
+                                  { "type": "string", "enum": ["Q6"] }
+                                ]
+                              },
+                              "number": { "minimum": 1, "maximum": 6, "type": "integer" },
+                              "answerPath": { "minLength": 1, "maxLength": 100, "type": "string" },
+                              "timeframe": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["PAST_MONTH"] },
+                                  { "type": "string", "enum": ["LIFETIME"] }
+                                ]
+                              },
+                              "text": { "minLength": 1, "maxLength": 300, "type": "string" }
+                            }
+                          }
+                        },
+                        "recencyFollowUp": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": ["id", "answerPath", "timeframe", "text"],
+                          "properties": {
+                            "id": { "type": "string", "enum": ["Q6_RECENCY"] },
+                            "answerPath": { "type": "string", "enum": ["q6WithinThreeMonths"] },
+                            "timeframe": { "type": "string", "enum": ["PAST_THREE_MONTHS"] },
+                            "text": { "minLength": 1, "maxLength": 200, "type": "string" }
+                          }
+                        }
+                      },
+                      "title": "insight.cssrs-definition.v1"
+                    },
+                    "assessment": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "researchCaseId",
+                        "status",
+                        "answers",
+                        "calculation",
+                        "instrumentPin",
+                        "activationGate",
+                        "createdByUserId",
+                        "updatedByUserId",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "researchCaseId": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["NOT_STARTED"] },
+                            { "type": "string", "enum": ["IN_PROGRESS"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["BYPASSED"] }
+                          ]
+                        },
+                        "answers": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "q1WishDead": { "type": "boolean" },
+                                "q2SuicidalThoughts": { "type": "boolean" },
+                                "q3Method": { "type": "boolean" },
+                                "q4Intent": { "type": "boolean" },
+                                "q5Plan": { "type": "boolean" },
+                                "q6Behavior": { "type": "boolean" },
+                                "q6WithinThreeMonths": { "type": "boolean" }
+                              },
+                              "title": "insight.cssrs-answers.v1"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "calculation": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "calculationVersion",
+                                "status",
+                                "band",
+                                "traversedBranch",
+                                "traversedQuestions"
+                              ],
+                              "properties": {
+                                "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["INCOMPLETE"] },
+                                    { "type": "string", "enum": ["COMPLETE"] }
+                                  ]
+                                },
+                                "band": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["LOW"] },
+                                        { "type": "string", "enum": ["MODERATE"] },
+                                        { "type": "string", "enum": ["HIGH"] },
+                                        { "type": "string", "enum": ["NO_POSITIVE_RESPONSE"] }
+                                      ]
+                                    },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "traversedBranch": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["Q2_UNANSWERED"] },
+                                    { "type": "string", "enum": ["Q2_NO_SKIP_TO_Q6"] },
+                                    { "type": "string", "enum": ["Q2_YES_ASK_Q3_TO_Q5"] }
+                                  ]
+                                },
+                                "traversedQuestions": {
+                                  "minItems": 3,
+                                  "maxItems": 7,
+                                  "type": "array",
+                                  "items": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["Q1"] },
+                                      { "type": "string", "enum": ["Q2"] },
+                                      { "type": "string", "enum": ["Q3"] },
+                                      { "type": "string", "enum": ["Q4"] },
+                                      { "type": "string", "enum": ["Q5"] },
+                                      { "type": "string", "enum": ["Q6"] },
+                                      { "type": "string", "enum": ["Q6_RECENCY"] }
+                                    ]
+                                  }
+                                }
+                              },
+                              "title": "insight.cssrs-calculation.v1"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "instrumentPin": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "instrumentId",
+                            "instrumentVersion",
+                            "schemaVersion",
+                            "calculationVersion",
+                            "sourceReference",
+                            "sourceSha256",
+                            "reviewReference"
+                          ],
+                          "properties": {
+                            "instrumentId": { "type": "string", "enum": ["C_SSRS_SCREEN_RECENT"] },
+                            "instrumentVersion": {
+                              "type": "string",
+                              "enum": [
+                                "LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2"
+                              ]
+                            },
+                            "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "sourceReference": {
+                              "type": "string",
+                              "enum": ["medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf"]
+                            },
+                            "sourceSha256": {
+                              "type": "string",
+                              "enum": [
+                                "8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2"
+                              ]
+                            },
+                            "reviewReference": {
+                              "type": "string",
+                              "enum": ["CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING"]
+                            }
+                          }
+                        },
+                        "activationGate": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "status",
+                            "permissionRecord",
+                            "trainingRecord",
+                            "transcriptionApproval",
+                            "clinicalReviewApproval"
+                          ],
+                          "properties": {
+                            "status": { "type": "string", "enum": ["INACTIVE"] },
+                            "permissionRecord": { "type": "boolean", "enum": [false] },
+                            "trainingRecord": { "type": "boolean", "enum": [false] },
+                            "transcriptionApproval": { "type": "boolean", "enum": [false] },
+                            "clinicalReviewApproval": { "type": "boolean", "enum": [false] }
+                          }
+                        },
+                        "createdByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "updatedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "saveCssrsRecentAssessment",
+        "tags": ["assessments"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": ["schemaVersion", "mode", "expectedRevision", "answers"],
+                    "properties": {
+                      "schemaVersion": { "type": "string", "enum": ["1"] },
+                      "mode": {
+                        "anyOf": [
+                          { "type": "string", "enum": ["SAVE"] },
+                          { "type": "string", "enum": ["COMPLETE"] }
+                        ]
+                      },
+                      "expectedRevision": { "minimum": 1, "type": "integer" },
+                      "answers": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "q1WishDead": { "type": "boolean" },
+                          "q2SuicidalThoughts": { "type": "boolean" },
+                          "q3Method": { "type": "boolean" },
+                          "q4Intent": { "type": "boolean" },
+                          "q5Plan": { "type": "boolean" },
+                          "q6Behavior": { "type": "boolean" },
+                          "q6WithinThreeMonths": { "type": "boolean" }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": ["schemaVersion", "mode", "expectedRevision"],
+                    "properties": {
+                      "schemaVersion": { "type": "string", "enum": ["1"] },
+                      "mode": { "type": "string", "enum": ["BYPASS"] },
+                      "expectedRevision": { "minimum": 1, "type": "integer" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "definition", "assessment"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "definition": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["title", "instruction", "questions", "recencyFollowUp"],
+                      "properties": {
+                        "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "instruction": { "minLength": 1, "maxLength": 300, "type": "string" },
+                        "questions": {
+                          "minItems": 6,
+                          "maxItems": 6,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["id", "number", "answerPath", "timeframe", "text"],
+                            "properties": {
+                              "id": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["Q1"] },
+                                  { "type": "string", "enum": ["Q2"] },
+                                  { "type": "string", "enum": ["Q3"] },
+                                  { "type": "string", "enum": ["Q4"] },
+                                  { "type": "string", "enum": ["Q5"] },
+                                  { "type": "string", "enum": ["Q6"] }
+                                ]
+                              },
+                              "number": { "minimum": 1, "maximum": 6, "type": "integer" },
+                              "answerPath": { "minLength": 1, "maxLength": 100, "type": "string" },
+                              "timeframe": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["PAST_MONTH"] },
+                                  { "type": "string", "enum": ["LIFETIME"] }
+                                ]
+                              },
+                              "text": { "minLength": 1, "maxLength": 300, "type": "string" }
+                            }
+                          }
+                        },
+                        "recencyFollowUp": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": ["id", "answerPath", "timeframe", "text"],
+                          "properties": {
+                            "id": { "type": "string", "enum": ["Q6_RECENCY"] },
+                            "answerPath": { "type": "string", "enum": ["q6WithinThreeMonths"] },
+                            "timeframe": { "type": "string", "enum": ["PAST_THREE_MONTHS"] },
+                            "text": { "minLength": 1, "maxLength": 200, "type": "string" }
+                          }
+                        }
+                      }
+                    },
+                    "assessment": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "researchCaseId",
+                        "status",
+                        "answers",
+                        "calculation",
+                        "instrumentPin",
+                        "activationGate",
+                        "createdByUserId",
+                        "updatedByUserId",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "researchCaseId": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["NOT_STARTED"] },
+                            { "type": "string", "enum": ["IN_PROGRESS"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["BYPASSED"] }
+                          ]
+                        },
+                        "answers": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "q1WishDead": { "type": "boolean" },
+                                "q2SuicidalThoughts": { "type": "boolean" },
+                                "q3Method": { "type": "boolean" },
+                                "q4Intent": { "type": "boolean" },
+                                "q5Plan": { "type": "boolean" },
+                                "q6Behavior": { "type": "boolean" },
+                                "q6WithinThreeMonths": { "type": "boolean" }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "calculation": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "calculationVersion",
+                                "status",
+                                "band",
+                                "traversedBranch",
+                                "traversedQuestions"
+                              ],
+                              "properties": {
+                                "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["INCOMPLETE"] },
+                                    { "type": "string", "enum": ["COMPLETE"] }
+                                  ]
+                                },
+                                "band": {
+                                  "anyOf": [
+                                    {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["LOW"] },
+                                        { "type": "string", "enum": ["MODERATE"] },
+                                        { "type": "string", "enum": ["HIGH"] },
+                                        { "type": "string", "enum": ["NO_POSITIVE_RESPONSE"] }
+                                      ]
+                                    },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "traversedBranch": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["Q2_UNANSWERED"] },
+                                    { "type": "string", "enum": ["Q2_NO_SKIP_TO_Q6"] },
+                                    { "type": "string", "enum": ["Q2_YES_ASK_Q3_TO_Q5"] }
+                                  ]
+                                },
+                                "traversedQuestions": {
+                                  "minItems": 3,
+                                  "maxItems": 7,
+                                  "type": "array",
+                                  "items": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["Q1"] },
+                                      { "type": "string", "enum": ["Q2"] },
+                                      { "type": "string", "enum": ["Q3"] },
+                                      { "type": "string", "enum": ["Q4"] },
+                                      { "type": "string", "enum": ["Q5"] },
+                                      { "type": "string", "enum": ["Q6"] },
+                                      { "type": "string", "enum": ["Q6_RECENCY"] }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "instrumentPin": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "instrumentId",
+                            "instrumentVersion",
+                            "schemaVersion",
+                            "calculationVersion",
+                            "sourceReference",
+                            "sourceSha256",
+                            "reviewReference"
+                          ],
+                          "properties": {
+                            "instrumentId": { "type": "string", "enum": ["C_SSRS_SCREEN_RECENT"] },
+                            "instrumentVersion": {
+                              "type": "string",
+                              "enum": [
+                                "LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2"
+                              ]
+                            },
+                            "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "sourceReference": {
+                              "type": "string",
+                              "enum": ["medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf"]
+                            },
+                            "sourceSha256": {
+                              "type": "string",
+                              "enum": [
+                                "8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2"
+                              ]
+                            },
+                            "reviewReference": {
+                              "type": "string",
+                              "enum": ["CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING"]
+                            }
+                          }
+                        },
+                        "activationGate": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "status",
+                            "permissionRecord",
+                            "trainingRecord",
+                            "transcriptionApproval",
+                            "clinicalReviewApproval"
+                          ],
+                          "properties": {
+                            "status": { "type": "string", "enum": ["INACTIVE"] },
+                            "permissionRecord": { "type": "boolean", "enum": [false] },
+                            "trainingRecord": { "type": "boolean", "enum": [false] },
+                            "transcriptionApproval": { "type": "boolean", "enum": [false] },
+                            "clinicalReviewApproval": { "type": "boolean", "enum": [false] }
+                          }
+                        },
+                        "createdByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "updatedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -9,6 +9,7 @@ import type { Pool, PoolClient, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 import type { PatientActor } from "../patient/patients.js";
+import { recordAssessmentCommit } from "./shared.js";
 
 export type Dsm5trAssessmentStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
 
@@ -23,6 +24,7 @@ export type Dsm5trSaveInput =
 
 export interface Dsm5trAssessmentRecord {
   readonly researchCaseId: string;
+  readonly assessmentType: "DSM5TR";
   readonly status: Dsm5trAssessmentStatus;
   readonly answers: Dsm5trAnswers | null;
   readonly calculation: Dsm5trCalculation | null;
@@ -39,6 +41,8 @@ interface CaseRow extends QueryResultRow {
   workflow_state: string;
   workflow_revision: string;
   summary_status: Dsm5trAssessmentStatus;
+  summary_updated_by_user_id: string;
+  summary_updated_at: Date;
 }
 
 interface AssessmentRow extends QueryResultRow {
@@ -76,7 +80,7 @@ export async function getDsm5trAssessment(
   const researchCase = await caseByPatient(pool, patientId);
   if (!researchCase) throw new Dsm5trAssessmentNotFoundError();
   const result = await pool.query<AssessmentRow>(assessmentQuery, [researchCase.id]);
-  return materialize(researchCase.id, researchCase.summary_status, result.rows[0]);
+  return materialize(researchCase, result.rows[0]);
 }
 
 export async function saveDsm5trAssessment(
@@ -112,6 +116,21 @@ export async function saveDsm5trAssessment(
     const decision = bypassed ? null : input.psychiatristDecision;
 
     await client.query("SELECT set_config('insight.dsm5tr_write', 'allowed', true)");
+    if (bypassed) {
+      await client.query(`DELETE FROM insight.dsm5tr_assessments WHERE research_case_id = $1`, [
+        researchCase.id,
+      ]);
+      await recordAssessmentCommit(client, researchCase.id, "DSM5TR", status, actor, now);
+      return materialize(
+        {
+          ...researchCase,
+          summary_status: status,
+          summary_updated_by_user_id: actor.id,
+          summary_updated_at: now,
+        },
+        undefined,
+      );
+    }
     const saved = await client.query<AssessmentRow>(
       `INSERT INTO insight.dsm5tr_assessments (
          research_case_id, status, answers, calculation_result, psychiatrist_decision,
@@ -151,13 +170,16 @@ export async function saveDsm5trAssessment(
         now,
       ],
     );
-    await client.query(
-      `UPDATE insight.research_case_assessments
-       SET status = $2, updated_by_user_id = $3, updated_at = $4
-       WHERE research_case_id = $1 AND assessment_type = 'DSM5TR'`,
-      [researchCase.id, status, actor.id, now],
+    await recordAssessmentCommit(client, researchCase.id, "DSM5TR", status, actor, now);
+    return materialize(
+      {
+        ...researchCase,
+        summary_status: status,
+        summary_updated_by_user_id: actor.id,
+        summary_updated_at: now,
+      },
+      saved.rows[0],
     );
-    return materialize(researchCase.id, status, saved.rows[0]);
   });
 }
 
@@ -169,21 +191,21 @@ const assessmentQuery = `
   WHERE research_case_id = $1`;
 
 function materialize(
-  researchCaseId: string,
-  status: Dsm5trAssessmentStatus,
+  researchCase: CaseRow,
   row: AssessmentRow | undefined,
 ): Dsm5trAssessmentRecord {
   return {
-    researchCaseId,
-    status,
+    researchCaseId: researchCase.id,
+    assessmentType: "DSM5TR",
+    status: researchCase.summary_status,
     answers: row?.answers ?? null,
     calculation: row?.calculation_result ?? null,
     psychiatristDecision: row?.psychiatrist_decision ?? null,
     instrumentPin: DSM5TR_INSTRUMENT_PIN,
     createdByUserId: row?.created_by_user_id ?? null,
-    updatedByUserId: row?.updated_by_user_id ?? null,
+    updatedByUserId: researchCase.summary_updated_by_user_id,
     createdAt: row?.created_at.toISOString() ?? null,
-    updatedAt: row?.updated_at.toISOString() ?? null,
+    updatedAt: researchCase.summary_updated_at.toISOString(),
   };
 }
 
@@ -194,7 +216,9 @@ async function caseByPatient(
 ): Promise<CaseRow | undefined> {
   const result = await database.query<CaseRow>(
     `SELECT research_case.id, research_case.workflow_state,
-            research_case.workflow_revision, assessment.status AS summary_status
+             research_case.workflow_revision, assessment.status AS summary_status,
+             assessment.updated_by_user_id AS summary_updated_by_user_id,
+             assessment.updated_at AS summary_updated_at
      FROM insight.research_cases research_case
      JOIN insight.research_case_assessments assessment
        ON assessment.research_case_id = research_case.id

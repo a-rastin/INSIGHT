@@ -340,6 +340,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/cssrs-recent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getCssrsRecentAssessment"];
+    put: operations["saveCssrsRecentAssessment"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2867,6 +2883,289 @@ export interface operations {
                 sourceReference: "https://doi.org/10.1093/schbul/13.2.261";
                 /** @enum {string} */
                 reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW";
+              };
+              createdByUserId: string | null;
+              updatedByUserId: string | null;
+              createdAt: string | null;
+              updatedAt: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getCssrsRecentAssessment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            /** insight.cssrs-definition.v1 */
+            definition: {
+              title: string;
+              instruction: string;
+              questions: {
+                id: "Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6";
+                number: number;
+                answerPath: string;
+                timeframe: "PAST_MONTH" | "LIFETIME";
+                text: string;
+              }[];
+              recencyFollowUp: {
+                /** @enum {string} */
+                id: "Q6_RECENCY";
+                /** @enum {string} */
+                answerPath: "q6WithinThreeMonths";
+                /** @enum {string} */
+                timeframe: "PAST_THREE_MONTHS";
+                text: string;
+              };
+            };
+            assessment: {
+              researchCaseId: string;
+              status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+              answers: {
+                q1WishDead?: boolean;
+                q2SuicidalThoughts?: boolean;
+                q3Method?: boolean;
+                q4Intent?: boolean;
+                q5Plan?: boolean;
+                q6Behavior?: boolean;
+                q6WithinThreeMonths?: boolean;
+              } | null;
+              calculation: {
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                status: "INCOMPLETE" | "COMPLETE";
+                band: ("LOW" | "MODERATE" | "HIGH" | "NO_POSITIVE_RESPONSE") | null;
+                traversedBranch: "Q2_UNANSWERED" | "Q2_NO_SKIP_TO_Q6" | "Q2_YES_ASK_Q3_TO_Q5";
+                traversedQuestions: ("Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6" | "Q6_RECENCY")[];
+              } | null;
+              instrumentPin: {
+                /** @enum {string} */
+                instrumentId: "C_SSRS_SCREEN_RECENT";
+                /** @enum {string} */
+                instrumentVersion: "LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2";
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                /** @enum {string} */
+                sourceReference: "medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf";
+                /** @enum {string} */
+                sourceSha256: "8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2";
+                /** @enum {string} */
+                reviewReference: "CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING";
+              };
+              activationGate: {
+                /** @enum {string} */
+                status: "INACTIVE";
+                /** @enum {boolean} */
+                permissionRecord: false;
+                /** @enum {boolean} */
+                trainingRecord: false;
+                /** @enum {boolean} */
+                transcriptionApproval: false;
+                /** @enum {boolean} */
+                clinicalReviewApproval: false;
+              };
+              createdByUserId: string | null;
+              updatedByUserId: string | null;
+              createdAt: string | null;
+              updatedAt: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  saveCssrsRecentAssessment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json":
+          | {
+              /** @enum {string} */
+              schemaVersion: "1";
+              mode: "SAVE" | "COMPLETE";
+              expectedRevision: number;
+              answers: {
+                q1WishDead?: boolean;
+                q2SuicidalThoughts?: boolean;
+                q3Method?: boolean;
+                q4Intent?: boolean;
+                q5Plan?: boolean;
+                q6Behavior?: boolean;
+                q6WithinThreeMonths?: boolean;
+              };
+            }
+          | {
+              /** @enum {string} */
+              schemaVersion: "1";
+              /** @enum {string} */
+              mode: "BYPASS";
+              expectedRevision: number;
+            };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            definition: {
+              title: string;
+              instruction: string;
+              questions: {
+                id: "Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6";
+                number: number;
+                answerPath: string;
+                timeframe: "PAST_MONTH" | "LIFETIME";
+                text: string;
+              }[];
+              recencyFollowUp: {
+                /** @enum {string} */
+                id: "Q6_RECENCY";
+                /** @enum {string} */
+                answerPath: "q6WithinThreeMonths";
+                /** @enum {string} */
+                timeframe: "PAST_THREE_MONTHS";
+                text: string;
+              };
+            };
+            assessment: {
+              researchCaseId: string;
+              status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+              answers: {
+                q1WishDead?: boolean;
+                q2SuicidalThoughts?: boolean;
+                q3Method?: boolean;
+                q4Intent?: boolean;
+                q5Plan?: boolean;
+                q6Behavior?: boolean;
+                q6WithinThreeMonths?: boolean;
+              } | null;
+              calculation: {
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                status: "INCOMPLETE" | "COMPLETE";
+                band: ("LOW" | "MODERATE" | "HIGH" | "NO_POSITIVE_RESPONSE") | null;
+                traversedBranch: "Q2_UNANSWERED" | "Q2_NO_SKIP_TO_Q6" | "Q2_YES_ASK_Q3_TO_Q5";
+                traversedQuestions: ("Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6" | "Q6_RECENCY")[];
+              } | null;
+              instrumentPin: {
+                /** @enum {string} */
+                instrumentId: "C_SSRS_SCREEN_RECENT";
+                /** @enum {string} */
+                instrumentVersion: "LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2";
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                /** @enum {string} */
+                sourceReference: "medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf";
+                /** @enum {string} */
+                sourceSha256: "8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2";
+                /** @enum {string} */
+                reviewReference: "CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING";
+              };
+              activationGate: {
+                /** @enum {string} */
+                status: "INACTIVE";
+                /** @enum {boolean} */
+                permissionRecord: false;
+                /** @enum {boolean} */
+                trainingRecord: false;
+                /** @enum {boolean} */
+                transcriptionApproval: false;
+                /** @enum {boolean} */
+                clinicalReviewApproval: false;
               };
               createdByUserId: string | null;
               updatedByUserId: string | null;

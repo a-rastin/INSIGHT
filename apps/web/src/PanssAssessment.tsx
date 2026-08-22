@@ -196,7 +196,9 @@ export function PanssAssessment({
 
         <section className="calculation-panel" aria-live="polite" aria-atomic="true">
           <h3>PANSS calculation</h3>
-          {calculation.scores ? (
+          {data.assessment.status === "BYPASSED" ? (
+            <p className="calculation-result">Bypassed: no score</p>
+          ) : calculation.scores ? (
             <dl className="panss-scores">
               <div>
                 <dt>Positive</dt>

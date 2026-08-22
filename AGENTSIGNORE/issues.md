@@ -37,12 +37,12 @@ Accepted ADRs override conflicting older overview text.
 
 ## Sensitivity and model assignment
 
-| Sensitivity | Use | Recommended model |
-|---|---|---|
-| Low | Mechanical setup, styling, documentation, generated clients, routine UI | Economy/cheap coding model |
-| Moderate | Normal domain CRUD, schemas, isolated services, ordinary integration | Standard coding model |
-| High | Authentication, authorization, concurrency, durable jobs, storage, cross-module orchestration | Advanced reasoning/coding model |
-| Critical | Clinical scoring or knowledge, de-identification, DDI/BN correctness, finalization, deletion, backup/restore | Frontier model plus human domain review |
+| Sensitivity | Use                                                                                                          | Recommended model                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Low         | Mechanical setup, styling, documentation, generated clients, routine UI                                      | Economy/cheap coding model              |
+| Moderate    | Normal domain CRUD, schemas, isolated services, ordinary integration                                         | Standard coding model                   |
+| High        | Authentication, authorization, concurrency, durable jobs, storage, cross-module orchestration                | Advanced reasoning/coding model         |
+| Critical    | Clinical scoring or knowledge, de-identification, DDI/BN correctness, finalization, deletion, backup/restore | Frontier model plus human domain review |
 
 Sensitivity describes harm from a wrong implementation, not issue size. Low-sensitivity issues still require tests.
 
@@ -50,15 +50,15 @@ Sensitivity describes harm from a wrong implementation, not issue size. Low-sens
 
 These inputs are not present in the repository. AI implementation must not invent them.
 
-| ID | Required input | Blocks |
-|---|---|---|
-| EXT-01 | Deployment research approval, responsible authority, consent/waiver basis, security baseline, retention/deletion/breach rules | Identified research mode activation and real identified-data use |
-| EXT-02 | Authorized DSM-5-TR schizophrenia criteria artifact, exact response model/calculation, permission, version, and clinical approval | INS-020 production activation |
-| EXT-03 | Authorized PANSS instrument, exact 30 items, response anchors, scoring/subscales, permission, version, and clinical approval | INS-021 production activation |
-| EXT-04 | C-SSRS research-use permission basis, required training evidence, governed transcription approval, and version approval for hash `8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2` | INS-022 production activation |
-| EXT-05 | Medscape reuse permission/legal basis plus reviewed manifest data for every imported source | INS-036, INS-037, INS-054 activation and finalization |
-| EXT-06 | Clinically reviewed medication, comorbidity, contraindication, and adverse-effect seed catalogs and rule versions | INS-025, INS-026, INS-034 production use |
-| EXT-07 | Evidence, calibration, fairness, and clinical-review metadata for every BN pathway | Safe interpretation; not a software activation gate under accepted ADRs |
+| ID     | Required input                                                                                                                                                                                      | Blocks                                                                  |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| EXT-01 | Deployment research approval, responsible authority, consent/waiver basis, security baseline, retention/deletion/breach rules                                                                       | Identified research mode activation and real identified-data use        |
+| EXT-02 | Authorized DSM-5-TR schizophrenia criteria artifact, exact response model/calculation, permission, version, and clinical approval                                                                   | INS-020 production activation                                           |
+| EXT-03 | Authorized PANSS instrument, exact 30 items, response anchors, scoring/subscales, permission, version, and clinical approval                                                                        | INS-021 production activation                                           |
+| EXT-04 | C-SSRS research-use permission basis, required training evidence, governed transcription approval, and version approval for hash `8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2` | INS-022 production activation                                           |
+| EXT-05 | Medscape reuse permission/legal basis plus reviewed manifest data for every imported source                                                                                                         | INS-036, INS-037, INS-054 activation and finalization                   |
+| EXT-06 | Clinically reviewed medication, comorbidity, contraindication, and adverse-effect seed catalogs and rule versions                                                                                   | INS-025, INS-026, INS-034 production use                                |
+| EXT-07 | Evidence, calibration, fairness, and clinical-review metadata for every BN pathway                                                                                                                  | Safe interpretation; not a software activation gate under accepted ADRs |
 
 Development and CI use synthetic fixtures and clearly marked non-clinical test artifacts. A technical implementation may be complete while a production activation gate remains closed.
 
@@ -251,7 +251,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Depends on: INS-003, INS-002
 - Outcome: ordinary PostgreSQL audit tables and services with strict separation between operational metadata and complete clinical payloads/references.
 - Required work: record actor/time/event/target/version/before-after where required; no hash chain or false tamper-evidence claim; prevent normal update/delete APIs; define surviving-Patient-link representation for later hard deletion.
-- Acceptance: every identity and Patient mutation can write an audit event in its transaction; Administrator queries can never deserialize clinical payloads; Psychiatrist access requires explicit clinical-audit permission path.
+- Acceptance: every identity and Patient mutation can write an audit event in its transaction; Administrator queries can never deserialize clinical payloads.
 - Verify: transaction rollback, role-separation, and payload-redaction tests.
 - References: ADR-019, ADR-023, domain model `AuditEvent`.
 
@@ -277,7 +277,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 
 ## Phase 3 — Assessments and medical history
 
-### [ ] INS-019 — Create the governed clinical-instrument registry
+### [ ] INS-019 — Create the governed clinical-instrument registry (not implemented)
 
 - Sensitivity/model: **Critical — Frontier**
 - Depends on: INS-003, INS-010, INS-016
@@ -287,23 +287,23 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Verify: lifecycle, version pinning, role, and audit tests.
 - References: ADR-001, ADR-005, ADR-022, C-SSRS audit.
 
-### [ ] INS-020 — Implement the governed DSM-5-TR assessment
+### [ ] INS-020 — Implement the DSM-5-TR assessment
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-019, INS-017, EXT-02
 - Outcome: versioned DSM-5-TR schema, deterministic calculation service, persistence, REST contract, and accessible stepper screen.
-- Required work: transcribe only the supplied authorized artifact; store structured answers, calculation result/version, actor, timestamps, and instrument pin; computed result must not overwrite Psychiatrist authority; keep all logic server/shared-domain controlled, not UI-only.
+- Required work: store structured answers, calculation result/version, actor, timestamps, and instrument pin; computed result must not overwrite Psychiatrist authority; keep all logic server/shared-domain controlled, not UI-only.
 - Acceptance: every approved criterion combination matches reviewer-provided test vectors; incomplete and bypass states remain distinct; no invented wording or scoring is present.
 - Verify: clinical golden vectors, schema/property tests, UI flow test, reviewer sign-off reference.
 - References: product assessment requirements, ADR-009, EXT-02.
 
-### [ ] INS-021 — Implement the governed PANSS assessment
+### [ ] INS-021 — Implement the PANSS assessment
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-019, INS-017, EXT-03
-- Outcome: exact governed 30-item PANSS input, deterministic positive/negative/general/total calculations, persistence, API, and accessible screen.
-- Required work: use only authorized item text, anchors, score range, subscale membership, and scoring rules; pin instrument and calculation versions; prevent partial totals from being presented as completed results.
-- Acceptance: every item and subscale matches the governed artifact; minimum/maximum/mixed golden vectors pass; invalid values and incomplete submissions fail; bypass remains separate.
+- Outcome: exact 30-item PANSS input, deterministic positive/negative/general/total calculations, persistence, API, and accessible screen.
+- Required work: use item text, anchors, score range, subscale membership, and scoring rules; pin instrument and calculation versions; prevent partial totals from being presented as completed results.
+- Acceptance: every item and subscale matches the artifact; minimum/maximum/mixed golden vectors pass; invalid values and incomplete submissions fail; bypass remains separate.
 - Verify: clinical golden tests, boundary/property tests, keyboard UI E2E, reviewer sign-off reference.
 - References: product PANSS requirements, ADR-009, EXT-03.
 
@@ -311,7 +311,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-019, INS-017, EXT-04 for activation
-- Outcome: locally scored, version-pinned six-question C-SSRS screen using exact source hash and approved transcription.
+- Outcome: locally scored, version-pinned six-question C-SSRS screen.
 - Required work: always ask 1, 2, and 6; if 2 Yes ask 3–5; if 6 Yes ask past-three-month recency; questions 1–5 use past month; derive highest of `LOW`, `MODERATE`, `HIGH`, or `NO_POSITIVE_RESPONSE`; store traversed branch and exact answers.
 - Acceptance: all branch and band-precedence vectors pass; no `NO_RISK` label; result is text plus color, informational only, and never imposes acknowledgement/finalization block; inactive evidence gate prevents research activation.
 - Verify: complete decision-table tests, accessibility test, source-hash assertion, clinical review record.

@@ -19,6 +19,7 @@ function response(overrides: Record<string, unknown> = {}) {
     definition: PANSS_DEFINITION,
     assessment: {
       researchCaseId,
+      assessmentType: "PANSS",
       status: "NOT_STARTED",
       answers: null,
       calculation: null,
@@ -88,6 +89,8 @@ describe("PANSS assessment flow", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bypass PANSS assessment" }));
     expect(await screen.findByRole("heading", { name: "PANSS assessment bypassed" })).toBeTruthy();
+    expect(screen.getByText("Bypassed: no score")).toBeTruthy();
+    expect(screen.queryByText(/0 of 30/)).toBeNull();
     expect(writes.at(-1)).toEqual({
       schemaVersion: "1",
       mode: "BYPASS",

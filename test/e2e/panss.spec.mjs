@@ -148,6 +148,8 @@ test("Psychiatrist completes PANSS with keyboard and sees totals only when compl
 function emptyAssessment(instrumentPin) {
   return {
     researchCaseId: "30000000-0000-4000-8000-000000000001",
+    assessmentType:
+      instrumentPin.instrumentId === "PANSS_30" ? "PANSS" : "DSM5TR",
     status: "NOT_STARTED",
     answers: null,
     calculation: null,

@@ -220,7 +220,11 @@ export function Dsm5trAssessment({
 
         <section className="calculation-panel" aria-live="polite">
           <h3>Calculated criteria status</h3>
-          <p className="calculation-result">{displayDisposition(calculation.disposition)}</p>
+          <p className="calculation-result">
+            {data.assessment.status === "BYPASSED"
+              ? "Bypassed: no result"
+              : displayDisposition(calculation.disposition)}
+          </p>
           <p className="field-hint">
             Calculation version {data.assessment.instrumentPin.calculationVersion}; instrument pin{" "}
             {data.assessment.instrumentPin.instrumentVersion}.

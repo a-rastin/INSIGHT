@@ -893,6 +893,154 @@ export const migrations: readonly Migration[] = Object.freeze([
       EXECUTE FUNCTION insight.protect_panss_write();
     `,
   },
+  {
+    version: 12,
+    name: "cssrs_recent_assessment",
+    sql: `
+      CREATE TABLE insight.cssrs_recent_assessments (
+        research_case_id uuid PRIMARY KEY
+          REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        status insight.assessment_status NOT NULL CHECK (
+          status IN ('IN_PROGRESS', 'COMPLETED', 'BYPASSED')
+        ),
+        answers jsonb,
+        calculation_result jsonb,
+        instrument_id text NOT NULL CHECK (instrument_id = 'C_SSRS_SCREEN_RECENT'),
+        instrument_version text NOT NULL CHECK (
+          instrument_version =
+            'LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2'
+        ),
+        schema_version text NOT NULL CHECK (schema_version = '1.0.0'),
+        calculation_version text CHECK (calculation_version = '1.0.0'),
+        source_reference text NOT NULL CHECK (
+          source_reference = 'medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf'
+        ),
+        source_sha256 text NOT NULL CHECK (
+          source_sha256 = '8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2'
+        ),
+        review_reference text NOT NULL CHECK (
+          review_reference = 'CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING'
+        ),
+        research_activation_status text NOT NULL CHECK (
+          research_activation_status = 'INACTIVE'
+        ),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (answers IS NULL OR jsonb_typeof(answers) = 'object'),
+        CHECK (calculation_result IS NULL OR jsonb_typeof(calculation_result) = 'object'),
+        CHECK (
+          (status = 'BYPASSED'
+            AND answers IS NULL
+            AND calculation_result IS NULL
+            AND calculation_version IS NULL)
+          OR
+          (status = 'IN_PROGRESS'
+            AND answers IS NOT NULL
+            AND calculation_version IS NOT NULL
+            AND (
+              (calculation_result->>'status' = 'INCOMPLETE'
+                AND calculation_result->'band' = 'null'::jsonb)
+              OR
+              (calculation_result->>'status' = 'COMPLETE'
+                AND calculation_result->>'band' IN (
+                  'LOW', 'MODERATE', 'HIGH', 'NO_POSITIVE_RESPONSE'
+                ))
+            ))
+          OR
+          (status = 'COMPLETED'
+            AND answers IS NOT NULL
+            AND calculation_result->>'status' = 'COMPLETE'
+            AND calculation_result->>'band' IN (
+              'LOW', 'MODERATE', 'HIGH', 'NO_POSITIVE_RESPONSE'
+            )
+            AND calculation_version IS NOT NULL)
+        )
+      );
+
+      INSERT INTO insight.cssrs_recent_assessments (
+        research_case_id, status, instrument_id, instrument_version, schema_version,
+        source_reference, source_sha256, review_reference, research_activation_status,
+        created_by_user_id, updated_by_user_id, created_at, updated_at
+      )
+      SELECT research_case_id, 'BYPASSED', 'C_SSRS_SCREEN_RECENT',
+             'LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2',
+             '1.0.0', 'medical-documentation/suicide-risk/CSSRS_ScreenVersion.pdf',
+             '8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2',
+             'CSSRS-CLINICAL-REVIEW-2026-08-22-PENDING', 'INACTIVE',
+             updated_by_user_id, updated_by_user_id, updated_at, updated_at
+      FROM insight.research_case_assessments
+      WHERE assessment_type = 'CSSRS_RECENT' AND status = 'BYPASSED';
+
+      UPDATE insight.research_case_assessments
+      SET status = 'NOT_STARTED'
+      WHERE assessment_type = 'CSSRS_RECENT' AND status <> 'BYPASSED';
+
+      CREATE FUNCTION insight.protect_cssrs_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.cssrs_write', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'C-SSRS assessment data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+
+      CREATE TRIGGER cssrs_recent_assessments_service_owned
+      BEFORE INSERT OR UPDATE ON insight.cssrs_recent_assessments
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_cssrs_write();
+
+      CREATE TRIGGER cssrs_summary_service_owned
+      BEFORE UPDATE ON insight.research_case_assessments
+      FOR EACH ROW
+      WHEN (OLD.assessment_type = 'CSSRS_RECENT' AND OLD.status IS DISTINCT FROM NEW.status)
+      EXECUTE FUNCTION insight.protect_cssrs_write();
+    `,
+  },
+  {
+    version: 13,
+    name: "shared_assessment_autosave",
+    sql: `
+      CREATE TABLE insight.assessment_save_events (
+        id bigserial PRIMARY KEY,
+        research_case_id uuid NOT NULL,
+        assessment_type text NOT NULL CHECK (
+          assessment_type IN ('DSM5TR', 'PANSS', 'CSSRS_RECENT')
+        ),
+        status insight.assessment_status NOT NULL,
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE INDEX assessment_save_events_case_idx
+        ON insight.assessment_save_events (research_case_id, assessment_type, id);
+
+      CREATE TRIGGER assessment_save_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.assessment_save_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+
+      DROP TRIGGER dsm5tr_assessments_service_owned ON insight.dsm5tr_assessments;
+      CREATE TRIGGER dsm5tr_assessments_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.dsm5tr_assessments
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_dsm5tr_write();
+
+      DROP TRIGGER panss_assessments_service_owned ON insight.panss_assessments;
+      CREATE TRIGGER panss_assessments_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.panss_assessments
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_panss_write();
+
+      DROP TRIGGER cssrs_recent_assessments_service_owned
+        ON insight.cssrs_recent_assessments;
+      CREATE TRIGGER cssrs_recent_assessments_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.cssrs_recent_assessments
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_cssrs_write();
+    `,
+  },
 ]);
 
 export function prepareMigrations(
