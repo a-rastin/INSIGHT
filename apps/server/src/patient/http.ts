@@ -7,6 +7,8 @@ import {
   PatientInputError,
   PatientNotFoundError,
   createOrOverwritePatient,
+  getPatient,
+  listPatients,
   savePatientDemographics,
   type OfficialIdentifierConfiguration,
   type PatientDemographics,
@@ -34,6 +36,53 @@ const DATE_PATTERN = "^\\d{4}-\\d{2}-\\d{2}$";
 
 const response = (schema: object) => ({ 200: schema, default: ApiErrorSchema });
 
+const patientParamsSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["patientId"],
+  properties: { patientId: { type: "string", pattern: UUID_PATTERN } },
+} as const;
+
+function patientRecordSchema(configuration: OfficialIdentifierConfiguration) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "id",
+      "officialIdentifier",
+      "firstName",
+      "lastName",
+      "dateOfBirth",
+      "sex",
+      "profileAge",
+      "researchCase",
+      "createdAt",
+      "updatedAt",
+    ],
+    properties: {
+      id: { type: "string", pattern: UUID_PATTERN },
+      officialIdentifier: officialIdentifierSchema(configuration, true),
+      firstName: { type: "string", minLength: 1, maxLength: 128 },
+      lastName: { type: "string", minLength: 1, maxLength: 128 },
+      dateOfBirth: { type: "string", pattern: DATE_PATTERN },
+      sex: { type: "string", enum: ["MALE", "FEMALE"] },
+      profileAge: { type: "integer", minimum: 0 },
+      researchCase: {
+        type: "object",
+        additionalProperties: false,
+        required: ["id", "startedAt", "ageAtStart"],
+        properties: {
+          id: { type: "string", pattern: UUID_PATTERN },
+          startedAt: { type: "string", format: "date-time" },
+          ageAtStart: { type: "integer", minimum: 0 },
+        },
+      },
+      createdAt: { type: "string", format: "date-time" },
+      updatedAt: { type: "string", format: "date-time" },
+    },
+  } as const;
+}
+
 function patientResponseSchema(configuration: OfficialIdentifierConfiguration) {
   return {
     type: "object",
@@ -41,43 +90,19 @@ function patientResponseSchema(configuration: OfficialIdentifierConfiguration) {
     required: ["schemaVersion", "patient"],
     properties: {
       schemaVersion: { type: "string", const: CURRENT_SCHEMA_VERSION },
-      patient: {
-        type: "object",
-        additionalProperties: false,
-        required: [
-          "id",
-          "officialIdentifier",
-          "firstName",
-          "lastName",
-          "dateOfBirth",
-          "sex",
-          "profileAge",
-          "researchCase",
-          "createdAt",
-          "updatedAt",
-        ],
-        properties: {
-          id: { type: "string", pattern: UUID_PATTERN },
-          officialIdentifier: officialIdentifierSchema(configuration, true),
-          firstName: { type: "string", minLength: 1, maxLength: 128 },
-          lastName: { type: "string", minLength: 1, maxLength: 128 },
-          dateOfBirth: { type: "string", pattern: DATE_PATTERN },
-          sex: { type: "string", enum: ["MALE", "FEMALE"] },
-          profileAge: { type: "integer", minimum: 0 },
-          researchCase: {
-            type: "object",
-            additionalProperties: false,
-            required: ["id", "startedAt", "ageAtStart"],
-            properties: {
-              id: { type: "string", pattern: UUID_PATTERN },
-              startedAt: { type: "string", format: "date-time" },
-              ageAtStart: { type: "integer", minimum: 0 },
-            },
-          },
-          createdAt: { type: "string", format: "date-time" },
-          updatedAt: { type: "string", format: "date-time" },
-        },
-      },
+      patient: patientRecordSchema(configuration),
+    },
+  } as const;
+}
+
+function patientListResponseSchema(configuration: OfficialIdentifierConfiguration) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["schemaVersion", "patients"],
+    properties: {
+      schemaVersion: { type: "string", const: CURRENT_SCHEMA_VERSION },
+      patients: { type: "array", items: patientRecordSchema(configuration) },
     },
   } as const;
 }
@@ -146,6 +171,10 @@ function body(patient: PatientRecord) {
   return { schemaVersion: CURRENT_SCHEMA_VERSION, patient };
 }
 
+function listBody(patients: readonly PatientRecord[]) {
+  return { schemaVersion: CURRENT_SCHEMA_VERSION, patients };
+}
+
 function apiError(
   request: FastifyRequest,
   status: 400 | 404,
@@ -169,6 +198,45 @@ export const patientRoutes =
   ): FastifyPluginAsync =>
   async (api) => {
     const patientSchema = patientResponseSchema(options.officialIdentifier);
+
+    api.get(
+      "/patients",
+      {
+        schema: {
+          operationId: "listPatients",
+          tags: ["patients"],
+          response: response(patientListResponseSchema(options.officialIdentifier)),
+        },
+      },
+      async (request, reply) => {
+        const patients = await listPatients(options.pool, actor(getSession(request)!));
+        return reply.send(listBody(patients));
+      },
+    );
+
+    api.get<{ Params: { patientId: string } }>(
+      "/patients/:patientId",
+      {
+        schema: {
+          operationId: "getPatientProfile",
+          tags: ["patients"],
+          params: patientParamsSchema,
+          response: response(patientSchema),
+        },
+      },
+      async (request, reply) => {
+        try {
+          const patient = await getPatient(
+            options.pool,
+            actor(getSession(request)!),
+            request.params.patientId,
+          );
+          return reply.send(body(patient));
+        } catch (error) {
+          return patientError(error, request, reply);
+        }
+      },
+    );
 
     api.post<{ Body: VersionedPatientInput }>(
       "/patients",
@@ -203,12 +271,7 @@ export const patientRoutes =
         schema: {
           operationId: "savePatientDemographics",
           tags: ["patients"],
-          params: {
-            type: "object",
-            additionalProperties: false,
-            required: ["patientId"],
-            properties: { patientId: { type: "string", pattern: UUID_PATTERN } },
-          },
+          params: patientParamsSchema,
           body: demographicsBodySchema,
           response: response(patientSchema),
         },

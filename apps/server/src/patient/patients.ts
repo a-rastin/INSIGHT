@@ -286,6 +286,43 @@ export async function savePatientDemographics(
   });
 }
 
+export async function listPatients(
+  pool: Pool,
+  actor: PatientActor,
+  now = new Date(),
+): Promise<readonly PatientRecord[]> {
+  requirePsychiatrist(actor);
+  const result = await pool.query<PatientRow>(
+    `${patientSelect()} ORDER BY p.updated_at DESC, p.id`,
+  );
+  const keys = new Map<number, Buffer>();
+  const patients: PatientRecord[] = [];
+
+  for (const row of result.rows) {
+    let key = keys.get(row.encryption_key_version);
+    if (!key) {
+      key = await encryptionKey(pool, row.encryption_key_version);
+      keys.set(row.encryption_key_version, key);
+    }
+    patients.push(materializeStoredPatient(row, key, now));
+  }
+  return patients;
+}
+
+export async function getPatient(
+  pool: Pool,
+  actor: PatientActor,
+  patientId: string,
+  now = new Date(),
+): Promise<PatientRecord> {
+  requirePsychiatrist(actor);
+  const result = await pool.query<PatientRow>(`${patientSelect()} WHERE p.id = $1`, [patientId]);
+  const row = result.rows[0];
+  if (!row) throw new PatientNotFoundError();
+  const key = await encryptionKey(pool, row.encryption_key_version);
+  return materializeStoredPatient(row, key, now);
+}
+
 export async function listPatientAuditEvents(
   pool: Pool,
   actor: PatientActor,
@@ -709,4 +746,13 @@ function materializePatient(
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
+}
+
+function materializeStoredPatient(row: PatientRow, key: Buffer, now: Date): PatientRecord {
+  return materializePatient(
+    row,
+    decryptField(row, "official_identifier", key),
+    decryptDemographics(row, key),
+    now,
+  );
 }

@@ -141,7 +141,7 @@ These are target boundaries, not claims that the modules are implemented.
 
 The root now contains the initial TypeScript workspace for INSIGHT:
 
-- `apps/web` is the minimal React/Vite browser entry point.
+- `apps/web` is the React/Vite browser entry point with role-owned navigation and the Psychiatrist-only shared Patient Registry, create, and profile pages.
 - `apps/server` owns the versioned `/api/v1` Fastify boundary, safe error envelopes, server-generated request IDs, generated OpenAPI, database/worker-aware readiness, a supervised worker runtime, and production delivery of the React build with SPA fallback.
 - `apps/server/src/deployment` owns the EXT-01 evidence lifecycle and identified-data gate. Its Administrator API exposes deployment evidence only; operational audit rows retain actor, evidence version, environment status, request ID, and timestamp without Patient or approval content.
 - `apps/server/src/patient` owns configured official-identifier normalization, encrypted Patient demographics, transactional duplicate overwrite, one-to-one Research Case creation, calendar-age calculation, and encrypted before/after audit events. Patient services and routes reject Administrators.
@@ -177,7 +177,7 @@ Representative failure contracts:
 
 ## Web UI Development
 
-`apps/web` provides the desktop-first React/Vite shell. It includes local sign-in, forced temporary-password replacement, role-specific navigation, Administrator user management, relative client-side routes, semantic application landmarks, a root error boundary, the approved light-theme design tokens, responsive behavior down to 320px, and shared accessible form, button, table, badge, banner, loading, empty, and error primitives. Dark mode is intentionally unavailable until approved tokens and accessibility review exist.
+`apps/web` provides the desktop-first React/Vite shell. It includes local sign-in, forced temporary-password replacement, role-specific navigation, Administrator user management, and Psychiatrist-only Patient Registry list/search/create/profile flows. Patient searches remain in browser memory, duplicate create responses open the canonical profile directly, and Patient names, demographics, and official identifiers never enter client URLs or logs. The shell also provides relative client-side routes, semantic landmarks, a root error boundary, approved light-theme design tokens, responsive behavior down to 320px, and shared accessible state primitives. Dark mode is intentionally unavailable until approved tokens and accessibility review exist.
 
 Run `npm test --workspace @insight/web` for focused component and WCAG A/AA smoke tests. Run `npm run typecheck --workspace @insight/web` and `npm run build --workspace @insight/web` for package checks.
 
@@ -208,7 +208,7 @@ Migration 4 adds attributable, sanitized account-management audit events and tre
 
 Migration 5 adds immutable EXT-01 evidence versions, explicit latest-version activation state, and metadata-only operational audit events. `GET` and `POST /api/v1/admin/deployment-evidence` inspect or record evidence; `POST /api/v1/admin/deployment-evidence/{version}/activate` enables identified mode only while the latest approval is effective and every security-control prerequisite is satisfied. Any new evidence version or approval expiry disables identified Patient creation. Administrator requests to the Patient-creation boundary remain forbidden.
 
-Migration 6 adds the database-held application encryption key, encrypted Patient identity and demographics, unique normalized-identifier lookup hash, exactly one Research Case per Patient, and immutable encrypted Patient audit events. `POST /api/v1/patients` creates a complete Patient and Research Case or atomically overwrites demographics on a normalized identifier match; `PUT /api/v1/patients/{patientId}` performs an attributable last-write-wins demographic save. Responses calculate profile age against today's deployment-local date and Research Case age against `startedAt`.
+Migration 6 adds the database-held application encryption key, encrypted Patient identity and demographics, unique normalized-identifier lookup hash, exactly one Research Case per Patient, and immutable encrypted Patient audit events. `GET /api/v1/patients` lists the shared registry without creator filtering, and `GET /api/v1/patients/{patientId}` returns one profile. `POST /api/v1/patients` creates a complete Patient and Research Case or atomically overwrites demographics on a normalized identifier match; `PUT /api/v1/patients/{patientId}` performs an attributable last-write-wins demographic save. Responses calculate profile age against today's deployment-local date and Research Case age against `startedAt`. Every Patient endpoint rejects Administrators.
 
 Patient routes require one deployment identifier configuration. Set `INSIGHT_OFFICIAL_IDENTIFIER_TYPE`, `INSIGHT_OFFICIAL_IDENTIFIER_ISSUER`, `INSIGHT_OFFICIAL_IDENTIFIER_PATTERN`, and `INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION`; normalization must be `NFKC`, `NFKC_UPPERCASE`, or `NFKC_LOWERCASE`. The Compose file forwards these runtime values and contains no jurisdiction-specific default.
 

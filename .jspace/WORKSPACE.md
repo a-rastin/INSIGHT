@@ -1,7 +1,7 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement and verify transactional Patient identity plus one Research Case for the requested packet.
+Deliver psychiatrist-only shared Patient Registry UI and verified role/privacy behavior.
 
 ## Core
 - canonical identity — configured normalized identifier serializes to one encrypted UUID Patient and one Research Case
@@ -107,8 +107,9 @@ Implement and verify transactional Patient identity plus one Research Case for t
 - ✓96 Focused Patient unit and PostgreSQL integration tests pass. — verified by: Node tests cover birthday/leap dates, configured normalization, concurrent duplicate creates, overwrite audits, rollback, route validation, Administrator denial, and Encounter/visit absence.
 - ✓97 Patient packet and repository regressions verified. — verified by: Prettier, ESLint, TypeScript, OpenAPI drift, artifact scan, production builds, 7 server unit files, 12 web tests, 25 PostgreSQL integration tests, shell syntax, Compose validation, and clean diff checks.
 - ✓98 Patient and Research Case packet committed as b17de14. — verified by: git log and status; coverage: all 16 staged packet files committed and no uncommitted product changes remain.
+- ✓99 Shared Patient Registry backend/UI and focused verification pass. — verified by: Verifier: Prettier, targeted ESLint, TypeScript, 26 unit/component tests, PostgreSQL 16 Patient integration, OpenAPI drift check, production build, three-role Playwright E2E, and artifact scan; coverage: shared list/profile/create/search, duplicate overwrite, age display, all requested states, both Psychiatrist contexts, Administrator UI/API denial, keyboard submit/search, URL/log privacy, and generated contracts.
 
 ## Open
 
 ## Next
-Await the next implementation issue.
+Review final diff, commit scoped files, and report absent root Plan.md.

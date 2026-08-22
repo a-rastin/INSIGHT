@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { AdminUsersPage } from "./AdminUsersPage";
+import { CreatePatientPage, PatientProfilePage, PatientRegistryPage } from "./PatientPages";
 import {
   Badge,
   Banner,
@@ -28,7 +29,7 @@ type Route = {
   label: string;
   title: string;
   description: string;
-  page: "workspace" | "patients" | "users" | "placeholder";
+  page: "workspace" | "patients" | "patient-create" | "patient-profile" | "users" | "placeholder";
 };
 
 type Session = operations["getSession"]["responses"][200]["content"]["application/json"];
@@ -53,7 +54,7 @@ const clinicianRoutes: Route[] = [
     label: "Create Patient",
     title: "Create Patient",
     description: "Create a patient record and its single Research Case.",
-    page: "placeholder",
+    page: "patient-create",
   },
   {
     path: "/case",
@@ -162,6 +163,10 @@ function navigate(event: MouseEvent<HTMLAnchorElement>, path: string) {
   }
 
   event.preventDefault();
+  navigateTo(path);
+}
+
+function navigateTo(path: string) {
   if (window.location.pathname !== path) {
     window.history.pushState({}, "", path);
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -210,32 +215,6 @@ function WorkspacePage({ administrator = false }: { administrator?: boolean }) {
           rowKey={(row) => row.id}
         />
       </section>
-    </div>
-  );
-}
-
-function PatientsPage() {
-  return (
-    <div className="page-stack">
-      <section className="card" aria-labelledby="patient-search-title">
-        <div className="section-heading">
-          <div>
-            <p className="kicker">Patient registry</p>
-            <h2 id="patient-search-title">Find a patient</h2>
-          </div>
-        </div>
-        <form className="inline-form" onSubmit={(event) => event.preventDefault()}>
-          <FormField label="Patient identifier" hint="Enter an exact or partial identifier.">
-            {(fieldProps) => <TextInput {...fieldProps} name="patient-identifier" />}
-          </FormField>
-          <Button type="submit">Search</Button>
-        </form>
-      </section>
-      <EmptyState
-        title="No patient selected"
-        description="Search for a patient to open their research case."
-        action={<Button variant="secondary">Add patient</Button>}
-      />
     </div>
   );
 }
@@ -307,7 +286,23 @@ function NotFoundPage() {
 function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => void }) {
   const pathname = usePathname();
   const routes = session.user.role === "ADMINISTRATOR" ? administratorRoutes : clinicianRoutes;
-  const route = routes.find((candidate) => candidate.path === pathname);
+  const patientId =
+    session.user.role === "PSYCHIATRIST"
+      ? pathname.match(
+          /^\/patients\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i,
+        )?.[1]
+      : undefined;
+  const route =
+    routes.find((candidate) => candidate.path === pathname) ??
+    (patientId
+      ? {
+          path: pathname,
+          label: "Patient Profile",
+          title: "Patient Profile",
+          description: "Review the current shared Patient record.",
+          page: "patient-profile" as const,
+        }
+      : undefined);
 
   async function signOut() {
     await apiClient.POST("/api/v1/logout", {
@@ -362,7 +357,13 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
         {route?.page === "workspace" ? (
           <WorkspacePage administrator={session.user.role === "ADMINISTRATOR"} />
         ) : null}
-        {route?.page === "patients" ? <PatientsPage /> : null}
+        {route?.page === "patients" ? <PatientRegistryPage onNavigate={navigateTo} /> : null}
+        {route?.page === "patient-create" ? (
+          <CreatePatientPage csrfToken={session.csrfToken} onNavigate={navigateTo} />
+        ) : null}
+        {route?.page === "patient-profile" && patientId ? (
+          <PatientProfilePage patientId={patientId} onNavigate={navigateTo} />
+        ) : null}
         {route?.page === "users" ? <AdminUsersPage csrfToken={session.csrfToken} /> : null}
         {route?.page === "placeholder" ? <PlaceholderPage title={route.title} /> : null}
         {!route ? <NotFoundPage /> : null}

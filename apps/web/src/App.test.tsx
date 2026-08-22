@@ -59,7 +59,7 @@ describe("application shell", () => {
     fireEvent.click(await screen.findByRole("link", { name: "Patient Registry" }));
 
     expect(window.location.pathname).toBe("/patients");
-    expect(screen.getByRole("heading", { level: 1, name: "Patient Registry" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: "Patient Registry" })).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "Application navigation" })).toBeTruthy();
     expect(screen.getByRole("main").getAttribute("id")).toBe("main-content");
   });

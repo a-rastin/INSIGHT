@@ -372,6 +372,47 @@ p {
   gap: var(--space-3);
 }
 
+.patient-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: var(--space-5);
+}
+
+.form-actions {
+  display: flex;
+  align-items: end;
+  gap: var(--space-3);
+  grid-column: 1 / -1;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.profile-grid > div {
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.profile-grid dt {
+  margin-bottom: var(--space-1);
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.profile-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+}
+
 .select-field {
   display: grid;
   gap: var(--space-2);
@@ -728,6 +769,11 @@ tbody tr:last-child td {
 
   .management-form {
     display: flex;
+  }
+
+  .patient-form,
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .card,

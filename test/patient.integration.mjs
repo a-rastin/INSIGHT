@@ -7,7 +7,9 @@ import {
   buildApp,
   createOrOverwritePatient,
   createUser,
+  getPatient,
   listPatientAuditEvents,
+  listPatients,
   recordDeploymentEvidence,
   savePatientDemographics,
 } from "../.tsbuild/server/index.js";
@@ -113,6 +115,24 @@ test("PAT-01 transactional Patient identity and one Research Case", async (suite
       assert.equal(saved.researchCase.ageAtStart, 35);
       assert.equal(saved.researchCase.startedAt, now.toISOString());
 
+      const secondPsychiatrist = await createUser(pool, {
+        username: "SharedRegistryResearcher",
+        password: "research-password",
+        role: "PSYCHIATRIST",
+      });
+      const secondActor = { id: secondPsychiatrist.id, role: secondPsychiatrist.role };
+      assert.deepEqual(
+        (await listPatients(pool, secondActor, new Date("2027-08-22T10:00:00.000Z"))).map(
+          ({ id }) => id,
+        ),
+        [patientId],
+      );
+      assert.equal(
+        (await getPatient(pool, secondActor, patientId, new Date("2027-08-22T10:00:00.000Z")))
+          .firstName,
+        "Latest",
+      );
+
       const finalAudit = await listPatientAuditEvents(pool, actor, patientId);
       assert.equal(finalAudit.length, 3);
       assert.deepEqual(finalAudit[2].before, overwriteAudit.after);
@@ -181,6 +201,11 @@ test("PAT-01 transactional Patient identity and one Research Case", async (suite
           password: "research-password",
           role: "PSYCHIATRIST",
         });
+        const secondPsychiatrist = await createUser(pool, {
+          username: "SecondRouteResearcher",
+          password: "research-password",
+          role: "PSYCHIATRIST",
+        });
         await enableIdentifiedMode(pool);
         const app = buildApp({
           authentication: { pool, allowInsecureLoopbackCookie: true, loginDelay: async () => {} },
@@ -188,6 +213,11 @@ test("PAT-01 transactional Patient identity and one Research Case", async (suite
         });
         try {
           const clinicianSession = await login(app, psychiatrist.username, "research-password");
+          const secondClinicianSession = await login(
+            app,
+            secondPsychiatrist.username,
+            "research-password",
+          );
           const administratorSession = await login(app, "admin", "admin");
           const invalid = await app.inject({
             method: "POST",
@@ -250,13 +280,40 @@ test("PAT-01 transactional Patient identity and one Research Case", async (suite
           assert.equal(saved.statusCode, 200);
           assert.equal(saved.json().patient.firstName, "Last");
 
-          const denied = await app.inject({
-            method: "POST",
+          const sharedList = await app.inject({
+            method: "GET",
             url: "/api/v1/patients",
-            headers: unsafeHeaders(administratorSession),
-            payload: { schemaVersion: "1", ...patientInput(makeSyntheticPatientIdentity(4)) },
+            headers: { cookie: secondClinicianSession.cookie },
           });
-          assert.equal(denied.statusCode, 403);
+          assert.equal(sharedList.statusCode, 200);
+          assert.deepEqual(
+            sharedList.json().patients.map(({ id }) => id),
+            [created.json().patient.id],
+          );
+          const sharedProfile = await app.inject({
+            method: "GET",
+            url: `/api/v1/patients/${created.json().patient.id}`,
+            headers: { cookie: secondClinicianSession.cookie },
+          });
+          assert.equal(sharedProfile.statusCode, 200);
+          assert.equal(sharedProfile.json().patient.firstName, "Last");
+
+          for (const deniedRequest of [
+            { method: "GET", url: "/api/v1/patients" },
+            { method: "GET", url: `/api/v1/patients/${created.json().patient.id}` },
+            {
+              method: "POST",
+              url: "/api/v1/patients",
+              headers: unsafeHeaders(administratorSession),
+              payload: { schemaVersion: "1", ...patientInput(makeSyntheticPatientIdentity(4)) },
+            },
+          ]) {
+            const denied = await app.inject({
+              ...deniedRequest,
+              headers: deniedRequest.headers ?? { cookie: administratorSession.cookie },
+            });
+            assert.equal(denied.statusCode, 403);
+          }
 
           for (const path of ["/api/v1/encounters", "/api/v1/visits"]) {
             const missing = await app.inject({
