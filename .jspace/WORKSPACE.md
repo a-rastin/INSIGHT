@@ -1,9 +1,10 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Admin-provided OpenAI-compatible API key and base URL work through final MCP model calls with focused tests.
+Implement and verify PostgreSQL access, forward migrations, schema startup checks, test isolation, server-only secrets, and recovery documentation for the current issue.
 
 ## Core
+- migration safety — advisory lock plus per-migration transaction and checksum ledger
 
 ## Verified
 - ✓01 Required context and skills read; repository indexed at 1,649 nodes and 2,820 edges; executable code concentrated in Bayesian-Engine; architecture.md and code-standards.md are empty; root is not a Git worktree. — verified by: Direct file reads, codebase-memory full index, architecture graph, filesystem inventory, and git status.
@@ -96,8 +97,10 @@ Admin-provided OpenAI-compatible API key and base URL work through final MCP mod
 - ✓88 Self-contained INSIGHT architecture schematic completed with seven views, target/current status separation, exact MCP/domain/state mappings, all 23 ADR links, and README reference. — verified by: Browser verification at 1265px and 345px widths; all tabs exercised; no horizontal overflow; no console errors; counts verified for 12 modules, 9 tools, 12 error codes, 18 entities, 23 ADRs, and 9 plan packets; every local link exists.
 - ✓89 Delivery repetition marker was a structural false positive: repeated HTML closing tags, article wrappers, and shared CSS declarations only; no user-visible sentence or compressed register repeats three times. — verified by: Exact duplicate-line audit of the shipped HTML, followed by browser-rendered text inspection; coverage includes every line repeated three or more times.
 - ✓90 OpenAI-compatible transport and activation contract documented with implementation test matrix. — verified by: rg consistency search and local markdown-link checker, including MCP contract, ADRs, admin UI requirements, README, and Plan.
+- ✓91 PostgreSQL migration acceptance behavior passes. — verified by: PostgreSQL 16 integration suite, including empty migration, idempotent rerun, concurrent serialization, rollback and repair, divergent startup rejection, CLI migration, and head reporting
+- ✓92 Database implementation and security boundary pass repository verification. — verified by: format, lint, TypeScript build, root unit suite, explicit secret-log scan, git diff check, and PostgreSQL 16 integration tests, including all requested migration acceptance paths
 
 ## Open
 
 ## Next
-Run final register/goal audit and report repository limitations.
+Review staged scope, commit the completed database issue, then run final goal audit.

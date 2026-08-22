@@ -16,7 +16,11 @@
     "format": "prettier --check apps packages package.json tsconfig.base.json tsconfig.json eslint.config.mjs prettier.config.mjs",
     "lint": "eslint apps packages",
     "typecheck": "tsc -b",
-    "test": "npm run build --workspace @insight/contracts && node --test test/*.test.mjs",
+    "test": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test test/*.test.mjs",
+    "db:migrate": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js migrate",
+    "db:migration:head": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js status",
+    "db:migrate:test": "npm run build --workspace @insight/server && node --test test/database.integration.mjs",
+    "secret-log:scan": "npm run build --workspace @insight/server && node --test test/database.test.mjs",
     "build": "npm run build --workspaces --if-present"
   },
   "devDependencies": {

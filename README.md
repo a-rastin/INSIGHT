@@ -140,6 +140,7 @@ The root now contains the initial TypeScript workspace for INSIGHT:
 
 - `apps/web` is the minimal React/Vite browser entry point.
 - `apps/server` is the minimal Fastify backend entry point.
+- `apps/server/src/database` owns PostgreSQL 16 pooled access, UTC sessions, transaction handling, forward-only migration locking and ledger checks, startup schema enforcement, safe diagnostics, and isolated integration-test databases.
 - `packages/contracts` owns browser-safe version 1 TypeBox runtime schemas and inferred types for UUIDs, RFC 3339 timestamps, fixed roles, API errors, pagination, and provenance. It also provides deterministic JSON serialization, Web Crypto SHA-256 helpers, and explicit unsupported-version errors; lint and contract tests prohibit server, database, secret, and Node-only imports at the browser boundary.
 - `packages/bayes` is the migration boundary for environment-independent Bayesian logic.
 - `Bayesian-Engine/` remains intact as the standalone Electron migration source and is not a root workspace.
@@ -153,7 +154,13 @@ The repository also contains one implemented legacy tool:
 - [`medical-documentation/`](medical-documentation/) contains source material collected for DDI and suicide-risk work.
 - [`CONTEXT/`](CONTEXT/) contains protected project context used by coding agents.
 
-No patient database, DDI engine, treatment-plan orchestrator, authentication service, or unified deployment exists yet.
+No patient-domain tables, DDI engine, treatment-plan orchestrator, authentication service, or unified deployment exists yet.
+
+## Database Development
+
+PostgreSQL major version 16 is pinned and enforced at runtime. Keep `DATABASE_URL` in the server environment only. Run `npm run db:migrate` to migrate forward, `npm run db:migration:head` to report database and code heads, and `npm run db:migrate:test` with a dedicated PostgreSQL 16 `TEST_DATABASE_URL` to run isolated integration tests. `npm run secret-log:scan` verifies safe database diagnostics and browser-source boundaries. Server startup fails before readiness when the database is empty, behind, divergent, or on another PostgreSQL major.
+
+Migration deployment, failure recovery, full-restore boundaries, and major-upgrade steps are documented in [Database Migrations and Recovery](docs/operations/database-migrations.md).
 
 ## Known Blockers
 
