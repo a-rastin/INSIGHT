@@ -197,6 +197,8 @@ No patient-domain tables, DDI engine, treatment-plan orchestrator, or authentica
 
 PostgreSQL major version 16 is pinned and enforced at runtime. Keep `DATABASE_URL` in the server environment only. Run `npm run db:migrate` to migrate forward, `npm run db:migration:head` to report database and code heads, and `npm run db:migrate:test` with a dedicated PostgreSQL 16 `TEST_DATABASE_URL` to run isolated integration tests. `npm run secret-log:scan` verifies safe database diagnostics and browser-source boundaries. Server startup fails before readiness when the database is empty, behind, divergent, or on another PostgreSQL major.
 
+Migration 2 creates the identity schema and exactly one enabled bootstrap Administrator. Its publicly predictable `admin/admin` credential is hashed with the current versioned Argon2id policy, does not require a first-sign-in change, and is never recreated or overwritten after the migration is recorded. User services enforce Unicode-normalized case-insensitive usernames, one-character minimum passwords, transparent rehash after policy changes, fixed Administrator/Psychiatrist roles, visible bootstrap-risk metadata, and protection for the last enabled Administrator.
+
 Migration deployment, failure recovery, full-restore boundaries, and major-upgrade steps are documented in [Database Migrations and Recovery](docs/operations/database-migrations.md).
 
 ## Production Container

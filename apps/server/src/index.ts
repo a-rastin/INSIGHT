@@ -7,6 +7,7 @@ import { assertSchemaAtHead, createPostgresPool, databaseConfigFromEnv } from ".
 import { safeDatabaseDiagnostic } from "./database/diagnostic.js";
 
 export { buildApp } from "./app.js";
+export * from "./identity/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const pool = createPostgresPool(databaseConfigFromEnv(env));

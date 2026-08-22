@@ -185,6 +185,7 @@ export async function migrateToHead(
         await client.query("BEGIN");
         await client.query("SET LOCAL TIME ZONE 'UTC'");
         await client.query(migration.sql);
+        await migration.run?.(client);
         await client.query(
           "INSERT INTO public.insight_schema_migrations (version, name, checksum) VALUES ($1, $2, $3)",
           [migration.version, migration.name, migration.checksum],
