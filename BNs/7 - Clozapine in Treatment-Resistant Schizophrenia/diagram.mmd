@@ -1,0 +1,23 @@
+flowchart TD
+    A[Schizophrenia diagnosis and persistent symptoms] --> B[Treatment resistance status]
+    C[Adequacy of prior antipsychotic trials] --> B
+    D[Adherence evidence and trial response] --> B
+    E[Residual impairment despite partial response] --> B
+
+    F[Severe neutropenia, myocarditis, NMS, or urgent toxicity] --> G[Clozapine eligibility]
+    H[Monitoring feasibility and patient preference] --> G
+    I[Titration risk: older, debilitated, CNS risk, cardiovascular risk, respiratory depressants] --> J[Clozapine implementation mode]
+    K[Clozapine current status: naive, interrupted, subtherapeutic, adequate nonresponse, responding] --> J
+
+    B --> L[Clozapine priority]
+    G --> L
+    J --> M[Management recommendation]
+    L --> M
+
+    N[Catatonia, significant suicide risk, rapid response need, or clozapine-resistant illness] --> O[ECT priority]
+    O --> M
+
+    P[TMS considered for hallucinations or negative symptoms] --> Q[TMS priority]
+    Q --> M
+
+    M --> R[Recommended clinical action pattern]

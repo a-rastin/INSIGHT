@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3">
+  <NETWORK>
+    <NAME>Properties</NAME>
+    <PROPERTY>author = Ada</PROPERTY>
+    <VARIABLE TYPE="nature">
+      <NAME>LocatedNode</NAME><OUTCOME>yes</OUTCOME><OUTCOME>no</OUTCOME>
+      <PROPERTY>position = (73, 165)</PROPERTY><PROPERTY>custom = preserve exactly</PROPERTY>
+    </VARIABLE>
+    <DEFINITION><FOR>LocatedNode</FOR><TABLE>0.5 0.5</TABLE></DEFINITION>
+  </NETWORK>
+</BIF>

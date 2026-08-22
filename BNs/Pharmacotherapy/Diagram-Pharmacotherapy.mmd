@@ -1,0 +1,49 @@
+flowchart TD
+
+  %% ------------------------------------------------------------------
+  %% Root nodes — patient state (no parents)
+  %% ------------------------------------------------------------------
+  DX["(*) schizophrenia_diagnostic_context<br/>── outcomes ──<br/>• schizophrenia_confirmed<br/>• diagnosis_not_confirmed<br/>• unknown<br/><br/>Statement 4 applies to patients with<br/>schizophrenia; uncertainty requires<br/>diagnostic reassessment"]
+
+  CI["(*) candidate_specific_hard_contraindication<br/>── outcomes ──<br/>• present<br/>• absent<br/>• unknown<br/><br/>An absolute candidate-specific<br/>contraindication excludes that candidate;<br/>labeling and interaction checks remain required"]
+
+  PXP["(*) prior_antipsychotic_experience<br/>── outcomes ──<br/>• effective_and_tolerable<br/>• ineffective_or_intolerable<br/>• no_prior_trial<br/>• unknown<br/><br/>Prior symptom response and tolerability<br/>should inform selection"]
+
+  PREF["(*) patient_preference_and_acceptability<br/>── outcomes ──<br/>• accepts_candidate<br/>• prefers_alternative<br/>• declines_antipsychotic<br/>• unknown<br/><br/>Incorporate treatment-related preferences<br/>through person-centered discussion"]
+
+  SE["(*) side_effect_and_physical_health_fit<br/>── outcomes ──<br/>• favorable<br/>• concerning<br/>• unknown<br/><br/>Match the candidate side-effect profile<br/>to physical health conditions and<br/>patient-specific vulnerability"]
+
+  PK["(*) interaction_and_pharmacokinetic_fit<br/>── outcomes ──<br/>• favorable<br/>• concerning<br/>• unknown<br/><br/>Consider drug-drug interactions,<br/>receptor/PK characteristics, smoking-related<br/>metabolism, and organ function"]
+
+  FORM["(*) formulation_fit<br/>── outcomes ──<br/>• acceptable_formulation_available<br/>• formulation_mismatch<br/>• unknown<br/><br/>Available formulation should fit swallowing<br/>ability, adherence context, acute route<br/>needs, and preference"]
+
+  %% ------------------------------------------------------------------
+  %% Intermediate nodes — intervention eligibility / priority
+  %% ------------------------------------------------------------------
+  ELIG["(I) antipsychotic_candidate_eligibility<br/>── outcomes ──<br/>• eligible<br/>• candidate_contraindicated<br/>• diagnostic_review_required<br/>• insufficient_information<br/><br/>Antipsychotic treatment is recommended<br/>for confirmed schizophrenia; a<br/>contraindicated candidate must be excluded"]
+
+  PRIO["(I) individualized_candidate_priority<br/>── outcomes ──<br/>• candidate_high_priority<br/>• alternative_candidate_preferred<br/>• candidate_requires_caution_or_adjustment<br/>• insufficient_information<br/><br/>Integrate prior response/tolerability,<br/>side-effect profile, physical health,<br/>interactions, and PK; no FGA or SGA class<br/>is generally preferred"]
+
+  SDFP["(I) shared_decision_and_formulation_priority<br/>── outcomes ──<br/>• proceed_with_candidate<br/>• choose_acceptable_alternative_or_formulation<br/>• address_declination_and_reassess<br/>• insufficient_information<br/><br/>Integrate patient preference and<br/>formulation fit in a person-centered plan"]
+
+  %% ------------------------------------------------------------------
+  %% Terminal node — management recommendation
+  %% ------------------------------------------------------------------
+  MGMT["(M) management_recommendation<br/>── outcomes ──<br/>• initiate_individualized_antipsychotic_and<br/>&nbsp;&nbsp;monitor_effectiveness_and_side_effects<br/>• select_alternative_antipsychotic_or_formulation<br/>&nbsp;&nbsp;_then_initiate_and_monitor<br/>• exclude_contraindicated_candidate_and<br/>&nbsp;&nbsp;_select_an_eligible_alternative<br/>• continue_shared_decision_discussion_and<br/>&nbsp;&nbsp;_reassess_if_antipsychotic_declined<br/>• defer_selection_and_obtain_missing<br/>&nbsp;&nbsp;_or_diagnostic_information<br/><br/>Clinical action pattern derived from<br/>APA Statement 4 and its implementation discussion"]
+
+  %% ------------------------------------------------------------------
+  %% Edges (parent -> child) inferred from <DEFINITION> / <GIVEN> blocks
+  %% ------------------------------------------------------------------
+  DX --> ELIG
+  CI --> ELIG
+
+  PXP --> PRIO
+  SE --> PRIO
+  PK --> PRIO
+
+  PREF --> SDFP
+  FORM --> SDFP
+
+  ELIG --> MGMT
+  PRIO --> MGMT
+  SDFP --> MGMT

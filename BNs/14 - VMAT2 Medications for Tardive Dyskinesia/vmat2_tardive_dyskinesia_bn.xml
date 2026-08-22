@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="XSD.xml">
+  <NETWORK>
+    <NAME>vmat2_treatment_for_antipsychotic_associated_tardive_dyskinesia_bn</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>td_relationship</NAME>
+      <OUTCOME>antipsychotic_associated</OUTCOME>
+      <OUTCOME>other_or_uncertain</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Relationship of the tardive dyskinesia to antipsychotic therapy.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>td_severity_or_disability</NAME>
+      <OUTCOME>moderate_severe_or_disabling</OUTCOME>
+      <OUTCOME>mild</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Severity and disability determine whether VMAT2 treatment is recommended or may be considered.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>contributing_etiology_assessment</NAME>
+      <OUTCOME>none_identified</OUTCOME>
+      <OUTCOME>identified_or_possible</OUTCOME>
+      <OUTCOME>not_assessed</OUTCOME>
+      <PROPERTY>Other contributors to a movement disorder should be assessed before VMAT2 treatment.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>mild_td_patient_factors</NAME>
+      <OUTCOME>preference_impairment_or_psychosocial_effect_present</OUTCOME>
+      <OUTCOME>factors_absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>For mild tardive dyskinesia, patient preference, impairment, and psychosocial effects guide consideration of treatment.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>universal_vmat2_contraindication</NAME>
+      <OUTCOME>present</OUTCOME>
+      <OUTCOME>absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>All VMAT2 inhibitors are contraindicated near MAOI or reserpine exposure and with active suicidal ideas or untreated depression.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>hepatic_impairment</NAME>
+      <OUTCOME>present</OUTCOME>
+      <OUTCOME>absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Tetrabenazine and deutetrabenazine are contraindicated with hepatic impairment; valbenazine requires dose limitation in moderate to severe impairment.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>severe_renal_impairment</NAME>
+      <OUTCOME>present</OUTCOME>
+      <OUTCOME>absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Valbenazine is not recommended with severe renal impairment.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>vmat2_treatment_priority</NAME>
+      <OUTCOME>treatment_recommended</OUTCOME>
+      <OUTCOME>treatment_reasonable_to_consider</OUTCOME>
+      <OUTCOME>evaluate_other_cause_first</OUTCOME>
+      <OUTCOME>treatment_not_currently_favored</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Clinical priority for use of a reversible VMAT2 inhibitor.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>vmat2_agent_eligibility</NAME>
+      <OUTCOME>deutetrabenazine_or_valbenazine_eligible</OUTCOME>
+      <OUTCOME>valbenazine_with_label_dose_limit_only</OUTCOME>
+      <OUTCOME>deutetrabenazine_eligible_valbenazine_not_recommended</OUTCOME>
+      <OUTCOME>no_source_supported_preferred_agent</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Eligibility of preferred VMAT2 agents after source-stated contraindication gates.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>management_recommendation</NAME>
+      <OUTCOME>initiate_deutetrabenazine_or_valbenazine_with_monitoring</OUTCOME>
+      <OUTCOME>initiate_valbenazine_with_label_based_dose_limit_and_monitoring</OUTCOME>
+      <OUTCOME>initiate_deutetrabenazine_with_monitoring</OUTCOME>
+      <OUTCOME>consider_vmat2_trial_after_shared_decision_making</OUTCOME>
+      <OUTCOME>evaluate_contributors_before_vmat2_treatment</OUTCOME>
+      <OUTCOME>do_not_initiate_vmat2_address_contraindication_or_seek_specialist_input</OUTCOME>
+      <OUTCOME>reassess_missing_information</OUTCOME>
+      <PROPERTY>Final clinical action pattern for the bounded VMAT2 treatment decision.</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION>
+      <FOR>td_relationship</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>td_severity_or_disability</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>contributing_etiology_assessment</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>mild_td_patient_factors</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>universal_vmat2_contraindication</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>hepatic_impairment</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>severe_renal_impairment</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333333
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>vmat2_treatment_priority</FOR>
+      <GIVEN>td_relationship</GIVEN>
+      <GIVEN>td_severity_or_disability</GIVEN>
+      <GIVEN>contributing_etiology_assessment</GIVEN>
+      <GIVEN>mild_td_patient_factors</GIVEN>
+      <TABLE>
+        1.000000 0.000000 0.000000 0.000000 0.000000
+        1.000000 0.000000 0.000000 0.000000 0.000000
+        1.000000 0.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 1.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>vmat2_agent_eligibility</FOR>
+      <GIVEN>universal_vmat2_contraindication</GIVEN>
+      <GIVEN>hepatic_impairment</GIVEN>
+      <GIVEN>severe_renal_impairment</GIVEN>
+      <TABLE>
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 1.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000
+        1.000000 0.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>management_recommendation</FOR>
+      <GIVEN>vmat2_treatment_priority</GIVEN>
+      <GIVEN>vmat2_agent_eligibility</GIVEN>
+      <TABLE>
+        1.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+        0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
+      </TABLE>
+    </DEFINITION>
+  </NETWORK>
+</BIF>

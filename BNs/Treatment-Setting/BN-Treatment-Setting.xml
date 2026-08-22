@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="XSD.xml">
+  <NETWORK>
+    <NAME>schizophrenia_treatment_setting_bn</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>acute_safety_or_supervision_need</NAME>
+      <OUTCOME>serious_threat_of_harm_to_self_or_others</OUTCOME>
+      <OUTCOME>unable_to_self_care_and_needs_constant_support</OUTCOME>
+      <OUTCOME>neither_present</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: usual hospitalization indications include serious threat of harm or inability to self-care with need for constant supervision or support.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>outpatient_treatment_feasibility</NAME>
+      <OUTCOME>unsafe_or_ineffective_due_to_psychiatric_problem</OUTCOME>
+      <OUTCOME>unsafe_or_ineffective_due_to_medical_problem</OUTCOME>
+      <OUTCOME>safe_and_effective</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: psychiatric or medical problems can make outpatient treatment unsafe or ineffective.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>new_onset_psychosis_stabilization_need</NAME>
+      <OUTCOME>initial_inpatient_stabilization_warranted</OUTCOME>
+      <OUTCOME>initial_inpatient_stabilization_not_warranted</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: new-onset psychosis may warrant inpatient stabilization to reduce acute symptoms and permit treatment engagement.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>medical_surgical_service_need</NAME>
+      <OUTCOME>significant_intervention_or_monitoring_unavailable_on_psychiatric_service</OUTCOME>
+      <OUTCOME>manageable_on_psychiatric_service_with_medical_consultants</OUTCOME>
+      <OUTCOME>no_significant_additional_health_service_need</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: significant medical or surgical needs and service capability determine whether a general hospital, intensive care, or psychiatric inpatient service is optimal.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>monitoring_assistance_need_if_not_inpatient</NAME>
+      <OUTCOME>more_than_routine_outpatient_care</OUTCOME>
+      <OUTCOME>routine_outpatient_care_sufficient</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: enhanced outpatient programs are indicated when inpatient criteria are not met but routine outpatient monitoring or assistance is insufficient.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>hospitalization_acceptance</NAME>
+      <OUTCOME>accepts_voluntary_hospitalization</OUTCOME>
+      <OUTCOME>does_not_accept_voluntary_hospitalization</OUTCOME>
+      <OUTCOME>unknown_or_not_yet_discussed</OUTCOME>
+      <PROPERTY>Patient state: when inpatient care is essential, voluntary hospitalization should be pursued; applicable jurisdictional requirements govern involuntary hospitalization if essential care is refused.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>inpatient_care_priority</NAME>
+      <OUTCOME>inpatient_care_essential</OUTCOME>
+      <OUTCOME>inpatient_care_not_indicated</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Clinical priority: integrates safety, self-care, outpatient feasibility, and new-onset stabilization indications.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>inpatient_service_priority</NAME>
+      <OUTCOME>general_hospital_or_intensive_care_with_consultation_liaison_psychiatry</OUTCOME>
+      <OUTCOME>psychiatric_inpatient_service_with_medical_consultants</OUTCOME>
+      <OUTCOME>standard_psychiatric_inpatient_service</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Clinical priority: matches inpatient location to required medical or surgical capability.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>less_restrictive_care_priority</NAME>
+      <OUTCOME>enhanced_outpatient_program</OUTCOME>
+      <OUTCOME>routine_outpatient_care</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Clinical priority: selects enhanced versus routine outpatient care when inpatient treatment is not indicated.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>management_recommendation</NAME>
+      <OUTCOME>voluntary_general_hospital_or_intensive_care_with_consultation_liaison_psychiatry</OUTCOME>
+      <OUTCOME>voluntary_psychiatric_inpatient_care_with_needed_medical_consultation</OUTCOME>
+      <OUTCOME>voluntary_standard_psychiatric_inpatient_care</OUTCOME>
+      <OUTCOME>follow_jurisdictional_requirements_for_involuntary_hospitalization_in_appropriate_inpatient_service</OUTCOME>
+      <OUTCOME>use_enhanced_outpatient_program_act_assisted_outpatient_intensive_outpatient_partial_or_day_hospitalization</OUTCOME>
+      <OUTCOME>use_routine_outpatient_care</OUTCOME>
+      <OUTCOME>insufficient_information_reassess_safety_feasibility_service_needs_and_acceptance</OUTCOME>
+      <PROPERTY>Management recommendation: use the least restrictive setting likely to be safe and effective, while matching inpatient medical capability and favoring voluntary admission.</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION><FOR>acute_safety_or_supervision_need</FOR><TABLE>0.250000 0.250000 0.250000 0.250000</TABLE></DEFINITION>
+    <DEFINITION><FOR>outpatient_treatment_feasibility</FOR><TABLE>0.250000 0.250000 0.250000 0.250000</TABLE></DEFINITION>
+    <DEFINITION><FOR>new_onset_psychosis_stabilization_need</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>medical_surgical_service_need</FOR><TABLE>0.250000 0.250000 0.250000 0.250000</TABLE></DEFINITION>
+    <DEFINITION><FOR>monitoring_assistance_need_if_not_inpatient</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>hospitalization_acceptance</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+
+    <DEFINITION>
+      <FOR>inpatient_care_priority</FOR>
+      <GIVEN>acute_safety_or_supervision_need</GIVEN>
+      <GIVEN>outpatient_treatment_feasibility</GIVEN>
+      <GIVEN>new_onset_psychosis_stabilization_need</GIVEN>
+      <TABLE>0.333333 0.333333 0.333334</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>inpatient_service_priority</FOR>
+      <GIVEN>medical_surgical_service_need</GIVEN>
+      <TABLE>0.250000 0.250000 0.250000 0.250000</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>less_restrictive_care_priority</FOR>
+      <GIVEN>monitoring_assistance_need_if_not_inpatient</GIVEN>
+      <TABLE>0.333333 0.333333 0.333334</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>management_recommendation</FOR>
+      <GIVEN>inpatient_care_priority</GIVEN>
+      <GIVEN>inpatient_service_priority</GIVEN>
+      <GIVEN>less_restrictive_care_priority</GIVEN>
+      <GIVEN>hospitalization_acceptance</GIVEN>
+      <TABLE>0.142857 0.142857 0.142857 0.142857 0.142857 0.142857 0.142858</TABLE>
+    </DEFINITION>
+  </NETWORK>
+</BIF>

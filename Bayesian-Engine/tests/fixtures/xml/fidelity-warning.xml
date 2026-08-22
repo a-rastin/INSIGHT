@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!DOCTYPE BIF [<!ELEMENT BIF ANY>]>
+<BIF VERSION="0.3">
+  <!-- source comment must trigger canonicalization warning -->
+  <NETWORK><NAME>Fidelity</NAME>
+    <VARIABLE TYPE="chance"><NAME>legacy-name</NAME><OUTCOME>yes</OUTCOME><OUTCOME>no</OUTCOME><PROPERTY>arbitrary = keep me</PROPERTY></VARIABLE>
+    <DEFINITION><FOR>legacy-name</FOR><TABLE>5e-1 5e-1</TABLE></DEFINITION>
+  </NETWORK>
+</BIF>

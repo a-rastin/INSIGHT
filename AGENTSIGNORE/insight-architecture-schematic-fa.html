@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>شماتیک معماری INSIGHT</title>
+  <style>
+    :root {
+      --primary: #0a9e8f;
+      --primary-hover: #088a7d;
+      --primary-light: #e6f6f5;
+      --ink: #111827;
+      --ink-muted: #6b7280;
+      --ink-subtle: #9ca3af;
+      --canvas: #ffffff;
+      --surface-1: #f9fafb;
+      --surface-2: #f3f4f6;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --urgent: #b91c1c;
+      --urgent-bg: #fef2f2;
+      --warning: #b45309;
+      --warning-bg: #fffbeb;
+      --normal: #047857;
+      --normal-bg: #ecfdf5;
+      --info: #0369a1;
+      --info-bg: #f0f9ff;
+      --purple: #6d28d9;
+      --purple-bg: #f5f3ff;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--surface-1);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    a { color: #075e57; text-underline-offset: 2px; }
+    a:hover { color: var(--primary-hover); }
+    code, .mono {
+      font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .92em;
+    }
+    button { font: inherit; }
+
+    .page { max-width: 1580px; margin: 0 auto; padding: 24px; }
+    .hero {
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--primary);
+      border-radius: 12px;
+      background: var(--canvas);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+    .hero-top { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+    .eyebrow { margin: 0 0 4px; color: #075e57; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.12; letter-spacing: -.02em; }
+    .subtitle { max-width: 900px; margin: 10px 0 0; color: var(--ink-muted); font-size: 15px; }
+    .snapshot { min-width: 250px; padding: 12px 14px; border-left: 3px solid var(--info); background: var(--info-bg); }
+    .snapshot strong { display: block; }
+    .snapshot span { color: var(--ink-muted); font-size: 13px; }
+
+    .truth-banner {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .truth {
+      min-height: 88px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-1);
+    }
+    .truth strong { display: block; margin-bottom: 5px; }
+    .truth p { margin: 0; color: var(--ink-muted); font-size: 13px; }
+    .truth.implemented { border-left: 4px solid var(--normal); }
+    .truth.target { border-left: 4px solid var(--info); }
+    .truth.safety { border-left: 4px solid var(--urgent); background: var(--urgent-bg); }
+
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin: 18px 0;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,.96);
+      box-shadow: var(--shadow);
+    }
+    .tab {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: var(--ink-muted);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .tab:hover { color: var(--ink); background: var(--surface-2); }
+    .tab[aria-selected="true"] { color: #064e47; border-color: #99d9d2; background: var(--primary-light); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .section-card {
+      margin-bottom: 18px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--canvas);
+      box-shadow: var(--shadow);
+    }
+    .section-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 16px; }
+    h2 { margin: 0; font-size: 24px; line-height: 1.2; }
+    h3 { margin: 0 0 9px; font-size: 16px; }
+    h4 { margin: 0 0 6px; font-size: 14px; }
+    .section-head p, .caption { margin: 5px 0 0; color: var(--ink-muted); font-size: 13px; }
+    .sources { max-width: 520px; text-align: right; color: var(--ink-muted); font-size: 12px; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 9px 14px; margin-bottom: 16px; font-size: 12px; color: var(--ink-muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border-strong); }
+    .swatch.planned { background: var(--info-bg); border-color: #7dd3fc; }
+    .swatch.implemented { background: var(--normal-bg); border-color: #6ee7b7; }
+    .swatch.external { background: var(--purple-bg); border-color: #c4b5fd; }
+    .swatch.gated { background: var(--warning-bg); border-color: #fcd34d; }
+    .swatch.risk { background: var(--urgent-bg); border-color: #fca5a5; }
+
+    .boundary {
+      padding: 14px;
+      border: 2px dashed var(--border-strong);
+      border-radius: 12px;
+      background: var(--surface-1);
+    }
+    .boundary-title { margin-bottom: 12px; color: var(--ink-muted); font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .row-flow { display: flex; align-items: stretch; justify-content: center; gap: 8px; }
+    .node {
+      position: relative;
+      flex: 1 1 180px;
+      min-width: 145px;
+      max-width: 300px;
+      padding: 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--canvas);
+      box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    }
+    .node strong { display: block; margin-bottom: 5px; font-size: 14px; }
+    .node small { display: block; color: var(--ink-muted); font-size: 11px; line-height: 1.4; }
+    .node.planned { border-color: #7dd3fc; background: var(--info-bg); }
+    .node.implemented { border-color: #6ee7b7; background: var(--normal-bg); }
+    .node.external { border-color: #c4b5fd; background: var(--purple-bg); }
+    .node.gated { border-color: #fcd34d; background: var(--warning-bg); }
+    .node.risk { border-color: #fca5a5; background: var(--urgent-bg); }
+    .arrow {
+      flex: 0 0 76px;
+      align-self: center;
+      color: var(--ink-muted);
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+    .arrow::after { content: "→"; display: block; color: var(--primary); font-size: 24px; line-height: 1; }
+    .arrow.bi::after { content: "↔"; }
+    .arrow.down::after { content: "↓"; }
+
+    .system-grid { display: grid; grid-template-columns: 180px minmax(0,1fr); gap: 14px; align-items: stretch; }
+    .actors { display: grid; gap: 10px; align-content: start; }
+    .actor { padding: 12px; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 8px; background: var(--canvas); }
+    .actor strong { display: block; }
+    .actor small { color: var(--ink-muted); font-size: 11px; }
+    .stack { display: grid; gap: 12px; }
+    .lane { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 8px; align-items: center; }
+    .lane .arrow { min-width: 0; width: auto; flex-basis: auto; }
+    .lane-storage { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 12px; }
+    .connector-label { color: var(--ink-muted); font-size: 11px; text-align: center; }
+
+    .module-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .module {
+      padding: 14px;
+      border: 1px solid #bae6fd;
+      border-top: 3px solid var(--info);
+      border-radius: 8px;
+      background: var(--info-bg);
+    }
+    .module p { margin: 5px 0; color: var(--ink-muted); font-size: 12px; }
+    .module .not-own { padding-top: 5px; border-top: 1px solid #dbeafe; color: #7c2d12; }
+
+    .workflow { display: grid; gap: 8px; }
+    .workflow-row { display: grid; grid-template-columns: repeat(5, minmax(155px,1fr)); gap: 8px; }
+    .state {
+      min-height: 82px;
+      padding: 11px 12px;
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+      background: var(--info-bg);
+    }
+    .state .num { color: var(--info); font: 700 11px/1 "JetBrains Mono", monospace; }
+    .state strong { display: block; margin: 5px 0; font-size: 12px; overflow-wrap: anywhere; }
+    .state small { color: var(--ink-muted); font-size: 11px; }
+    .state.final { border-color: #6ee7b7; background: var(--normal-bg); }
+    .state.deleted { border-color: #fca5a5; background: var(--urgent-bg); }
+    .branch-note { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+    .note { padding: 12px; border-left: 3px solid var(--warning); background: var(--warning-bg); font-size: 12px; }
+    .note.info { border-color: var(--info); background: var(--info-bg); }
+    .note.danger { border-color: var(--urgent); background: var(--urgent-bg); }
+
+    .tool-boundary { display: grid; grid-template-columns: 1fr 70px 1.35fr 70px 1fr; gap: 8px; align-items: stretch; }
+    .tool-list { display: grid; gap: 8px; }
+    .tool { padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--canvas); }
+    .tool strong { font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    .tool small { display: block; color: var(--ink-muted); margin-top: 3px; }
+    .context-box { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+    .context-box ul { columns: 2; margin: 8px 0 0; padding-left: 20px; font-size: 12px; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: #374151; background: var(--surface-1); font-weight: 800; }
+    tr:last-child td { border-bottom: 0; }
+    .none { color: var(--ink-muted); }
+
+    .entity-layout { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .entity-group { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+    .entity-group h3 { font-size: 14px; color: #374151; }
+    .entity { margin: 7px 0; padding: 9px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--canvas); }
+    .entity strong { font: 700 12px/1.3 "JetBrains Mono", monospace; }
+    .entity small { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 11px; }
+    .relation-list { columns: 2; column-gap: 30px; margin: 16px 0 0; padding-left: 20px; font-size: 12px; }
+    .relation-list li { break-inside: avoid; margin-bottom: 5px; }
+
+    .repo-map { display: grid; grid-template-columns: 1fr 62px 1fr 62px 1.4fr; gap: 10px; align-items: stretch; }
+    .file-list { margin: 8px 0 0; padding-left: 18px; color: var(--ink-muted); font-size: 11px; }
+    .file-list li { margin: 3px 0; }
+    .asset-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .asset-grid > * { min-width: 0; }
+    details { border: 1px solid var(--border); border-radius: 8px; background: var(--canvas); }
+    summary { cursor: pointer; padding: 12px; font-weight: 700; }
+    details > div { padding: 0 12px 12px; color: var(--ink-muted); font-size: 12px; }
+    details code { overflow-wrap: anywhere; word-break: break-word; }
+    details ul { margin: 6px 0; padding-left: 20px; }
+
+    .risk-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .risk-block { padding: 14px; border: 1px solid #fca5a5; border-radius: 8px; background: var(--urgent-bg); }
+    .risk-block h3 { color: var(--urgent); }
+    .risk-block ul, .scope-block ul { margin: 8px 0 0; padding-left: 20px; font-size: 12px; }
+    .scope-block { padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+    .adr-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+    .adr { padding: 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--canvas); font-size: 12px; }
+    .adr strong { display: block; margin-bottom: 3px; }
+    .adr span { color: var(--ink-muted); }
+
+    .gate { padding: 12px 14px; border-left: 4px solid var(--warning); background: var(--warning-bg); font-size: 12px; }
+    .gate strong { display: block; margin-bottom: 4px; }
+    .footer { margin: 18px 0 4px; color: var(--ink-muted); text-align: center; font-size: 11px; }
+
+    @media (max-width: 1120px) {
+      .module-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .lane { grid-template-columns: repeat(4,minmax(130px,1fr)); }
+      .lane .arrow { display: none; }
+      .workflow-row { grid-template-columns: repeat(3,minmax(150px,1fr)); }
+      .entity-layout { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .adr-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width: 760px) {
+      .page { padding: 10px; }
+      .hero, .section-card { padding: 15px; }
+      .hero-top, .section-head { display: block; }
+      .snapshot, .sources { max-width: none; margin-top: 14px; text-align: left; }
+      .truth-banner, .branch-note, .risk-grid, .asset-grid { grid-template-columns: 1fr; }
+      .system-grid { grid-template-columns: 1fr; }
+      .actors { grid-template-columns: 1fr; }
+      .row-flow { flex-direction: column; }
+      .row-flow > .node { width: 100%; max-width: none; }
+      .row-flow > .arrow { transform: rotate(90deg); min-height: 44px; align-self: center; }
+      .lane, .lane-storage, .module-grid, .workflow-row, .entity-layout, .adr-grid { grid-template-columns: 1fr; }
+      .tool-boundary, .repo-map { grid-template-columns: 1fr; }
+      .tool-boundary > .arrow, .repo-map > .arrow { transform: rotate(90deg); min-height: 44px; }
+      .relation-list, .context-box ul { columns: 1; }
+    }
+    @media print {
+      .tabs { display: none; }
+      .panel { display: block !important; break-before: page; }
+      .panel:first-of-type { break-before: auto; }
+      .section-card { box-shadow: none; break-inside: avoid; }
+      body { background: white; }
+    }
+  
+
+    html[dir="rtl"] body {
+      direction: rtl;
+      text-align: right;
+      font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+    }
+    html[dir="rtl"] code,
+    html[dir="rtl"] .mono {
+      direction: ltr;
+      unicode-bidi: isolate;
+      display: inline-block;
+      text-align: left;
+    }
+    html[dir="rtl"] .arrow::after { content: "←"; }
+    html[dir="rtl"] .arrow.bi::after { content: "↔"; }
+    html[dir="rtl"] .arrow.down::after { content: "↓"; }
+    html[dir="rtl"] .sources { text-align: left; }
+    html[dir="rtl"] .snapshot,
+    html[dir="rtl"] .truth,
+    html[dir="rtl"] .node,
+    html[dir="rtl"] .module,
+    html[dir="rtl"] .state,
+    html[dir="rtl"] .entity,
+    html[dir="rtl"] .adr { text-align: right; }
+    @media (max-width: 760px) {
+      html[dir="rtl"] .row-flow > .arrow,
+      html[dir="rtl"] .tool-boundary > .arrow,
+      html[dir="rtl"] .repo-map > .arrow { transform: rotate(-90deg); }
+      html[dir="rtl"] .sources { text-align: right; }
+    }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">شماتیک مستند به شواهد مخزن</p>
+          <h1>معماری INSIGHT</h1>
+          <p class="subtitle">معماری هدف پذیرفته‌شده، مرزهای اعتماد زمان اجرا، ماشین حالت پرونده پژوهشی، قرارداد MCP، مدل دامنه، رفتار ذخیره‌سازی و پیاده‌سازی فعلی مخزن—جدا از هم نمایش داده شده‌اند تا قابلیت‌های برنامه‌ریزی‌شده هرگز به‌عنوان نرم‌افزار عملیاتی معرفی نشوند.</p>
+        </div>
+        <div class="snapshot">
+          <strong>نمای لحظه‌ای شواهد: ۲۰۲۶-۰۸-۲۲</strong>
+          <span>ADR-001 تا ADR-023 پذیرفته شده‌اند. منبع معماری فقط فایل‌های مخزن است. هیچ سرویس استنباطی یا جریان داده مستندنشده‌ای افزوده نشده است.</span>
+        </div>
+      </div>
+      <div class="truth-banner">
+        <div class="truth implemented">
+          <strong>اکنون پیاده‌سازی‌شده</strong>
+          <p>فقط ویرایشگر مستقل XMLBIF موتور بیز با Electron/React/TypeScript پیاده‌سازی شده است. این ابزار با INSIGHT یکپارچه نشده است.</p>
+        </div>
+        <div class="truth target">
+          <strong>هدف پذیرفته‌شده</strong>
+          <p>مونولیت ماژولار تک‌مستأجره با TypeScript: شامل React/Vite، Fastify، درگاه داخلی MCP، کارهای ماندگار و PostgreSQL در یک کانتینر.</p>
+        </div>
+        <div class="truth safety">
+          <strong>مرز صرفاً پژوهشی</strong>
+          <p>هنوز هیچ برنامه اجرایی INSIGHT، پایگاه‌داده بیمار، موتور DDI، سرویس احراز هویت، هماهنگ‌کننده طرح یا استقرار یکپارچه‌ای وجود ندارد.</p>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="نماهای معماری">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="system" id="tab-system">نقشه سامانه</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="workflow" id="tab-workflow">گردش‌کار</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="modules" id="tab-modules">ماژول‌ها</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="mcp" id="tab-mcp">MCP و کارها</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="data" id="tab-data">دامنه و ذخیره‌سازی</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="repository" id="tab-repository">وضعیت واقعی مخزن</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="governance" id="tab-governance">ریسک‌ها و شواهد</button>
+    </nav>
+
+    <main>
+      <section id="system" class="panel active" role="tabpanel" aria-labelledby="tab-system">
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>زمان اجرای هدف و مرزهای اعتماد</h2><p>یک مرز روبه‌مرورگر، یک درگاه درون‌فرایندی MCP، یک پایگاه‌داده، یک حجم مصنوعات و یک خروجی خارجی مجاز.</p></div>
+            <div class="sources">منابع: <a href="docs/architecture/system-architecture.md">معماری سامانه</a>, <a href="docs/decisions/0015-mcp-jobs-and-browser-boundary.md">ADR-015</a>, <a href="docs/decisions/0021-tenancy-network-and-deletion.md">ADR-021</a></div>
+          </div>
+          <div class="legend" aria-label="راهنمای نمودار">
+            <span><i class="swatch planned"></i>هدف پذیرفته‌شده، پیاده‌سازی‌نشده</span>
+            <span><i class="swatch implemented"></i>کد پیاده‌سازی‌شده مخزن</span>
+            <span><i class="swatch external"></i>مرز خارجی</span>
+            <span><i class="swatch gated"></i>دروازه حاکمیت/فعال‌سازی</span>
+            <span><i class="swatch risk"></i>محدودیت پذیرفته‌شده</span>
+          </div>
+
+          <div class="system-grid">
+            <aside class="actors" aria-label="کنشگران سامانه">
+              <div class="actor"><strong>مدیر سامانه</strong><small>کاربران، نقطه پایانی، دانش، ممیزی عملیاتی و پشتیبان‌گیری/بازیابی. بدون دسترسی به محتوای بیمار و بدون مسیر اضطراری دسترسی.</small></div>
+              <div class="actor"><strong>روان‌پزشک</strong><small>دفتر مشترک بیماران، پرونده پژوهشی، بازبینی پیش‌نویس، بازبینی مجدد DDI، نهایی‌سازی و حذف سخت فوری.</small></div>
+            </aside>
+            <div class="stack">
+              <div class="row-flow">
+                <div class="node planned"><strong>مرورگر React / Vite</strong><small>دسکتاپ‌محور و غیرقابل‌اعتماد. فقط API هم‌مبدأ. هیچ مدل، پایگاه‌داده، MCP، کلید اصلی یا راز بازشناسایی را نگه نمی‌دارد.</small></div>
+                <div class="arrow bi">فرمان‌های REST/JSON<br>پیشرفت احرازشده SSE</div>
+                <div class="node planned"><strong>بک‌اند Fastify</strong><small>تنها مرز برنامه روبه‌مرورگر. احراز هویت، مجوزدهی نقش، اعتبارسنجی زمان اجرا، CSRF، محدودیت نرخ، همانی‌پذیری و OpenAPI.</small></div>
+              </div>
+
+              <div class="boundary">
+                <div class="boundary-title">یک کانتینر تولیدی · یک سازمان/پروژه پژوهشی · مقیاس‌پذیری افقی پشتیبانی نمی‌شود</div>
+                <div class="lane">
+                  <div class="node planned"><strong>ماشین حالت ماندگار گردش‌کار</strong><small>مالک گذارها و فهرست مجاز ابزارهای ویژه هر حالت است. مرورگر و مدل نمی‌توانند حالت را جلو ببرند.</small></div>
+                  <div class="arrow">ایجاد کار فرمان</div>
+                  <div class="node planned"><strong>کارهای ماندگار PostgreSQL و worker</strong><small>اجاره‌های تراکنشی، تلاش مجدد، رخدادهای پیشرفت، همانی‌پذیری و بازیابی پس از راه‌اندازی مجدد.</small></div>
+                  <div class="arrow">اجرای تصاحب‌شده</div>
+                  <div class="node planned"><strong>زمان اجرای عامل مدل در سمت سرور</strong><small>کلاینت فیزیکی MCP. طرح‌واره‌های مجاز را می‌فرستد، فراخوانی ابزار مدل را اعتبارسنجی و اجرا می‌کند و منشأ را حفظ می‌کند.</small></div>
+                  <div class="arrow">فرافکنی فهرست‌مجاز</div>
+                  <div class="node planned"><strong>درگاه بی‌نام‌سازی</strong><small>مرجع موقت آزمودنی؛ فیلدها را مجاز یا حذف می‌کند و نتایج ابزار را پالایش می‌کند. هیچ نام، شناسه، UUID یا نگاشتی خارج نمی‌شود.</small></div>
+                </div>
+
+                <div class="lane" style="margin-top:12px">
+                  <div class="node planned"><strong>درگاه داخلی MCP</strong><small>بدون listener عمومی. فقط ابزارهای درون‌فرایندی نام‌فضادار، نوع‌دار و نسخه‌بندی‌شده.</small></div>
+                  <div class="arrow bi">فراخوانی‌های اعتبارسنجی‌شده ابزار</div>
+                  <div class="node planned"><strong>ماژول‌های دامنه</strong><small>ارزیابی · دارو · DDI · بیزین · طرح درمان · زمینه محدود پرونده پژوهشی.</small></div>
+                  <div class="arrow bi">قراردادهای متعلق به ماژول</div>
+                  <div class="node planned"><strong>سرور PostgreSQL</strong><small>سامانه ثبت مرجع در همان کانتینر. جداول متعلق به ماژول، گردش‌کار/کارها، ممیزی، تنظیم نقطه پایانی، کلید اصلی و فراداده مصنوعات.</small></div>
+                  <div class="arrow bi">مسیرهای نسبی و هش‌ها</div>
+                  <div class="node planned"><strong>سرویس مصنوعات</strong><small>XMLBIF، اسناد منبع DDI، خروجی‌ها و منشأهای بزرگ. نوشتن فایل‌سیستم در حد بهترین تلاش؛ مجوزدهی در هر خواندن.</small></div>
+                </div>
+              </div>
+
+              <div class="lane-storage">
+                <div class="node external"><strong>نقطه پایانی HTTPS سازگار با OpenAI</strong><small>تنها خروجی لازم زمان اجرا. کلاینت منطقی MCP. فقط از مسیر عامل سمت سرور و درگاه بی‌نام‌سازی بالا متصل می‌شود. یک نقطه پایانی/مدل پین‌شده، تلاش‌های مجدد محدود و بدون جایگزین خودکار.</small></div>
+                <div class="node planned"><strong>حجم ماندگار خارجی</strong><small>زیرشاخه‌های جداگانه برای داده PostgreSQL و مصنوعات. برای راه‌اندازی الزامی است. مصنوعات ازدست‌رفته از پشتیبان برنامه بازیابی نمی‌شوند.</small></div>
+                <div class="node gated"><strong>دانش محلی تحت حاکمیت</strong><small>نمای لحظه‌ای منبع DDI، مصنوع C-SSRS، کاتالوگ‌های دارو/همبودی/عارضه جانبی، مصنوع مسیریابی و نسخه‌های BN.</small></div>
+                <div class="node risk"><strong>کلید اصلی نگهداری‌شده در پایگاه‌داده</strong><small>کنار متن رمز ذخیره می‌شود. از ذخیره عادی متن ساده جلوگیری می‌کند، اما در برابر نفوذ کامل پایگاه‌داده حفاظتی ندارد.</small></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="branch-note">
+            <div class="note info"><strong>قاعده شبکه</strong><br>مرورگر فقط REST و SSE هم‌مبدأ را به‌کار می‌برد. خروجی بک‌اند به نقطه پایانی مدل میزبانی‌شده محدود است. DDI، BN، ارزیابی‌ها، PostgreSQL و مصنوعات محلی می‌مانند.</div>
+            <div class="note"><strong>قاعده پشتیبان‌گیری</strong><br>اقدام دستی مدیر سامانه، خروجی سفارشی PostgreSQL همراه manifest نوع JSON می‌سازد. مصنوعات در آن نیستند. بازیابی در حالت نگهداری کل پایگاه‌داده را جایگزین می‌کند.</div>
+            <div class="note danger"><strong>قاعده اختیار بالینی</strong><br>خروجی مدل یک پیش‌نویس ساخت‌یافته است. فقط روان‌پزشک احراز هویت‌شده می‌تواند آن را نهایی کند. هیچ ابزار مدل نمی‌تواند نهایی‌سازی، حذف بیمار، مدیریت کاربر، فعال‌سازی دانش یا بازیابی پشتیبان را انجام دهد.</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="workflow" class="panel" role="tabpanel" aria-labelledby="tab-workflow" hidden>
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>ماشین حالت ماندگار پرونده پژوهشی</h2><p>برای هر بیمار دقیقاً یک پرونده پژوهشی وجود دارد. هیچ موجودیت Encounter، ویزیت، پیگیری یا پرونده دومی وجود ندارد.</p></div>
+            <div class="sources">منابع: <a href="docs/architecture/system-architecture.md">معماری سامانه</a>, <a href="docs/architecture/mcp-contracts.md">قرارداد MCP</a>, <a href="docs/decisions/0013-single-research-case-and-clinical-history.md">ADR-013</a></div>
+          </div>
+          <div class="workflow" aria-label="حالت‌های گردش‌کار پرونده پژوهشی">
+            <div class="workflow-row">
+              <div class="state"><span class="num">01</span><strong>DATA_COLLECTION</strong><small>بیمار، ارزیابی‌ها، سابقه پزشکی و داروهای فعلی. ابزار مدل: هیچ.</small></div>
+              <div class="state"><span class="num">02</span><strong>NORMALIZING_MEDICATIONS</strong><small>جست‌وجوی کاتالوگ و نگاشت خودکار یا <code>UNKNOWN</code>.</small></div>
+              <div class="state"><span class="num">03</span><strong>IMPUTING_BYPASSED_ASSESSMENTS</strong><small>اشیای پنهان و جداگانه <code>AI_IMPUTED</code> ؛ رکوردهای رسمی در وضعیت <code>BYPASSED</code>.</small></div>
+              <div class="state"><span class="num">04</span><strong>ROUTING_BN</strong><small>مصنوع مسیریابی قطعی بک‌اند؛ مدل نمی‌تواند مسیرها را انتخاب کند.</small></div>
+              <div class="state"><span class="num">05</span><strong>GENERATING_CPTS</strong><small>همه CPTها برای مدل‌های منتخب تولید می‌شوند؛ اعتبارسنجی طرح‌واره، ابعاد و نرمال‌سازی انجام می‌شود.</small></div>
+            </div>
+            <div class="workflow-row">
+              <div class="state"><span class="num">06</span><strong>RUNNING_BN</strong><small>استنتاج قطعی روی نمای لحظه‌ای پذیرفته‌شده؛ هیچ واقعیت بیمار به‌عنوان شاهد clamp نمی‌شود.</small></div>
+              <div class="state"><span class="num">07</span><strong>CHECKING_PRIMARY_DDI</strong><small>رژیم دقیق نرمال‌شده؛ <code>UNKNOWN</code> جفت‌های مربوط حذف می‌شوند؛ هر یافته، گزینه را از طرح خودکار کنار می‌گذارد.</small></div>
+              <div class="state"><span class="num">08</span><strong>GENERATING_PRIMARY_PLAN</strong><small>پیش‌نویس ساخت‌یافته و نسخه‌بندی‌شده؛ ارجاع شواهد و منشأ الزامی است.</small></div>
+              <div class="state"><span class="num">09</span><strong>CLINICIAN_REVIEW</strong><small>روان‌پزشک می‌پذیرد یا ویرایش می‌کند. دلیل override الزامی نیست.</small></div>
+              <div class="state"><span class="num">10</span><strong>RECHECKING_FINAL_DDI</strong><small>فقط پس از تغییر دارو الزامی است؛ رژیم نهایی دقیق بررسی می‌شود.</small></div>
+            </div>
+            <div class="workflow-row">
+              <div class="state"><span class="num">11</span><strong>READY_TO_FINALIZE</strong><small>همه وابستگی‌های الزامی، موفق، جاری و متصل به منشأ موجودند.</small></div>
+              <div class="state final"><span class="num">12</span><strong>FINALIZED</strong><small>نسخه فعال و تغییرناپذیر طرح نهایی، به‌صورت تراکنشی و همانی‌پذیر ایجاد می‌شود.</small></div>
+              <div class="state"><span class="num">13</span><strong>REVISION_DRAFT</strong><small>نسخه قابل‌تغییر جدید از طرح فعال آغاز می‌شود؛ نسخه پیشین تغییرناپذیر می‌ماند.</small></div>
+              <div class="state deleted"><span class="num">14</span><strong>DELETED</strong><small>تجمیع عملیاتی به‌طور سخت حذف می‌شود؛ تاریخچه کامل ممیزی بالینی باقی می‌ماند.</small></div>
+              <div class="state final"><span class="num">↺</span><strong>SUPERSESSION</strong><small>بازنگری از بازبینی نهایی DDI عبور می‌کند. طرح جدید <code>ACTIVE</code>می‌شود؛ طرح قبلی <code>SUPERSEDED</code>.</small></div>
+            </div>
+          </div>
+          <div class="branch-note">
+            <div class="note"><strong>شکست CPT</strong><br>تولید نخست به‌علاوه حداکثر دو تلاش تشخیصی. هیچ برش، ترمیم، تکمیل یا نرمال‌سازی مجددی انجام نمی‌شود. سومین تلاش نامعتبر، خروجی BN و نهایی‌سازی را مسدود می‌کند.</div>
+            <div class="note info"><strong>خروجی‌های صرفاً هشداردهنده</strong><br>سطح تکمیل‌شده C-SSRS و یافته‌های موفق DDI هرگز نهایی‌سازی را مسدود نمی‌کنند؛ اما اجرای الزامی DDI در صورت شکست یا عدم دسترس، آن را مسدود می‌کند.</div>
+            <div class="note danger"><strong>شاخه حذف</strong><br>هر روان‌پزشک فعال می‌تواند فوراً حذف کند: بدون تأیید، ورود دوباره گذرواژه، تأخیر، تأیید دوم یا اقدام مدیر سامانه.</div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>دروازه نهایی‌سازی</h2><p>همه شروط در سمت سرورند؛ موفقیت HTTP یا پایان worker به‌تنهایی موفقیت دامنه را ثابت نمی‌کند.</p></div>
+            <div class="sources">منبع: <a href="docs/architecture/system-architecture.md">تراکنش نهایی‌سازی</a></div>
+          </div>
+          <div class="module-grid">
+            <div class="module"><h3>هویت</h3><p>نشست روان‌پزشک احراز هویت‌شده.</p></div>
+            <div class="module"><h3>حالت</h3><p>حالت ماندگار فعلی دقیقاً <code>READY_TO_FINALIZE</code>.</p></div>
+            <div class="module"><h3>DDI نهایی</h3><p>اجرای موفق متصل به رژیم نهایی دقیق و منبع پین‌شده.</p></div>
+            <div class="module"><h3>BN/CPT</h3><p>در صورت نیاز، اجرای مسیریابی‌شده موفق؛ نمای لحظه‌ای پذیرفته‌شده و منشأ جاری‌اند.</p></div>
+            <div class="module"><h3>طرح</h3><p>طرح ساخت‌یافته با طرح‌واره پشتیبانی‌شده اعتبارسنجی می‌شود.</p></div>
+            <div class="module"><h3>وابستگی‌ها</h3><p>هیچ شکست وابستگی الزامی، timeout، نتیجه کهنه یا ناسازگاری منشأ وجود ندارد.</p></div>
+            <div class="module"><h3>همانی‌پذیری</h3><p>کلید یکتا برای هر پرونده پژوهشی؛ تلاش مجدد همان نسخه ساخته‌شده را برمی‌گرداند.</p></div>
+            <div class="module"><h3>تراکنش</h3><p>درج طرح تغییرناپذیر، جایگزینی نسخه فعال قبلی، ثبت ممیزی/منشأ و پیشبرد حالت.</p></div>
+          </div>
+        </article>
+      </section>
+
+      <section id="modules" class="panel" role="tabpanel" aria-labelledby="tab-modules" hidden>
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>مالکیت ماژول‌های بک‌اند هدف</h2><p>مرزهای منطقی درون یک مونولیت ماژولار Fastify، نه سرویس‌های جداگانه مستقرشده.</p></div>
+            <div class="sources">منبع: <a href="docs/architecture/system-architecture.md">ماژول‌های بک‌اند</a></div>
+          </div>
+          <div class="module-grid">
+            <div class="module"><h3>هویت</h3><p><strong>مالک است:</strong> کاربران، گذرواژه‌های Argon2id، نشست‌های opaque و نقش‌های ثابت.</p><p class="not-own"><strong>مالک نیست:</strong> محتوای بیمار.</p></div>
+            <div class="module"><h3>بیمار</h3><p><strong>مالک است:</strong> هویت canonical بیمار، جمعیت‌شناسی رمز‌شده، یکتایی شناسه رسمی و یک پرونده پژوهشی.</p><p class="not-own"><strong>مالک نیست:</strong> امتیازدهی ارزیابی یا طرح‌ها.</p></div>
+            <div class="module"><h3>ارزیابی</h3><p><strong>مالک است:</strong> پاسخ‌های DSM-5-TR، PANSS و C-SSRS، bypass و نتایج قطعی.</p><p class="not-own"><strong>مالک نیست:</strong> نهایی‌سازی طرح.</p></div>
+            <div class="module"><h3>سابقه پزشکی</h3><p><strong>مالک است:</strong> وضعیت ارائه، کارآزمایی‌های قبلی، همبودی‌ها و داروهای فعلی.</p><p class="not-own"><strong>مالک نیست:</strong> اصطلاحات canonical.</p></div>
+            <div class="module"><h3>دارو</h3><p><strong>مالک است:</strong> کاتالوگ canonical، نگاشت‌های نرمال‌سازی و <code>UNKNOWN</code> وضعیت.</p><p class="not-own"><strong>مالک نیست:</strong> نتیجه‌گیری‌های DDI.</p></div>
+            <div class="module"><h3>DDI</h3><p><strong>مالک است:</strong> نسخه‌های منبع، ارزیابی جفت‌های نرمال‌شده و هشدارها.</p><p class="not-own"><strong>مالک نیست:</strong> نرمال‌سازی دارو.</p></div>
+            <div class="module"><h3>بیزین</h3><p><strong>مالک است:</strong> نسخه‌های مدل، مسیریابی قطعی، اعتبارسنجی/نماهای CPT و استنتاج.</p><p class="not-own"><strong>مالک نیست:</strong> اختیار درمان.</p></div>
+            <div class="module"><h3>طرح درمان</h3><p><strong>مالک است:</strong> پیش‌نویس‌های ساخت‌یافته، ویرایش‌های بالین‌گر، بازبینی‌های DDI و نسخه‌های نهایی تغییرناپذیر.</p><p class="not-own"><strong>مالک نیست:</strong> احراز هویت کاربر.</p></div>
+            <div class="module"><h3>مدیریت دانش</h3><p><strong>مالک است:</strong> چرخه عمر نسخه کاتالوگ/مدل/منبع.</p><p class="not-own"><strong>مالک نیست:</strong> تصمیم‌های استفاده در محدوده بیمار.</p></div>
+            <div class="module"><h3>کارها</h3><p><strong>مالک است:</strong> اجرای ماندگار، اجاره‌ها، تلاش‌های مجدد، پیشرفت و همانی‌پذیری.</p><p class="not-own"><strong>مالک نیست:</strong> معنای موفقیت دامنه.</p></div>
+            <div class="module"><h3>ممیزی</h3><p><strong>مالک است:</strong> ماندگاری رخدادهای عملیاتی و بالینی.</p><p class="not-own"><strong>مالک نیست:</strong> شواهد دستکاری.</p></div>
+            <div class="module"><h3>مصنوع</h3><p><strong>مالک است:</strong> مسیرهای نسبی، فراداده، تأیید SHA-256 و بررسی دسترسی.</p><p class="not-own"><strong>مالک نیست:</strong> تراکنش‌های اتمی فایل‌سیستم/پایگاه‌داده.</p></div>
+          </div>
+          <div class="gate" style="margin-top:14px"><strong>قاعده بین‌ماژولی</strong>هر ماژول مالک جداول خود است و فقط از راه سرویس‌های همان ماژول در آن‌ها می‌نویسد. خواندن بین‌ماژولی از قراردادهای برنامه استفاده می‌کند. تراکنش مشترک فقط از راه سرویس هماهنگ‌سازی صریح مجاز است.</div>
+        </article>
+      </section>
+
+      <section id="mcp" class="panel" role="tabpanel" aria-labelledby="tab-mcp" hidden>
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>کلاینت منطقی، مجری فیزیکی، درگاه داخلی</h2><p>مدل میزبانی‌شده فقط از میان طرح‌واره‌های ارائه‌شده برای حالت فعلی انتخاب می‌کند. سرور زمینه مورداعتماد را تزریق و فراخوانی‌ها را اجرا می‌کند.</p></div>
+            <div class="sources">منبع: <a href="docs/architecture/mcp-contracts.md">قرارداد MCP</a></div>
+          </div>
+          <div class="tool-boundary">
+            <div class="node external"><strong>مدل میزبانی‌شده<br>کلاینت منطقی MCP</strong><small>فرافکنی‌های بی‌نام‌شده و طرح‌واره ابزارهای مجاز را دریافت و فراخوانی ساخت‌یافته تولید می‌کند. نمی‌تواند بیمار، نقش، حالت گردش‌کار، نسخه دانش یا فیلد دلخواه را انتخاب کند.</small></div>
+            <div class="arrow bi">حلقه HTTPS مدل/ابزار</div>
+            <div class="node planned"><strong>زمان اجرای عامل سمت سرور<br>کلاینت فیزیکی MCP</strong><small>تزریق می‌کند: <code>TrustedToolContext</code>، فراخوانی‌ها را اعتبارسنجی می‌کند، فهرست مجاز حالت را اعمال می‌کند، یک درگاه را فرامی‌خواند، نتایج را پالایش و هش‌ها/نسخه‌ها/تلاش‌ها را ثبت می‌کند.</small></div>
+            <div class="arrow bi">فراخوانی نوع‌دار درون‌فرایندی</div>
+            <div class="node planned"><strong>درگاه داخلی MCP</strong><small>بدون مرورگر یا نقطه پایانی عمومی. نام‌فضاها به ماژول مالک مسیریابی می‌شوند و نمی‌توانند قواعد مجوزدهی، اعتبارسنجی، تراکنش یا منشأ آن را دور بزنند.</small></div>
+          </div>
+
+          <div class="context-box">
+            <h3>پوش اجرای مورداعتماد (تزریق‌شده توسط بک‌اند)</h3>
+            <ul>
+              <li><code>executionId</code></li><li><code>jobId</code></li><li><code>subjectRef</code> (موقت؛ نه UUID)</li><li><code>researchCaseRevision</code></li><li><code>workflowState</code></li><li><code>actorRole = PSYCHIATRIST</code></li><li><code>allowedToolNames[]</code></li><li><code>idempotencyKey</code></li>
+            </ul>
+          </div>
+          <div class="context-box">
+            <h3>مرز مشترک نتیجه ابزار</h3>
+            <p class="caption"><strong>موفقیت:</strong> نوع‌دار <code>data</code> + منشأ (<code>toolName</code>، نسخه معنایی <code>toolVersion</code>، هش ورودی/خروجی، نسخه‌های دانش، زمان اجرا) + هشدارهای ساخت‌یافته. <strong>شکست:</strong> کد خطای نوع‌دار + پرچم امکان تلاش مجدد + پیام امن + تشخیص داخلی اختیاری.</p>
+            <p class="caption">استثناهای خام، جزئیات SQL، مسیرهای مطلق، اعتبارنامه‌ها، UUIDهای داخلی، نام‌ها و شناسه‌های رسمی هرگز وارد نتایج قابل‌مشاهده مدل نمی‌شوند.</p>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>سطح کامل ابزارهای قابل‌فراخوانی مدل</h2><p>۹ ابزار در ۶ نام‌فضا. هیچ عملیات دیگری به مدل ارائه نمی‌شود.</p></div><div class="sources">منبع: <a href="docs/architecture/mcp-contracts.md">نام‌فضاها و ابزارهای درگاه</a></div></div>
+          <div class="module-grid">
+            <div class="module"><h3><code>research_case.*</code></h3><p><code>get_context</code> یک فرافکنی ثابت برمی‌گرداند: <code>MEDICATION_NORMALIZATION</code>, <code>ASSESSMENT_IMPUTATION</code>, <code>CPT_GENERATION</code>، یا <code>PLAN_DRAFT</code>.</p></div>
+            <div class="module"><h3><code>assessment.*</code></h3><p><code>submit_imputation</code> برآوردهای جداگانه AI را برای همه ارزیابی‌های bypassشده فعلی اعتبارسنجی می‌کند.</p></div>
+            <div class="module"><h3><code>medication.*</code></h3><p><code>search_candidates</code><br><code>commit_mapping</code> (گزینه برگشتی یا <code>UNKNOWN</code>).</p></div>
+            <div class="module"><h3><code>ddi.*</code></h3><p><code>evaluate_regimen</code> برای <code>PRIMARY_FILTER</code> یا <code>FINAL_RECHECK</code>.</p></div>
+            <div class="module"><h3><code>bn.*</code></h3><p><code>get_routed_contracts</code><br><code>submit_cpt_snapshot</code><br><code>run_inference</code>.</p></div>
+            <div class="module"><h3><code>treatment_plan.*</code></h3><p><code>submit_primary</code> پیش‌نویس ساخت‌یافته را اعتبارسنجی و ماندگار می‌کند؛ هرگز نهایی نمی‌کند.</p></div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>فهرست مجاز ابزار مدل بر اساس حالت</h2><p>فراخوانی‌های خارج از این جدول با خطای زیر شکست می‌خورند: <code>TOOL_NOT_ALLOWED_IN_STATE</code>.</p></div><div class="sources">منبع: <a href="docs/architecture/mcp-contracts.md">فهرست مجاز حالت</a></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>حالت گردش‌کار</th><th>ابزارهای قابل‌فراخوانی مدل</th></tr></thead>
+              <tbody>
+                <tr><td><code>DATA_COLLECTION</code></td><td class="none">هیچ</td></tr>
+                <tr><td><code>NORMALIZING_MEDICATIONS</code></td><td><code>research_case.get_context</code>, <code>medication.search_candidates</code>, <code>medication.commit_mapping</code></td></tr>
+                <tr><td><code>IMPUTING_BYPASSED_ASSESSMENTS</code></td><td><code>research_case.get_context</code>, <code>assessment.submit_imputation</code></td></tr>
+                <tr><td><code>ROUTING_BN</code></td><td class="none">هیچ؛ فقط مسیریابی بک‌اند</td></tr>
+                <tr><td><code>GENERATING_CPTS</code></td><td><code>research_case.get_context</code>, <code>bn.get_routed_contracts</code>, <code>bn.submit_cpt_snapshot</code></td></tr>
+                <tr><td><code>RUNNING_BN</code></td><td><code>bn.run_inference</code></td></tr>
+                <tr><td><code>CHECKING_PRIMARY_DDI</code></td><td><code>ddi.evaluate_regimen</code></td></tr>
+                <tr><td><code>GENERATING_PRIMARY_PLAN</code></td><td><code>research_case.get_context</code>, <code>treatment_plan.submit_primary</code></td></tr>
+                <tr><td><code>CLINICIAN_REVIEW</code></td><td class="none">هیچ</td></tr>
+                <tr><td><code>RECHECKING_FINAL_DDI</code></td><td><code>ddi.evaluate_regimen</code></td></tr>
+                <tr><td><code>REVISION_DRAFT</code></td><td class="none">در فهرست مجاز قرارداد فعلی MCP ذکر نشده است؛ این یک شکاف صریح مشخصات است، نه مجوز استنباط‌شده.</td></tr>
+                <tr><td><code>READY_TO_FINALIZE</code>, <code>FINALIZED</code>, <code>DELETED</code></td><td class="none">هیچ</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="gate" style="margin-top:14px"><strong>فرمان‌های صرفاً بک‌اند</strong>ایجاد/به‌روزرسانی/حذف بیمار؛ مدیریت شناسه؛ مدیریت احراز هویت/نشست/کاربر؛ فعال‌سازی/بازنشستگی دانش؛ تنظیم نقطه پایانی؛ پشتیبان‌گیری/بازیابی؛ تغییر مستقیم حالت؛ تأیید بالین‌گر؛ نهایی‌سازی/جایگزینی؛ حذف بیمار؛ خواندن ممیزی بالینی.</div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>اجرای ماندگار و بسته‌شدن هنگام شکست</h2><p>موفقیت کار لازم است اما هرگز کافی نیست؛ دامنه مالک پیش از پیشروی حالت، نتیجه و منشأ را اعتبارسنجی می‌کند.</p></div><div class="sources">منابع: <a href="docs/decisions/0015-mcp-jobs-and-browser-boundary.md">ADR-015</a>, <a href="docs/architecture/mcp-contracts.md">کدهای خطا</a></div></div>
+          <div class="row-flow">
+            <div class="node planned"><strong>فرمان REST</strong><small>نقش و حالت را اعتبارسنجی می‌کند؛ کار را با اثرانگشت ورودی/وابستگی و کلید همانی‌پذیری می‌سازد.</small></div>
+            <div class="arrow">صف</div>
+            <div class="node planned"><strong>تصاحب اجاره</strong><small><code>QUEUED → RUNNING</code>؛ تلاش، مالک و انقضا ثبت می‌شوند.</small></div>
+            <div class="arrow">اجرا</div>
+            <div class="node planned"><strong>نتیجه نوع‌دار دامنه</strong><small>نتیجه/منشأ تغییرناپذیر؛ شکست همچنان شکست می‌ماند.</small></div>
+            <div class="arrow">تراکنش</div>
+            <div class="node planned"><strong>گذار حالت</strong><small>فقط پس از اعتبارسنجی؛ رخدادهای پیشرفت از SSE احرازشده و ازسرگرفتنی پخش می‌شوند.</small></div>
+          </div>
+          <div class="branch-note">
+            <div class="note"><strong>قابل تلاش مجدد، محدود</strong><br><code>DEPENDENCY_UNAVAILABLE</code>, <code>MODEL_ENDPOINT_FAILED</code>، اصلاح طرح‌واره طرح و تشخیص‌های CPT در حدود دقیق.</div>
+            <div class="note danger"><strong>غیرقابل تلاش مجدد/توقف اجرای فعلی</strong><br>حالت غیرمجاز، بازنگری کهنه پرونده پژوهشی، دانش غیرفعال، گزینه نامعتبر، نمای لحظه‌ای کهنه یا ناسازگاری منشأ.</div>
+            <div class="note info"><strong>بازیابی پس از راه‌اندازی مجدد</strong><br>اجاره‌های منقضی تلاش مجدد امن را ممکن می‌کنند. تازه‌سازی/بستن مرورگر کار را لغو نمی‌کند. SSE پس از آخرین شناسه رخداد دوباره متصل می‌شود.</div>
+          </div>
+          <div class="table-wrap" style="margin-top:14px">
+            <table>
+              <thead><tr><th>خطای قرارداد</th><th>قاعده تلاش مجدد</th><th>اثر بر گردش‌کار</th></tr></thead>
+              <tbody>
+                <tr><td><code>TOOL_NOT_ALLOWED_IN_STATE</code></td><td>خیر</td><td>اجرای عامل شکست می‌خورد.</td></tr>
+                <tr><td><code>STALE_RESEARCH_CASE_REVISION</code></td><td>خیر</td><td>کار لغو می‌شود؛ کاربر اجرای جدیدی آغاز می‌کند.</td></tr>
+                <tr><td><code>INVALID_TOOL_INPUT</code></td><td>بدون تلاش مجدد کار</td><td>مدل می‌تواند در بودجه باقی‌مانده نوبت اصلاح کند.</td></tr>
+                <tr><td><code>DEPENDENCY_UNAVAILABLE</code></td><td>بله، محدود</td><td>پس از تلاش‌های مجدد کار، به‌صورت بسته شکست می‌خورد.</td></tr>
+                <tr><td><code>KNOWLEDGE_VERSION_INACTIVE</code></td><td>خیر</td><td>گردش‌کار وابسته را مسدود می‌کند.</td></tr>
+                <tr><td><code>MEDICATION_CANDIDATE_INVALID</code></td><td>خیر</td><td>مدل باید گزینه برگشتی یا <code>UNKNOWN</code>.</td></tr>
+                <tr><td><code>DDI_SOURCE_DISABLED</code></td><td>خیر</td><td>نهایی‌سازی را مسدود می‌کند.</td></tr>
+                <tr><td><code>CPT_VALIDATION_FAILED</code></td><td>بله؛ حداکثر ۲ تلاش تشخیصی</td><td>پس از سومین تلاش نامعتبر، BN و نهایی‌سازی را مسدود می‌کند.</td></tr>
+                <tr><td><code>CPT_SNAPSHOT_STALE</code></td><td>خیر</td><td>اجرای جدید برآورد/CPT ایجاد می‌کند.</td></tr>
+                <tr><td><code>PLAN_SCHEMA_INVALID</code></td><td>بله، محدود درون کار</td><td>تا زمان اعتبار، پیش‌نویس بالین‌گر ساخته نمی‌شود.</td></tr>
+                <tr><td><code>PROVENANCE_MISMATCH</code></td><td>خیر</td><td>نهایی‌سازی را مسدود می‌کند.</td></tr>
+                <tr><td><code>MODEL_ENDPOINT_FAILED</code></td><td>بله، محدود</td><td>به‌صورت بسته شکست می‌خورد؛ بدون نقطه پایانی جایگزین.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="data" class="panel" role="tabpanel" aria-labelledby="tab-data" hidden>
+        <article class="section-card">
+          <div class="section-head"><div><h2>تجمیع‌ها و روابط دامنه</h2><p>PostgreSQL مرجع نهایی است. هر نتیجه مشتق‌شده، همه ورودی‌های مؤثر بر تغییر خود را پین می‌کند.</p></div><div class="sources">منبع: <a href="docs/architecture/domain-model.md">مدل دامنه</a></div></div>
+          <div class="entity-layout">
+            <div class="entity-group">
+              <h3>هویت و ممیزی</h3>
+              <div class="entity"><strong>USER</strong><small>UUID، نام کاربری نرمال‌شده، هش گذرواژه Argon2id، ADMINISTRATOR | PSYCHIATRIST و وضعیت حساب.</small></div>
+              <div class="entity"><strong>SESSION</strong><small>هش توکن opaque، کاربر، زمان‌ها، انقضا، ابطال و فراداده کلاینت/امنیت.</small></div>
+              <div class="entity"><strong>AUDIT_EVENT</strong><small>عامل/زمان/هدف/نسخه و payload یا مرجع متناسب با نقش. ردیف عادی و قابل‌تغییر PostgreSQL.</small></div>
+            </div>
+            <div class="entity-group">
+              <h3>تجمیع بیمار</h3>
+              <div class="entity"><strong>PATIENT</strong><small>UUID canonical؛ شناسه رسمی، نام و تاریخ تولد رمز‌شده؛ جنسیت دودویی؛ هش جست‌وجو و قید یکتایی.</small></div>
+              <div class="entity"><strong>RESEARCH_CASE</strong><small>دقیقاً یکی برای هر بیمار؛ تاریخ شروع، وضعیت ارائه، حالت گردش‌کار و داده قابل‌تغییر با سیاست آخرین نوشتن برنده است.</small></div>
+              <div class="entity"><strong>ASSESSMENT</strong><small>DSM5TR | PANSS | CSSRS_RECENT؛ وضعیت، پاسخ‌های ساخت‌یافته و نتیجه قطعی؛ bypass پاسخ‌های ناقص را حذف می‌کند.</small></div>
+              <div class="entity"><strong>AI_IMPUTATION</strong><small>مقادیر ارزیابی تولیدشده، پنهان و جداگانه + منشأ مدل/پرامپت/طرح‌واره/ورودی و اثرانگشت وابستگی.</small></div>
+            </div>
+            <div class="entity-group">
+              <h3>سابقه و دارو</h3>
+              <div class="entity"><strong>MEDICATION_ENTRY</strong><small>CURRENT | PROPOSED؛ متن خام؛ NORMALIZED | UNKNOWN؛ فیلدهای اختیاری رژیم؛ منشأ نگاشت LLM.</small></div>
+              <div class="entity"><strong>ANTIPSYCHOTIC_TRIAL</strong><small>دارو الزامی است؛ دوز/دوره/پاسخ/عارضه جانبی/قطع/یادداشت اختیاری‌اند.</small></div>
+              <div class="entity"><strong>COMORBIDITY_SELECTION</strong><small>نسخه پین‌شده کاتالوگ تحت حاکمیت + اصطلاح پایدار؛ متن تکمیلی اختیاری.</small></div>
+              <div class="entity"><strong>DDI_EXECUTION</strong><small>نمای دقیق رژیم، موارد UNKNOWN حذف‌شده، نسخه منبع، یافته‌ها، وضعیت، زمان و منشأ.</small></div>
+            </div>
+            <div class="entity-group">
+              <h3>بیز، طرح و عملیات</h3>
+              <div class="entity"><strong>BN_MODEL_VERSION</strong><small>نسخه تغییرناپذیر مسیر، هش منبع، هش توپولوژی، وضعیت اعتبارسنجی/شواهد و چرخه عمر.</small></div>
+              <div class="entity"><strong>CPT_EXECUTION</strong><small>نسخه مدل، اثرانگشت وابستگی، حداکثر ۳ تلاش، نمای کامل تغییرناپذیر و استنتاج قطعی.</small></div>
+              <div class="entity"><strong>PLAN_DRAFT</strong><small>طرح‌واره ساخت‌یافته نسخه‌بندی‌شده، رژیم، مراجع اجرا و ویرایش‌های بالین‌گر؛ قابل‌تغییر.</small></div>
+              <div class="entity"><strong>FINAL_PLAN_VERSION</strong><small>نمای تغییرناپذیر، ACTIVE | SUPERSEDED، نسخه پیشین، منشأ دقیق DDI/CPT/BN/منبع و کلید همانی‌پذیری.</small></div>
+              <div class="entity"><strong>JOB</strong><small>payload نوع‌دار، اجاره/تلاش مجدد/پیشرفت/همانی‌پذیری/مرجع نتیجه.</small></div>
+              <div class="entity"><strong>ARTIFACT</strong><small>مسیر نسبی، نوع رسانه، بایت‌ها، SHA-256، چرخه عمر/نسخه/رده دسترسی.</small></div>
+              <div class="entity"><strong>ARTIFACT_REFERENCE</strong><small>به یک مصنوع ارجاع دارد؛ فیلدهای جزئی در سند فعلی دامنه مشخص نشده‌اند.</small></div>
+            </div>
+          </div>
+          <ul class="relation-list">
+            <li><code>USER 1 → many SESSION</code></li>
+            <li><code>USER 1 → many AUDIT_EVENT</code></li>
+            <li><code>PATIENT 1 ↔ 1 RESEARCH_CASE</code></li>
+            <li><code>RESEARCH_CASE 1 → many ASSESSMENT</code></li>
+            <li><code>RESEARCH_CASE 1 → many MEDICATION_ENTRY</code></li>
+            <li><code>RESEARCH_CASE 1 → many ANTIPSYCHOTIC_TRIAL</code></li>
+            <li><code>RESEARCH_CASE 1 → many COMORBIDITY_SELECTION</code></li>
+            <li><code>RESEARCH_CASE 1 → many AI_IMPUTATION</code></li>
+            <li><code>RESEARCH_CASE 1 → many DDI_EXECUTION</code></li>
+            <li><code>RESEARCH_CASE 1 → many CPT_EXECUTION</code></li>
+            <li><code>RESEARCH_CASE 1 → many PLAN_DRAFT</code></li>
+            <li><code>RESEARCH_CASE 1 → many FINAL_PLAN_VERSION</code></li>
+            <li><code>CPT_EXECUTION many → 1 BN_MODEL_VERSION</code></li>
+            <li><code>FINAL_PLAN_VERSION many → 1 DDI_EXECUTION</code></li>
+            <li><code>FINAL_PLAN_VERSION many → 1 CPT_EXECUTION</code></li>
+            <li><code>ARTIFACT 1 → many ARTIFACT_REFERENCE</code></li>
+            <li><code>JOB many → 1 RESEARCH_CASE</code></li>
+          </ul>
+          <div class="branch-note">
+            <div class="note info"><strong>ناوردای هویت</strong><br>تاپل شناسه رسمی (نوع، صادرکننده، مقدار نرمال‌شده) یکتا است. تطابق، بیمار موجود را باز می‌کند و تفاوت‌های نام، تاریخ تولد و جنسیت ارسالی را به‌صورت اتمی جایگزین و در رخداد ممیزی تغییرناپذیر ثبت می‌کند.</div>
+            <div class="note"><strong>ناوردای جمعیت‌شناختی</strong><br>تاریخ تولد و <code>MALE | FEMALE</code> الزامی‌اند. سن برای نمای زنده بر مبنای امروز و برای مصنوعات پرونده بر مبنای تاریخ شروع پرونده پژوهشی محاسبه می‌شود. نمای ماندگار سن وجود ندارد.</div>
+            <div class="note danger"><strong>ناوردای پین‌کردن نسخه</strong><br>نتایج مشتق‌شده، مصنوع بالینی، کاتالوگ/قاعده، منبع DDI، مسیر/مدل BN، تنظیم نقطه پایانی/مدل، پرامپت/طرح‌واره/تنظیمات، اثرانگشت ورودی بی‌نام‌شده، نمای CPT و ویرایش‌های بالین‌گر را پین می‌کنند.</div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>ماندگاری، مصنوعات، پشتیبان‌گیری، بازیابی و حذف</h2><p>محدودیت‌های بین ذخیره‌گاه‌ها و باقی‌مانده حذف، تصمیم‌های معماری‌اند نه خطاهای پیاده‌سازی.</p></div><div class="sources">منابع: <a href="docs/decisions/0018-key-backup-and-session-architecture.md">ADR-018</a>–<a href="docs/decisions/0020-backup-files-and-patient-deletion.md">ADR-020</a>, <a href="docs/decisions/0023-audit-reset-and-vertical-slice.md">ADR-023</a></div></div>
+          <div class="row-flow">
+            <div class="node planned"><strong>ایجاد فایل</strong><small>مسیر نسبی UUID تولید می‌شود؛ ابتدا فایل مقصد نوشته می‌شود. بدون staging، تغییرنام اتمی یا قاعده آدرس‌دهی محتوا.</small></div>
+            <div class="arrow">فایل موفق است</div>
+            <div class="node planned"><strong>درج فراداده</strong><small>ردیف PostgreSQL مسیر، هش، اندازه، مالک، رده دسترسی، چرخه عمر و منشأ را نگه می‌دارد.</small></div>
+            <div class="arrow">هنگام خواندن</div>
+            <div class="node planned"><strong>تأیید مجاز</strong><small>بک‌اند مسیر نسبی را حل و SHA-256 را تأیید می‌کند؛ مرورگر هرگز مسیر دلخواه انتخاب نمی‌کند.</small></div>
+          </div>
+          <div class="branch-note">
+            <div class="note danger"><strong>ریسک فایل یتیم</strong><br>اگر نوشتن فایل موفق و درج فراداده ناموفق شود—یا فرایند crash کند—فایل بدون مرجع ممکن است نامحدود باقی بماند. scanner یا worker پاک‌سازی خودکار وجود ندارد.</div>
+            <div class="note"><strong>شکاف پشتیبان‌گیری</strong><br>dump پایگاه‌داده شامل کلید اصلی نگهداری‌شده در پایگاه‌داده و داده محافظت‌شده است، اما هیچ فایل مصنوعی را شامل نمی‌شود. بازیابی فرض می‌کند حجم متناظر مستقل باقی مانده است.</div>
+            <div class="note info"><strong>باقی‌مانده حذف</strong><br>تجمیع بیمار و مصنوعات غیرممیزی حذف می‌شوند؛ سپس حذف فایل یک‌بار در حد بهترین تلاش انجام می‌شود. ردیف‌های کامل ممیزی بالینی و payloadهای لازم باقی می‌مانند.</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="repository" class="panel" role="tabpanel" aria-labelledby="tab-repository" hidden>
+        <article class="section-card">
+          <div class="section-head"><div><h2>کد اجرایی فعلی: موتور مستقل بیز</h2><p>فقط پیاده‌سازی منبع Electron. هدف تولیدی صریحاً Electron را حذف و منطق خالص و قابل‌استفاده مجدد TypeScript را به BN Manager یکپارچه منتقل می‌کند.</p></div><div class="sources">منابع: گراف ایندکس‌شده کد، <a href="Bayesian-Engine/README.md">README موتور بیز</a>, <a href="docs/decisions/0016-stack-bayes-and-model-endpoint.md">ADR-016</a></div></div>
+          <div class="repo-map">
+            <div class="node implemented"><strong>فرایند اصلی Electron</strong><small><code>src/main/main.ts</code></small><ul class="file-list"><li>چرخه عمر BrowserWindow</li><li>منوی بومی برنامه</li><li>IPC امن بازکردن/ذخیره فایل XML</li><li>حدود ورودی و مسیرهای مجاز</li></ul></div>
+            <div class="arrow bi">IPC با context isolation</div>
+            <div class="node implemented"><strong>پل preload</strong><small><code>src/preload/api.ts</code><br><code>src/preload/index.ts</code></small><ul class="file-list"><li>نوع‌دار <code>BayesEngineApi</code></li><li>بدون یکپارچگی Node در renderer</li></ul></div>
+            <div class="arrow bi">API نوع‌دار</div>
+            <div class="node implemented"><strong>renderer و حالت React</strong><small><code>src/renderer/*</code> + <code>src/store/documentStore.ts</code></small><ul class="file-list"><li>پوسته برنامه و فرمان‌ها</li><li>جدید/بازکردن/ذخیره/واگرد/ازنو</li><li>نماهای همگام گراف/کد/جدول</li><li>حالت dirty و محافظ fidelity</li></ul></div>
+          </div>
+          <div class="asset-grid" style="margin-top:14px">
+            <details open><summary>اجزای UI (۹ فایل)</summary><div><ul><li>CptEditor</li><li>DiagnosticsPanel</li><li>GraphView</li><li>NodeInspector</li><li>RawValueEditor</li><li>XmlCodeView</li><li>فرافکنی جدول CPT</li><li>فرافکنی گراف</li><li>فرافکنی جدول خام</li></ul></div></details>
+            <details open><summary>لایه خالص دامنه (۹ فایل)</summary><div><ul><li>cptTensor</li><li>diagnostics</li><li>fidelity</li><li>inputLimits</li><li>model</li><li>mutations</li><li>parser</li><li>serializer</li><li>validator</li></ul></div></details>
+            <details open><summary>دامنه پیاده‌سازی‌شده</summary><div><ul><li>ویرایشگر BN گسسته/نمودار تأثیر XMLBIF 0.3</li><li>ویرایش گره‌های nature/decision/utility</li><li>جداول CPT و مقادیر متناهی خام</li><li>بررسی‌های ساختاری و احتمال</li><li>تبدیل‌های امن ابعاد</li><li>همگام‌سازی قطعی XML</li><li>آزمون‌ها و تنظیم بسته‌بندی</li></ul><strong>وجود ندارد:</strong> استنتاج، یادگیری، بهینه‌سازی سیاست، زمینه بیمار، DDI و گردش‌کار طرح.</div></details>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>مصنوعات بالینی و دانشی مخزن</h2><p>فایل‌ها ورودی شواهد و مصنوعات پژوهشی‌اند، نه سرویس فعال زمان اجرا یا محتوای تأییدشده بالینی.</p></div><div class="sources">منابع: فهرست مخزن، <a href="README.md">README ریشه</a>, <a href="docs/decisions/0005-knowledge-activation-and-failure.md">ADR-005</a>, <a href="docs/decisions/0022-clinical-routing-and-plan-schema.md">ADR-022</a></div></div>
+          <div class="asset-grid">
+            <details open><summary>۱۳ مصنوع XML بیزین</summary><div>
+              <ul>
+                <li>محیط درمان (Treatment Setting)</li><li>دارودرمانی (Pharmacotherapy)</li><li>ملاحظات درمان غیراختیاری</li><li>کلوزاپین در خطر خودکشی</li><li>ادامه داروها</li><li>ادامه همان دارو</li><li>کلوزاپین در اسکیزوفرنی مقاوم به درمان</li><li>کلوزاپین در رفتار پرخاشگرانه</li><li>داروهای ضدروان‌پریشی طولانی‌اثر</li><li>دیستونی حاد / درمان آنتی‌کولینرژیک</li><li>درمان‌های پارکینسونیسم</li><li>درمان‌های آکاتیزیا</li><li>داروهای VMAT2 برای دیسکینزی دیررس</li>
+              </ul>
+              <strong>وضعیت ممیزی:</strong> ۶ مورد از ۱۳ فایل در بررسی ابعاد یا نرمال‌سازی CPT شکست می‌خورند؛ مورد هفتم جداگانه BIF 1.0 پشتیبانی‌نشده اعلام می‌کند. Pharmacotherapy نامزد نخست برش عمودی است، اما اعتبار بالینی ندارد. محتوای مصنوع Akathisia ناسازگار به نظر می‌رسد.
+            </div></details>
+            <details open><summary>آرشیو منبع DDI</summary><div><strong>تعداد محلی:</strong> ۱۲۱ فایل متنی Medscape + ۸ PDF از Medscape.<ul><li>بدون scraping زنده در زمان اجرا.</li><li>بدون منبع جایگزین یا حالت تداخل تولیدشده توسط LLM.</li><li>تا ثبت مجوز کتبی/مبنای قانونی و manifest نسخه‌بندی‌شده هر مورد غیرفعال است.</li><li>پس از فعال‌سازی انقضای زمانی ندارد؛ مدیر سامانه باید آن را بازنشسته/جایگزین کند.</li></ul></div></details>
+            <details open><summary>منبع خطر خودکشی</summary><div><strong>یک PDF محلی:</strong> C-SSRS Screen Version - Recent.<ul><li>SHA-256: <code>8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2</code></li><li>۶ پرسش قابل‌مشاهده بله/خیر با شاخه‌بندی و سطوح قطعی.</li><li>برای فعال‌سازی تولیدی، رکورد مجوز/آموزش/تأیید منبع الزامی است.</li><li>هیچ رونویسی تحت حاکمیت، ترجمه فارسی تأییدشده یا بازبینی بالینی نگاشت سطوح در مخزن وجود ندارد.</li></ul></div></details>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>وضعیت پیاده‌سازی</h2><p>بسته‌های ۰ تا ۸ طرح علامت نخورده‌اند. زمان اجرای هدف INSIGHT آغاز نشده است.</p></div><div class="sources">منبع: <a href="Plan.md">طرح پیاده‌سازی</a></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>بسته</th><th>افزایش هدف</th><th>وضعیت</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>فضای کاری TypeScript، React/Vite، Fastify، PostgreSQL تعبیه‌شده، یک image، REST/OpenAPI/SSE و CI.</td><td>آغاز نشده</td></tr>
+                <tr><td>1</td><td>نخستین پرونده پژوهشی مصنوعی سرتاسری از احراز هویت، ارزیابی‌ها، DDI، BN دارودرمانی، پیش‌نویس، طرح نهایی و کارها/ممیزی.</td><td>آغاز نشده</td></tr>
+                <tr><td>2</td><td>هویت، نشست‌ها، یکتایی/چرخه عمر مشترک بیمار، جداسازی مدیر سامانه و حذف سخت.</td><td>آغاز نشده</td></tr>
+                <tr><td>3</td><td>تکمیل ارزیابی و سابقه پزشکی.</td><td>آغاز نشده</td></tr>
+                <tr><td>4</td><td>گسترش کاتالوگ دارو و DDI.</td><td>آغاز نشده</td></tr>
+                <tr><td>5</td><td>سخت‌سازی MCP، مدل و کار ماندگار.</td><td>آغاز نشده</td></tr>
+                <tr><td>6</td><td>استخراج کتابخانه بیزین و BN Manager یکپارچه.</td><td>آغاز نشده</td></tr>
+                <tr><td>7</td><td>تکمیل چرخه عمر درمان، ممیزی و مصنوعات.</td><td>آغاز نشده</td></tr>
+                <tr><td>8</td><td>پشتیبان‌گیری/بازیابی، تمرین شکست، سخت‌سازی پژوهشی و مجموعه پذیرش.</td><td>آغاز نشده</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="governance" class="panel" role="tabpanel" aria-labelledby="tab-governance" hidden>
+        <article class="section-card">
+          <div class="section-head"><div><h2>ریسک‌های معماری آگاهانه پذیرفته‌شده</h2><p>تصمیم‌های صریح مشخصات پذیرفته‌شده؛ هیچ موردی در اینجا حدس زده یا تعدیل نشده است.</p></div><div class="sources">منبع: <a href="docs/architecture/system-architecture.md">ریسک‌های آگاهانه پذیرفته‌شده</a></div></div>
+          <div class="risk-grid">
+            <div class="risk-block"><h3>امنیت، حریم خصوصی و عملیات</h3><ul><li>فعال <code>admin/admin</code>؛ بدون تغییر اجباری.</li><li>بدون MFA یا SSO.</li><li>کلید اصلی همراه متن رمز ذخیره می‌شود.</li><li>شرایط نگهداری/آموزش ارائه‌دهنده مانع فعال‌سازی نیست.</li><li>هر روان‌پزشک می‌تواند بدون تأیید، هر بیمار مشترک را فوراً سخت‌حذف کند.</li><li>جداول ممیزی ردیف‌های عادی و قابل‌تغییر PostgreSQL هستند.</li><li>پشتیبان‌گیری دستی فقط از پایگاه‌داده؛ بدون پشتیبان مصنوعات.</li><li>سازگاری فایل‌سیستم/پایگاه‌داده در حد بهترین تلاش؛ فایل یتیم ممکن است.</li><li>حذف سخت، payloadهای کامل ممیزی بالینی و پیوند بیمار را حفظ می‌کند.</li></ul></div>
+            <div class="risk-block"><h3>رفتار بالینی و مدل</h3><ul><li>یافته‌های DDI و خطر خودکشی تکمیل‌شده صرفاً هشدارند.</li><li>جزئیات برآوردشده AI پنهان می‌ماند؛ اعلان عمومی از طرح نهایی/خروجی حذف می‌شود.</li><li>نرمال‌سازی دارو بدون تأیید بالین‌گر خودکار پذیرفته می‌شود.</li><li><code>UNKNOWN</code> همه جفت‌های DDI مربوط به داروها را حذف می‌کنند، اما نهایی‌سازی را مسدود نمی‌کنند.</li><li>نسخه‌های BN که بررسی ساختاری را می‌گذرانند بدون تأیید بالینی خودکار فعال می‌شوند.</li><li>LLM هر CPT را دوباره تولید می‌کند؛ جداول معتبر نرم‌افزاری احتمال بالینی کالیبره‌شده نیستند.</li><li>واقعیت‌های بیمار فقط از راه CPTهای تولیدشده بر استنتاج اثر می‌گذارند؛ بدون clamp شاهد.</li><li>پیش‌نویس‌های قابل‌تغییر از سیاست آخرین نوشتن برنده است پیروی می‌کنند؛ ویرایش هم‌زمان ممکن است بی‌صدا از دست برود.</li></ul></div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>صریحاً خارج از محدوده</h2><p>این موارد نبودهای معماری‌اند، نه گره‌های جامانده نمودار.</p></div><div class="sources">منبع: <a href="docs/product/product-and-workflow-requirements.md">الزامات محصول و گردش‌کار</a></div></div>
+          <div class="scope-block"><ul class="relation-list" style="margin-top:0">
+            <li>چند سازمان در یک استقرار.</li><li>چند پرونده پژوهشی، ویزیت یا Encounter.</li><li>دسترسی مدیر سامانه به محتوای بیمار.</li><li>MFA، SSO، ثبت‌نام عمومی یا بازیابی ایمیلی.</li><li>استفاده بالینی موبایل‌محور.</li><li>میکروسرویس، Redis یا ذخیره‌سازی شیء.</li><li>scraping زنده منابع پزشکی.</li><li>پشتیبان‌گیری خودکار یا پشتیبان مصنوعات.</li><li>نهایی‌سازی خودمختار طرح.</li><li>دروازه تأیید بالینی برای مدل‌های BN با ساختار معتبر.</li><li>مسدودسازی سخت ایمنی برای یافته‌های DDI یا نتایج خطر خودکشی.</li><li>مقیاس‌پذیری افقی، دسترس‌پذیری بالا، چند replica برنامه و failover مدیریت‌شده پایگاه‌داده.</li>
+          </ul></div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>نقشه شواهد مرجع</h2><p>در صورت تعارض، ADRهای پذیرفته‌شده بر اسناد روبه‌پیاده‌سازی اولویت دارند.</p></div><div class="sources">همه پیوندها در همین مخزن حل می‌شوند.</div></div>
+          <div class="adr-grid">
+            <div class="adr"><strong><a href="docs/decisions/0001-product-foundation.md">ADR-001 · بنیان محصول</a></strong><span>مرحله صرفاً پژوهشی، BN Manager یکپارچه و مونولیت ماژولار.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0002-data-and-mcp-boundary.md">ADR-002 · مرز داده و MCP</a></strong><span>هسته مستقل از حوزه قضایی، حالت پژوهش هویت‌دار تأییدشده و LLM به‌عنوان کلاینت.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0003-identity-and-llm-boundary.md">ADR-003 · هویت و LLM میزبانی‌شده</a></strong><span>هویت دوگانه، اختیار گردش‌کار بک‌اند و بی‌نام‌سازی.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0004-runtime-data-and-roles.md">ADR-004 · زمان اجرا، داده و نقش‌ها</a></strong><span>وب دسکتاپ‌محور، PostgreSQL و دو نقش ثابت.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0005-knowledge-activation-and-failure.md">ADR-005 · دانش و شکست</a></strong><span>دروازه Medscape، بررسی‌های BN و وابستگی‌های fail-closed.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0006-operational-scope.md">ADR-006 · محدوده عملیاتی</a></strong><span>فعال‌سازی فوری BN، تازگی دستی DDI و کانتینر یکپارچه.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0007-auth-access-and-concurrency.md">ADR-007 · احراز هویت و هم‌زمانی</a></strong><span>احراز هویت با گذرواژه، جداسازی مدیر سامانه و پیش‌نویس‌های آخرین نوشتن برنده است.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0008-cpt-admin-and-patient-scope.md">ADR-008 · محدوده CPT/مدیر/بیمار</a></strong><span>CPTهای ویژه بیمار، admin/admin و دفتر مشترک روان‌پزشکان.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0009-cpt-snapshot-and-assessment-bypass.md">ADR-009 · چرخه عمر CPT و bypass</a></strong><span>حد سه تلاش CPT، استفاده مجدد/ابطال و bypass بدون محدودیت.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0010-suicide-risk-and-ddi-warning-policy.md">ADR-010 · سیاست صرفاً هشدار</a></strong><span>خطر خودکشی تکمیل‌شده و یافته‌های DDI هرگز مسدودسازی سخت ایجاد نمی‌کنند.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0011-medication-normalization-and-assessment-imputation.md">ADR-011 · نرمال‌سازی و برآورد</a></strong><span>نگاشت خودکار، رفتار UNKNOWN و برآوردهای پنهان AI.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0012-patient-identity-and-demographics.md">ADR-012 · جمعیت‌شناسی بیمار</a></strong><span>یکتایی سخت، سن مشتق از تاریخ تولد، جنسیت دودویی و جایگزینی هنگام تطابق شناسه.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0013-single-research-case-and-clinical-history.md">ADR-013 · یک پرونده پژوهشی</a></strong><span>بدون ویزیت/Encounter؛ ارائه و سابقه ساخت‌یافته.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0014-plan-supersession-and-trial-details.md">ADR-014 · جایگزینی طرح</a></strong><span>نسخه‌های تغییرناپذیر، جزئیات اختیاری کارآزمایی و عوارض تحت حاکمیت.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0015-mcp-jobs-and-browser-boundary.md">ADR-015 · MCP، کارها و مرورگر</a></strong><span>درگاه داخلی، کارهای PostgreSQL و دسترسی مرورگر فقط به بک‌اند.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0016-stack-bayes-and-model-endpoint.md">ADR-016 · پشته و یکپارچه‌سازی بیز</a></strong><span>پشته TypeScript، بدون Electron تولیدی و کلاینت مستقیم نقطه پایانی.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0017-api-model-secrets-and-fallback.md">ADR-017 · API و اسرار مدل</a></strong><span>REST/OpenAPI/SSE، اعتبارنامه فقط‌نوشتنی و بدون جایگزین.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0018-key-backup-and-session-architecture.md">ADR-018 · کلید، پشتیبان و نشست‌ها</a></strong><span>کلید داخل DB، dump دستی DB و نشست‌های opaque در PostgreSQL.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0019-artifacts-audit-and-restore.md">ADR-019 · مصنوعات، ممیزی و بازیابی</a></strong><span>مصنوعات حجمی، جداول عادی ممیزی و جایگزینی کامل DB.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0020-backup-files-and-patient-deletion.md">ADR-020 · پشتیبان، فایل‌ها و حذف</a></strong><span>پشتیبان فقط پایگاه‌داده، فایل‌ها در حد بهترین تلاش و حذف سخت بیمار.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0021-tenancy-network-and-deletion.md">ADR-021 · مستأجری، شبکه و حذف</a></strong><span>یک مستأجر، خروجی فقط به LLM و حذف فوری توسط یک روان‌پزشک.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0022-clinical-routing-and-plan-schema.md">ADR-022 · مسیریابی بالینی و طرح‌ها</a></strong><span>C-SSRS تحت حاکمیت، مسیرهای قطعی BN و طرح‌ها/قواعد ساخت‌یافته.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0023-audit-reset-and-vertical-slice.md">ADR-023 · ممیزی، بازنشانی و برش</a></strong><span>بقای ممیزی بالینی، گذرواژه‌های موقت و تقدم برش عمودی.</span></div>
+          </div>
+          <div class="gate" style="margin-top:14px"><strong>مشخصات روبه‌پیاده‌سازی</strong><a href="docs/architecture/system-architecture.md">معماری سامانه</a> · <a href="docs/architecture/domain-model.md">مدل دامنه</a> · <a href="docs/architecture/mcp-contracts.md">قرارداد MCP</a> · <a href="docs/product/product-and-workflow-requirements.md">الزامات محصول/گردش‌کار</a> · <a href="Plan.md">طرح پیاده‌سازی</a> · <a href="README.md">وضعیت مخزن</a></div>
+        </article>
+      </section>
+    </main>
+
+    <p class="footer">نمونه پژوهشی INSIGHT · شماتیک فقط از شواهد مخزن ساخته شده است · معماری هدف پذیرفته‌شده، پیاده‌سازی فعلی نیست</p>
+  </div>
+
+  <script>
+    (() => {
+      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+      function activate(tab, focus = false) {
+        tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+        panels.forEach((panel) => {
+          const selected = panel.id === tab.getAttribute('aria-controls');
+          panel.hidden = !selected;
+          panel.classList.toggle('active', selected);
+        });
+        if (focus) tab.focus();
+        history.replaceState(null, '', `#${tab.getAttribute('aria-controls')}`);
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(tab));
+        tab.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          let next = index;
+          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          activate(tabs[next], true);
+        });
+      });
+
+      const requested = location.hash.slice(1);
+      const initial = tabs.find((tab) => tab.getAttribute('aria-controls') === requested);
+      if (initial) activate(initial);
+    })();
+  </script>
+</body>
+</html>

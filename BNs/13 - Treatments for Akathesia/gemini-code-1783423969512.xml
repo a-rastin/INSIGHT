@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3">
+  <NETWORK>
+    <NAME>New BN</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Alcohol</NAME>
+      <OUTCOME>Yes</OUTCOME>
+      <OUTCOME>No</OUTCOME>
+      <PROPERTY>position = (77, 37)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Sleep_Apnea</NAME>
+      <OUTCOME>Yes</OUTCOME>
+      <OUTCOME>No</OUTCOME>
+      <PROPERTY>position = (183, 42)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Opioid</NAME>
+      <OUTCOME>Yes</OUTCOME>
+      <OUTCOME>No</OUTCOME>
+      <PROPERTY>position = (365, 20)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Age</NAME>
+      <OUTCOME>Above65</OUTCOME>
+      <OUTCOME>Under65</OUTCOME>
+      <PROPERTY>position = (512, 45)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Low_BP</NAME>
+      <OUTCOME>Yes</OUTCOME>
+      <OUTCOME>No</OUTCOME>
+      <PROPERTY>position = (9, 152)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>BNZ_Option</NAME>
+      <OUTCOME>Yes</OUTCOME>
+      <OUTCOME>No</OUTCOME>
+      <PROPERTY>position = (272, 144)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>High_Risk_Antipsychotic</NAME>
+      <OUTCOME>Yes</OUTCOME>
+      <OUTCOME>No</OUTCOME>
+      <PROPERTY>position = (414, 153)</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Interventions</NAME>
+      <OUTCOME>Dose_Reduction</OUTCOME>
+      <OUTCOME>Drug_change</OUTCOME>
+      <OUTCOME>BNZ</OUTCOME>
+      <OUTCOME>BB</OUTCOME>
+      <OUTCOME>Mirtazapin</OUTCOME>
+      <PROPERTY>position = (259, 252)</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION>
+      <FOR>Alcohol</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Sleep_Apnea</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Opioid</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Age</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Low_BP</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>BNZ_Option</FOR>
+      <GIVEN>Alcohol</GIVEN>
+      <GIVEN>Sleep_Apnea</GIVEN>
+      <GIVEN>Opioid</GIVEN>
+      <GIVEN>Age</GIVEN>
+      <TABLE>
+        0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0
+        0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0
+        0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0
+        0.0 1.0 0.0 1.0 0.0 1.0 1.0 0.0
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>High_Risk_Antipsychotic</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Interventions</FOR>
+      <GIVEN>BNZ_Option</GIVEN>
+      <GIVEN>Low_BP</GIVEN>
+      <GIVEN>High_Risk_Antipsychotic</GIVEN>
+      <TABLE>
+        0.3 0.5 0.1 0.0 0.1
+        0.65 0.2 0.1 0.0 0.05
+        0.3 0.6 0.0 0.0 0.1
+        0.8 0.1 0.0 0.0 0.1
+        0.3 0.5 0.1 0.05 0.05
+        0.6 0.2 0.1 0.05 0.05
+        0.3 0.5 0.0 0.05 0.15
+        0.6 0.2 0.0 0.05 0.15
+      </TABLE>
+    </DEFINITION>
+  </NETWORK>
+</BIF>

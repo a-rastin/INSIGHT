@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3">
+  <NETWORK>
+    <NAME>Clozapine_Schizophrenia_Suicide_Risk</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Schizophrenia_Suicide_Indication</NAME>
+      <OUTCOME>Met</OUTCOME>
+      <OUTCOME>Not_Met</OUTCOME>
+      <PROPERTY>Patients with schizophrenia possessing substantial suicide risk despite other treatments.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Clozapine_Contraindications</NAME>
+      <OUTCOME>Present</OUTCOME>
+      <OUTCOME>Absent</OUTCOME>
+      <PROPERTY>Presence of severe neutropenia, history of clozapine-induced myocarditis, or unmanaged seizure disorder.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Monitoring_Adherence_Capacity</NAME>
+      <OUTCOME>Sufficient</OUTCOME>
+      <OUTCOME>Insufficient</OUTCOME>
+      <PROPERTY>Patient capacity and willingness to adhere to mandatory ANC blood monitoring.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Clozapine_Eligibility</NAME>
+      <OUTCOME>Eligible</OUTCOME>
+      <OUTCOME>Contraindicated</OUTCOME>
+      <PROPERTY>Hard contraindication gate determining overall clinical eligibility.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Clinical_Action_Pattern</NAME>
+      <OUTCOME>Initiate_Clozapine</OUTCOME>
+      <OUTCOME>Optimize_Current_Therapy</OUTCOME>
+      <PROPERTY>Final ranked management recommendation.</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION>
+      <FOR>Schizophrenia_Suicide_Indication</FOR>
+      <TABLE>0.5 0.5</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Clozapine_Contraindications</FOR>
+      <TABLE>0.1 0.9</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Monitoring_Adherence_Capacity</FOR>
+      <TABLE>0.8 0.2</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Clozapine_Eligibility</FOR>
+      <GIVEN>Clozapine_Contraindications</GIVEN>
+      <TABLE>
+        0.0 1.0 
+        1.0 0.0
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Clinical_Action_Pattern</FOR>
+      <GIVEN>Schizophrenia_Suicide_Indication</GIVEN>
+      <GIVEN>Clozapine_Eligibility</GIVEN>
+      <GIVEN>Monitoring_Adherence_Capacity</GIVEN>
+      <TABLE>
+        1.0 0.0
+        0.0 1.0
+        0.0 1.0
+        0.0 1.0
+        0.0 1.0
+        0.0 1.0
+        0.0 1.0
+        0.0 1.0
+      </TABLE>
+    </DEFINITION>
+
+  </NETWORK>
+</BIF>

@@ -1,0 +1,18 @@
+%%{init: {'flowchart': {'curve': 'ortho'}, 'themeVariables': {'fontSize': '14px'}}}%%
+flowchart TD
+    classDef patient fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b
+    classDef gate fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#e65100
+    classDef action fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+
+    SSI["Schizophrenia_Suicide_Indication<br/><i>Met | Not_Met</i><br/>P=0.5/0.5<br/><small>Substantial suicide risk despite other treatments</small>"]:::patient
+    CC["Clozapine_Contraindications<br/><i>Present | Absent</i><br/>P=0.1/0.9<br/><small>Severe neutropenia, myocarditis, unmanaged seizure disorder</small>"]:::patient
+    MAC["Monitoring_Adherence_Capacity<br/><i>Sufficient | Insufficient</i><br/>P=0.8/0.2<br/><small>Capacity/willingness for ANC blood monitoring</small>"]:::patient
+
+    CE["Clozapine_Eligibility<br/><i>Eligible | Contraindicated</i><br/><small>Hard contraindication gate</small><br/><b>Deterministic:</b> CC=Present → Contraindicated"]:::gate
+
+    CAP["Clinical_Action_Pattern<br/><i>Initiate_Clozapine | Optimize_Current_Therapy</i><br/><small>Final ranked management recommendation</small>"]:::action
+
+    SSI --> CAP
+    CC --> CE
+    MAC --> CAP
+    CE --> CAP

@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3">
+  <NETWORK>
+    <NAME>LAI_Antipsychotic_CDS_BN</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>DiagnosisStatus</NAME>
+      <OUTCOME>present</OUTCOME>
+      <OUTCOME>absent</OUTCOME>
+      <OUTCOME>uncertain</OUTCOME>
+      <PROPERTY>LABEL = Schizophrenia or schizoaffective diagnosis</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>AntipsychoticIndicated</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>uncertain</OUTCOME>
+      <PROPERTY>LABEL = Ongoing antipsychotic treatment indicated</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PatientPrefersLAI</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>LABEL = Patient preference for long-acting injectable antipsychotic</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PriorPositiveLAIExperience</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>none_or_unknown</OUTCOME>
+      <PROPERTY>LABEL = Prior positive experience with LAI antipsychotic</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>OralAdherence</NAME>
+      <OUTCOME>good</OUTCOME>
+      <OUTCOME>poor</OUTCOME>
+      <OUTCOME>uncertain</OUTCOME>
+      <PROPERTY>LABEL = Current adherence to oral antipsychotic treatment</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>LimitedIllnessInsight</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>LABEL = Limited awareness of need for treatment</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>SubstanceUseDisorder</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>LABEL = Co-occurring substance use disorder</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>CareTransition</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <PROPERTY>LABEL = Transition between care settings or release from supervised setting</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>RepeatedHospitalOrED</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <PROPERTY>LABEL = Repeated psychiatric hospitalization or emergency visits</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PoorOralResponse</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>unclear</OUTCOME>
+      <PROPERTY>LABEL = Poor or partial response to oral antipsychotic</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>SuspectedUnrecognizedNonadherence</NAME>
+      <OUTCOME>likely</OUTCOME>
+      <OUTCOME>possible</OUTCOME>
+      <OUTCOME>unlikely</OUTCOME>
+      <PROPERTY>LABEL = Suspected unrecognized nonadherence despite prescribed oral treatment</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>AdherenceRisk</NAME>
+      <OUTCOME>high</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>low</OUTCOME>
+      <PROPERTY>LABEL = Prospective risk of poor adherence</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PreferenceIndication</NAME>
+      <OUTCOME>strong</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>weak</OUTCOME>
+      <OUTCOME>none</OUTCOME>
+      <PROPERTY>LABEL = LAI indication strength from patient preference</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>AdherenceIndication</NAME>
+      <OUTCOME>strong</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>weak</OUTCOME>
+      <OUTCOME>none</OUTCOME>
+      <PROPERTY>LABEL = LAI indication strength from adherence history and risk</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>UtilizationIndication</NAME>
+      <OUTCOME>strong</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>weak</OUTCOME>
+      <OUTCOME>none</OUTCOME>
+      <PROPERTY>LABEL = LAI indication strength from utilization, transition, or hidden nonadherence</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>LAIIndicationStrength</NAME>
+      <OUTCOME>strong</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>weak</OUTCOME>
+      <OUTCOME>none</OUTCOME>
+      <PROPERTY>LABEL = Overall clinical indication strength for LAI antipsychotic</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>OralFormulationTolerated</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>not_tried</OUTCOME>
+      <PROPERTY>LABEL = Oral formulation of candidate antipsychotic tolerated</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PriorResponseCandidateAntipsychotic</NAME>
+      <OUTCOME>good</OUTCOME>
+      <OUTCOME>partial</OUTCOME>
+      <OUTCOME>poor</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>LABEL = Prior therapeutic response to candidate antipsychotic</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PriorNMS</NAME>
+      <OUTCOME>yes</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>LABEL = Prior neuroleptic malignant syndrome</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>InjectionAcceptability</NAME>
+      <OUTCOME>accepts</OUTCOME>
+      <OUTCOME>reluctant</OUTCOME>
+      <OUTCOME>refuses</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>LABEL = Acceptability of receiving injections</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>LAIFormulationAvailable</NAME>
+      <OUTCOME>yes_same_drug</OUTCOME>
+      <OUTCOME>yes_switch_needed</OUTCOME>
+      <OUTCOME>no</OUTCOME>
+      <PROPERTY>LABEL = LAI formulation availability for current or candidate medication</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>DrugTolerabilityStatus</NAME>
+      <OUTCOME>suitable</OUTCOME>
+      <OUTCOME>caution</OUTCOME>
+      <OUTCOME>unsuitable</OUTCOME>
+      <PROPERTY>LABEL = Medication tolerability status for LAI use</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PracticalAcceptability</NAME>
+      <OUTCOME>suitable</OUTCOME>
+      <OUTCOME>caution</OUTCOME>
+      <OUTCOME>unsuitable</OUTCOME>
+      <PROPERTY>LABEL = Practical acceptability of LAI route and formulation</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>LAISafetySuitability</NAME>
+      <OUTCOME>suitable</OUTCOME>
+      <OUTCOME>caution</OUTCOME>
+      <OUTCOME>unsuitable</OUTCOME>
+      <PROPERTY>LABEL = Overall LAI safety and suitability</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>CostInsuranceBarrier</NAME>
+      <OUTCOME>none</OUTCOME>
+      <OUTCOME>manageable</OUTCOME>
+      <OUTCOME>major</OUTCOME>
+      <PROPERTY>LABEL = Cost or insurance authorization barrier</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>TransportScheduleBarrier</NAME>
+      <OUTCOME>none</OUTCOME>
+      <OUTCOME>manageable</OUTCOME>
+      <OUTCOME>major</OUTCOME>
+      <PROPERTY>LABEL = Transport, schedule, childcare, school, or work barrier</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>AdministrationFeasibility</NAME>
+      <OUTCOME>feasible</OUTCOME>
+      <OUTCOME>feasible_with_support</OUTCOME>
+      <OUTCOME>not_feasible</OUTCOME>
+      <PROPERTY>LABEL = Clinic or partner capacity to administer LAI safely</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ImplementationBarriers</NAME>
+      <OUTCOME>low</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>high</OUTCOME>
+      <PROPERTY>LABEL = Overall implementation barriers</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ExpectedBenefitFromLAI</NAME>
+      <OUTCOME>high</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>low</OUTCOME>
+      <PROPERTY>LABEL = Expected clinical benefit from LAI treatment</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ExpectedHarmBurdenFromLAI</NAME>
+      <OUTCOME>high</OUTCOME>
+      <OUTCOME>moderate</OUTCOME>
+      <OUTCOME>low</OUTCOME>
+      <PROPERTY>LABEL = Expected harm or burden from LAI treatment</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>NetClinicalFavorability</NAME>
+      <OUTCOME>favorable</OUTCOME>
+      <OUTCOME>conditional</OUTCOME>
+      <OUTCOME>unfavorable</OUTCOME>
+      <PROPERTY>LABEL = Net clinical favorability of LAI treatment</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>LAIRecommendation</NAME>
+      <OUTCOME>recommend_lai</OUTCOME>
+      <OUTCOME>offer_shared_decision</OUTCOME>
+      <OUTCOME>consider_with_barrier_mitigation</OUTCOME>
+      <OUTCOME>defer_lai</OUTCOME>
+      <OUTCOME>avoid_or_specialist_review</OUTCOME>
+      <PROPERTY>LABEL = CDS recommendation for long-acting injectable antipsychotic</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION>
+      <FOR>DiagnosisStatus</FOR>
+      <TABLE>0.70 0.05 0.25</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PriorPositiveLAIExperience</FOR>
+      <TABLE>0.15 0.20 0.65</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>OralAdherence</FOR>
+      <TABLE>0.45 0.25 0.30</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>LimitedIllnessInsight</FOR>
+      <TABLE>0.30 0.45 0.25</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>SubstanceUseDisorder</FOR>
+      <TABLE>0.25 0.55 0.20</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>CareTransition</FOR>
+      <TABLE>0.25 0.75</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>RepeatedHospitalOrED</FOR>
+      <TABLE>0.30 0.70</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PoorOralResponse</FOR>
+      <TABLE>0.25 0.50 0.25</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>OralFormulationTolerated</FOR>
+      <TABLE>0.65 0.15 0.20</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PriorResponseCandidateAntipsychotic</FOR>
+      <TABLE>0.35 0.30 0.15 0.20</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PriorNMS</FOR>
+      <TABLE>0.02 0.90 0.08</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>InjectionAcceptability</FOR>
+      <TABLE>0.45 0.25 0.10 0.20</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>LAIFormulationAvailable</FOR>
+      <TABLE>0.55 0.35 0.10</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>CostInsuranceBarrier</FOR>
+      <TABLE>0.45 0.35 0.20</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>TransportScheduleBarrier</FOR>
+      <TABLE>0.45 0.35 0.20</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>AdministrationFeasibility</FOR>
+      <TABLE>0.60 0.30 0.10</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PatientPrefersLAI</FOR>
+      <GIVEN>PriorPositiveLAIExperience</GIVEN>
+      <TABLE>
+        0.70 0.15 0.15
+        0.15 0.65 0.20
+        0.25 0.25 0.50
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>AntipsychoticIndicated</FOR>
+      <GIVEN>DiagnosisStatus</GIVEN>
+      <TABLE>
+        0.95 0.02 0.03
+        0.05 0.85 0.10
+        0.40 0.20 0.40
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>SuspectedUnrecognizedNonadherence</FOR>
+      <GIVEN>OralAdherence</GIVEN>
+      <GIVEN>PoorOralResponse</GIVEN>
+      <TABLE>
+        0.10 0.30 0.60
+        0.03 0.12 0.85
+        0.05 0.25 0.70
+        0.85 0.12 0.03
+        0.60 0.30 0.10
+        0.70 0.25 0.05
+        0.45 0.45 0.10
+        0.20 0.55 0.25
+        0.30 0.55 0.15
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>AdherenceRisk</FOR>
+      <GIVEN>LimitedIllnessInsight</GIVEN>
+      <GIVEN>SubstanceUseDisorder</GIVEN>
+      <GIVEN>CareTransition</GIVEN>
+      <TABLE>
+        0.80 0.18 0.02   0.70 0.25 0.05
+        0.70 0.25 0.05   0.45 0.40 0.15
+        0.60 0.32 0.08   0.40 0.45 0.15
+        0.65 0.28 0.07   0.35 0.45 0.20
+        0.35 0.45 0.20   0.10 0.30 0.60
+        0.40 0.45 0.15   0.15 0.45 0.40
+        0.65 0.28 0.07   0.45 0.40 0.15
+        0.45 0.40 0.15   0.15 0.45 0.40
+        0.45 0.45 0.10   0.20 0.50 0.30
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PreferenceIndication</FOR>
+      <GIVEN>AntipsychoticIndicated</GIVEN>
+      <GIVEN>PatientPrefersLAI</GIVEN>
+      <TABLE>
+        0.85 0.12 0.03 0.00
+        0.00 0.10 0.35 0.55
+        0.10 0.45 0.35 0.10
+        0.00 0.02 0.08 0.90
+        0.00 0.01 0.04 0.95
+        0.00 0.02 0.08 0.90
+        0.15 0.40 0.30 0.15
+        0.00 0.05 0.25 0.70
+        0.03 0.22 0.45 0.30
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>AdherenceIndication</FOR>
+      <GIVEN>AntipsychoticIndicated</GIVEN>
+      <GIVEN>OralAdherence</GIVEN>
+      <GIVEN>AdherenceRisk</GIVEN>
+      <TABLE>
+        0.45 0.35 0.15 0.05   0.20 0.45 0.25 0.10   0.05 0.25 0.45 0.25
+        0.90 0.08 0.02 0.00   0.80 0.15 0.04 0.01   0.70 0.22 0.06 0.02
+        0.75 0.20 0.04 0.01   0.60 0.30 0.08 0.02   0.35 0.45 0.15 0.05
+        0.00 0.02 0.08 0.90   0.00 0.02 0.08 0.90   0.00 0.01 0.04 0.95
+        0.02 0.08 0.20 0.70   0.01 0.06 0.18 0.75   0.01 0.04 0.15 0.80
+        0.01 0.06 0.18 0.75   0.01 0.05 0.16 0.78   0.00 0.03 0.12 0.85
+        0.20 0.35 0.30 0.15   0.10 0.30 0.40 0.20   0.03 0.18 0.45 0.34
+        0.45 0.35 0.15 0.05   0.35 0.40 0.20 0.05   0.25 0.42 0.25 0.08
+        0.35 0.40 0.20 0.05   0.25 0.45 0.22 0.08   0.15 0.40 0.30 0.15
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>UtilizationIndication</FOR>
+      <GIVEN>AntipsychoticIndicated</GIVEN>
+      <GIVEN>RepeatedHospitalOrED</GIVEN>
+      <GIVEN>SuspectedUnrecognizedNonadherence</GIVEN>
+      <GIVEN>CareTransition</GIVEN>
+      <TABLE>
+        0.88 0.10 0.02 0.00   0.70 0.22 0.06 0.02
+        0.65 0.25 0.08 0.02   0.45 0.40 0.12 0.03
+        0.40 0.40 0.15 0.05   0.25 0.45 0.22 0.08
+        0.10 0.25 0.35 0.30   0.05 0.20 0.40 0.35
+        0.06 0.20 0.38 0.36   0.03 0.16 0.38 0.43
+        0.03 0.12 0.30 0.55   0.01 0.08 0.26 0.65
+        0.45 0.35 0.15 0.05   0.30 0.45 0.20 0.05
+        0.30 0.42 0.22 0.06   0.18 0.42 0.30 0.10
+        0.18 0.38 0.32 0.12   0.10 0.32 0.38 0.20
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>LAIIndicationStrength</FOR>
+      <GIVEN>PreferenceIndication</GIVEN>
+      <GIVEN>AdherenceIndication</GIVEN>
+      <GIVEN>UtilizationIndication</GIVEN>
+      <TABLE>
+        0.97 0.03 0.00 0.00   0.95 0.05 0.00 0.00   0.92 0.07 0.01 0.00   0.90 0.08 0.02 0.00
+        0.95 0.05 0.00 0.00   0.88 0.10 0.02 0.00   0.75 0.20 0.05 0.00   0.65 0.25 0.08 0.02
+        0.92 0.07 0.01 0.00   0.75 0.20 0.05 0.00   0.40 0.45 0.13 0.02   0.18 0.50 0.25 0.07
+        0.90 0.08 0.02 0.00   0.65 0.25 0.08 0.02   0.18 0.50 0.25 0.07   0.02 0.10 0.35 0.53
+        0.95 0.05 0.00 0.00   0.88 0.10 0.02 0.00   0.75 0.20 0.05 0.00   0.65 0.25 0.08 0.02
+        0.88 0.10 0.02 0.00   0.75 0.22 0.03 0.00   0.45 0.45 0.08 0.02   0.25 0.55 0.15 0.05
+        0.75 0.20 0.05 0.00   0.45 0.45 0.08 0.02   0.15 0.55 0.25 0.05   0.08 0.35 0.40 0.17
+        0.65 0.25 0.08 0.02   0.25 0.55 0.15 0.05   0.08 0.35 0.40 0.17   0.02 0.10 0.35 0.53
+        0.92 0.07 0.01 0.00   0.75 0.20 0.05 0.00   0.40 0.45 0.13 0.02   0.18 0.50 0.25 0.07
+        0.75 0.20 0.05 0.00   0.45 0.45 0.08 0.02   0.15 0.55 0.25 0.05   0.08 0.35 0.40 0.17
+        0.40 0.45 0.13 0.02   0.15 0.55 0.25 0.05   0.05 0.25 0.55 0.15   0.02 0.12 0.45 0.41
+        0.18 0.50 0.25 0.07   0.08 0.35 0.40 0.17   0.02 0.12 0.45 0.41   0.01 0.05 0.25 0.69
+        0.90 0.08 0.02 0.00   0.65 0.25 0.08 0.02   0.18 0.50 0.25 0.07   0.02 0.10 0.35 0.53
+        0.65 0.25 0.08 0.02   0.25 0.55 0.15 0.05   0.08 0.35 0.40 0.17   0.02 0.10 0.35 0.53
+        0.18 0.50 0.25 0.07   0.08 0.35 0.40 0.17   0.02 0.12 0.45 0.41   0.01 0.05 0.25 0.69
+        0.02 0.10 0.35 0.53   0.02 0.10 0.35 0.53   0.01 0.05 0.25 0.69   0.00 0.02 0.10 0.88
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>DrugTolerabilityStatus</FOR>
+      <GIVEN>OralFormulationTolerated</GIVEN>
+      <GIVEN>PriorNMS</GIVEN>
+      <TABLE>
+        0.05 0.75 0.20
+        0.90 0.09 0.01
+        0.50 0.45 0.05
+        0.01 0.24 0.75
+        0.05 0.35 0.60
+        0.02 0.28 0.70
+        0.02 0.78 0.20
+        0.35 0.55 0.10
+        0.15 0.70 0.15
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PracticalAcceptability</FOR>
+      <GIVEN>InjectionAcceptability</GIVEN>
+      <GIVEN>LAIFormulationAvailable</GIVEN>
+      <TABLE>
+        0.95 0.04 0.01
+        0.75 0.22 0.03
+        0.02 0.15 0.83
+        0.40 0.55 0.05
+        0.25 0.65 0.10
+        0.01 0.10 0.89
+        0.00 0.05 0.95
+        0.00 0.05 0.95
+        0.00 0.02 0.98
+        0.35 0.55 0.10
+        0.25 0.60 0.15
+        0.01 0.10 0.89
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>LAISafetySuitability</FOR>
+      <GIVEN>DrugTolerabilityStatus</GIVEN>
+      <GIVEN>PracticalAcceptability</GIVEN>
+      <TABLE>
+        0.95 0.04 0.01
+        0.55 0.40 0.05
+        0.02 0.13 0.85
+        0.45 0.50 0.05
+        0.15 0.75 0.10
+        0.01 0.15 0.84
+        0.02 0.18 0.80
+        0.01 0.15 0.84
+        0.00 0.05 0.95
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ImplementationBarriers</FOR>
+      <GIVEN>CostInsuranceBarrier</GIVEN>
+      <GIVEN>TransportScheduleBarrier</GIVEN>
+      <GIVEN>AdministrationFeasibility</GIVEN>
+      <TABLE>
+        0.95 0.04 0.01   0.70 0.28 0.02   0.05 0.25 0.70
+        0.70 0.28 0.02   0.45 0.50 0.05   0.03 0.22 0.75
+        0.20 0.55 0.25   0.08 0.42 0.50   0.01 0.10 0.89
+        0.70 0.28 0.02   0.45 0.50 0.05   0.03 0.22 0.75
+        0.45 0.50 0.05   0.20 0.65 0.15   0.02 0.18 0.80
+        0.08 0.42 0.50   0.03 0.25 0.72   0.01 0.06 0.93
+        0.20 0.55 0.25   0.08 0.42 0.50   0.01 0.10 0.89
+        0.08 0.42 0.50   0.03 0.25 0.72   0.01 0.06 0.93
+        0.02 0.18 0.80   0.01 0.08 0.91   0.00 0.03 0.97
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ExpectedBenefitFromLAI</FOR>
+      <GIVEN>LAIIndicationStrength</GIVEN>
+      <GIVEN>PriorResponseCandidateAntipsychotic</GIVEN>
+      <TABLE>
+        0.80 0.18 0.02
+        0.70 0.27 0.03
+        0.45 0.40 0.15
+        0.65 0.30 0.05
+        0.50 0.45 0.05
+        0.40 0.52 0.08
+        0.20 0.55 0.25
+        0.35 0.55 0.10
+        0.15 0.55 0.30
+        0.10 0.50 0.40
+        0.05 0.35 0.60
+        0.08 0.45 0.47
+        0.03 0.20 0.77
+        0.02 0.18 0.80
+        0.01 0.10 0.89
+        0.02 0.15 0.83
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ExpectedHarmBurdenFromLAI</FOR>
+      <GIVEN>LAISafetySuitability</GIVEN>
+      <GIVEN>ImplementationBarriers</GIVEN>
+      <TABLE>
+        0.03 0.12 0.85
+        0.08 0.42 0.50
+        0.25 0.55 0.20
+        0.15 0.55 0.30
+        0.25 0.60 0.15
+        0.45 0.45 0.10
+        0.80 0.18 0.02
+        0.85 0.14 0.01
+        0.92 0.07 0.01
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>NetClinicalFavorability</FOR>
+      <GIVEN>ExpectedBenefitFromLAI</GIVEN>
+      <GIVEN>ExpectedHarmBurdenFromLAI</GIVEN>
+      <GIVEN>LAISafetySuitability</GIVEN>
+      <TABLE>
+        0.90 0.09 0.01   0.65 0.32 0.03   0.05 0.25 0.70
+        0.70 0.27 0.03   0.45 0.48 0.07   0.03 0.20 0.77
+        0.35 0.50 0.15   0.20 0.55 0.25   0.01 0.12 0.87
+        0.65 0.32 0.03   0.35 0.55 0.10   0.02 0.18 0.80
+        0.45 0.48 0.07   0.20 0.60 0.20   0.01 0.12 0.87
+        0.15 0.55 0.30   0.08 0.45 0.47   0.00 0.08 0.92
+        0.25 0.55 0.20   0.10 0.50 0.40   0.00 0.10 0.90
+        0.12 0.50 0.38   0.05 0.35 0.60   0.00 0.06 0.94
+        0.03 0.22 0.75   0.01 0.15 0.84   0.00 0.03 0.97
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>LAIRecommendation</FOR>
+      <GIVEN>NetClinicalFavorability</GIVEN>
+      <GIVEN>ImplementationBarriers</GIVEN>
+      <GIVEN>LAISafetySuitability</GIVEN>
+      <TABLE>
+        0.80 0.15 0.04 0.01 0.00   0.35 0.35 0.25 0.04 0.01   0.00 0.05 0.05 0.05 0.85
+        0.45 0.25 0.25 0.04 0.01   0.15 0.35 0.40 0.07 0.03   0.00 0.03 0.04 0.08 0.85
+        0.10 0.20 0.60 0.07 0.03   0.03 0.20 0.55 0.15 0.07   0.00 0.02 0.03 0.10 0.85
+        0.20 0.65 0.10 0.05 0.00   0.05 0.55 0.20 0.15 0.05   0.00 0.03 0.05 0.12 0.80
+        0.08 0.55 0.25 0.10 0.02   0.02 0.45 0.30 0.18 0.05   0.00 0.02 0.04 0.14 0.80
+        0.02 0.25 0.45 0.22 0.06   0.01 0.20 0.40 0.30 0.09   0.00 0.01 0.03 0.16 0.80
+        0.02 0.10 0.05 0.80 0.03   0.00 0.08 0.05 0.72 0.15   0.00 0.01 0.02 0.17 0.80
+        0.01 0.08 0.05 0.76 0.10   0.00 0.05 0.05 0.65 0.25   0.00 0.01 0.02 0.17 0.80
+        0.00 0.04 0.08 0.70 0.18   0.00 0.02 0.06 0.60 0.32   0.00 0.00 0.01 0.19 0.80
+      </TABLE>
+    </DEFINITION>
+
+  </NETWORK>
+</BIF>

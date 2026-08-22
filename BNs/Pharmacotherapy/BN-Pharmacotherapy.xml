@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../XSD.xml">
+  <NETWORK>
+    <NAME>apa_statement_4_antipsychotic_selection_bn</NAME>
+    <VARIABLE TYPE="nature">
+      <NAME>schizophrenia_diagnostic_context</NAME>
+      <OUTCOME>schizophrenia_confirmed</OUTCOME>
+      <OUTCOME>diagnosis_not_confirmed</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: Statement 4 applies to patients with schizophrenia; uncertainty requires diagnostic reassessment.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>candidate_specific_hard_contraindication</NAME>
+      <OUTCOME>present</OUTCOME>
+      <OUTCOME>absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: an absolute candidate-specific contraindication excludes that candidate; medication labeling and interaction checks remain required.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>prior_antipsychotic_experience</NAME>
+      <OUTCOME>effective_and_tolerable</OUTCOME>
+      <OUTCOME>ineffective_or_intolerable</OUTCOME>
+      <OUTCOME>no_prior_trial</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: prior symptom response and tolerability should inform selection.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>patient_preference_and_acceptability</NAME>
+      <OUTCOME>accepts_candidate</OUTCOME>
+      <OUTCOME>prefers_alternative</OUTCOME>
+      <OUTCOME>declines_antipsychotic</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: selection should incorporate treatment-related preferences through person-centered discussion.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>side_effect_and_physical_health_fit</NAME>
+      <OUTCOME>favorable</OUTCOME>
+      <OUTCOME>concerning</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: match the candidate side-effect profile to physical health conditions and patient-specific vulnerability.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>interaction_and_pharmacokinetic_fit</NAME>
+      <OUTCOME>favorable</OUTCOME>
+      <OUTCOME>concerning</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: consider drug-drug interactions, receptor/pharmacokinetic characteristics, smoking-related metabolism, and organ function.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>formulation_fit</NAME>
+      <OUTCOME>acceptable_formulation_available</OUTCOME>
+      <OUTCOME>formulation_mismatch</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient state: available formulation should fit swallowing ability, adherence context, acute route needs, and preference.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>antipsychotic_candidate_eligibility</NAME>
+      <OUTCOME>eligible</OUTCOME>
+      <OUTCOME>candidate_contraindicated</OUTCOME>
+      <OUTCOME>diagnostic_review_required</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Intervention eligibility: antipsychotic treatment is recommended for confirmed schizophrenia, while a contraindicated candidate must be excluded.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>individualized_candidate_priority</NAME>
+      <OUTCOME>candidate_high_priority</OUTCOME>
+      <OUTCOME>alternative_candidate_preferred</OUTCOME>
+      <OUTCOME>candidate_requires_caution_or_adjustment</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Intervention priority: integrate prior response/tolerability, side-effect profile, physical health, interactions, and pharmacokinetics; no FGA or SGA class is generally preferred.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>shared_decision_and_formulation_priority</NAME>
+      <OUTCOME>proceed_with_candidate</OUTCOME>
+      <OUTCOME>choose_acceptable_alternative_or_formulation</OUTCOME>
+      <OUTCOME>address_declination_and_reassess</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Intervention priority: integrate patient preference and formulation fit in a person-centered plan.</PROPERTY>
+    </VARIABLE>
+    <VARIABLE TYPE="nature">
+      <NAME>management_recommendation</NAME>
+      <OUTCOME>initiate_individualized_antipsychotic_and_monitor_effectiveness_and_side_effects</OUTCOME>
+      <OUTCOME>select_alternative_antipsychotic_or_formulation_then_initiate_and_monitor</OUTCOME>
+      <OUTCOME>exclude_contraindicated_candidate_and_select_an_eligible_alternative</OUTCOME>
+      <OUTCOME>continue_shared_decision_discussion_and_reassess_if_antipsychotic_declined</OUTCOME>
+      <OUTCOME>defer_selection_and_obtain_missing_or_diagnostic_information</OUTCOME>
+      <PROPERTY>Management recommendation: clinical action pattern derived from APA Statement 4 and its implementation discussion.</PROPERTY>
+    </VARIABLE>
+    <DEFINITION>
+      <FOR>schizophrenia_diagnostic_context</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333334
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>candidate_specific_hard_contraindication</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333334
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>prior_antipsychotic_experience</FOR>
+      <TABLE>
+        0.250000 0.250000 0.250000 0.250000
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>patient_preference_and_acceptability</FOR>
+      <TABLE>
+        0.250000 0.250000 0.250000 0.250000
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>side_effect_and_physical_health_fit</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333334
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>interaction_and_pharmacokinetic_fit</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333334
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>formulation_fit</FOR>
+      <TABLE>
+        0.333333 0.333333 0.333334
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>antipsychotic_candidate_eligibility</FOR>
+      <GIVEN>schizophrenia_diagnostic_context</GIVEN>
+      <GIVEN>candidate_specific_hard_contraindication</GIVEN>
+      <TABLE>
+        0.000000 1.000000 0.000000 0.000000
+        1.000000 0.000000 0.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 1.000000 0.000000
+        0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 1.000000
+        0.000000 0.000000 0.000000 1.000000
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>individualized_candidate_priority</FOR>
+      <GIVEN>prior_antipsychotic_experience</GIVEN>
+      <GIVEN>side_effect_and_physical_health_fit</GIVEN>
+      <GIVEN>interaction_and_pharmacokinetic_fit</GIVEN>
+      <TABLE>
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>shared_decision_and_formulation_priority</FOR>
+      <GIVEN>patient_preference_and_acceptability</GIVEN>
+      <GIVEN>formulation_fit</GIVEN>
+      <TABLE>
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+        0.250000 0.250000 0.250000 0.250000
+      </TABLE>
+    </DEFINITION>
+    <DEFINITION>
+      <FOR>management_recommendation</FOR>
+      <GIVEN>antipsychotic_candidate_eligibility</GIVEN>
+      <GIVEN>individualized_candidate_priority</GIVEN>
+      <GIVEN>shared_decision_and_formulation_priority</GIVEN>
+      <TABLE>
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+        0.200000 0.200000 0.200000 0.200000 0.200000
+      </TABLE>
+    </DEFINITION>
+  </NETWORK>
+</BIF>

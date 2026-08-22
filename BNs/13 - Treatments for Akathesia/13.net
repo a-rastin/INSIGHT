@@ -1,0 +1,126 @@
+net
+{
+     node_size = (0 0);
+     name = "New BN";
+     UnBBayes_Color_Probabilistic_Description = "-256";
+     UnBBayes_Color_Probabilistic_Explanation = "-16711936";
+}
+
+node Alcohol
+{
+     label = "C1";
+     position = (77 37);
+     states = ("Yes" "No");
+}
+
+node Sleep_Apnea
+{
+     label = "C2";
+     position = (183 42);
+     states = ("Yes" "No");
+}
+
+node Opioid
+{
+     label = "C3";
+     position = (365 20);
+     states = ("Yes" "No");
+}
+
+node Age
+{
+     label = "C4";
+     position = (512 45);
+     states = ("Above65" "Under65");
+}
+
+node Low_BP
+{
+     label = "C5";
+     position = (9 152);
+     states = ("Yes" "No");
+}
+
+node BNZ_Option
+{
+     label = "C6";
+     position = (272 144);
+     states = ("Yes" "No");
+}
+
+node High_Risk_Antipsychotic
+{
+     label = "C7";
+     position = (414 153);
+     states = ("Yes" "No");
+}
+
+node Interventions
+{
+     label = "C8";
+     position = (259 252);
+     states = ("Dose_Reduction" "Drug_change" "BNZ" "BB" "Mirtazapin");
+}
+
+potential (Alcohol)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Sleep_Apnea)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Opioid)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Age)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Low_BP)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (BNZ_Option | Alcohol Sleep_Apnea Opioid Age)
+{
+ data = ((((( 0.0 1.0 )
+( 0.0 1.0 ))
+(( 0.0 1.0 )
+( 0.0 1.0 )))
+((( 0.0 1.0 )
+( 0.0 1.0 ))
+(( 0.0 1.0 )
+( 0.0 1.0 ))))
+(((( 0.0 1.0 )
+( 0.0 1.0 ))
+(( 0.0 1.0 )
+( 0.0 1.0 )))
+((( 0.0 1.0 )
+( 0.0 1.0 ))
+(( 0.0 1.0 )
+( 1.0 0.0 )))));
+}
+
+potential (High_Risk_Antipsychotic)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Interventions | BNZ_Option Low_BP High_Risk_Antipsychotic)
+{
+ data = (((( 0.3 0.5 0.1 0.0 0.1 )
+( 0.65 0.2 0.1 0.0 0.05 ))
+(( 0.3 0.6 0.0 0.0 0.1 )
+( 0.8 0.1 0.0 0.0 0.1 )))
+((( 0.3 0.5 0.1 0.05 0.05 )
+( 0.6 0.2 0.1 0.05 0.05 ))
+(( 0.3 0.5 0.0 0.05 0.15 )
+( 0.6 0.2 0.0 0.05 0.15 ))));
+}
+

@@ -1,0 +1,229 @@
+net
+{
+    name = "schizophrenia_maintenance_antipsychotic_bn";
+}
+
+node diagnosis_context
+{
+    states = ("clear_chronic_schizophrenia" "brief_or_uncertain_psychosis" "unknown");
+}
+
+node symptom_response_to_antipsychotic
+{
+    states = ("improved" "not_improved" "unknown");
+}
+
+node serious_or_emergent_medication_harm
+{
+    states = ("present" "absent" "unknown");
+}
+
+node significant_side_effect_burden
+{
+    states = ("present" "absent" "unknown");
+}
+
+node adherence_concern
+{
+    states = ("poor_or_uncertain" "adequate" "unknown");
+}
+
+node formulation_barrier_or_lai_preference
+{
+    states = ("present" "absent" "unknown");
+}
+
+node pharmacokinetic_dose_change_factor
+{
+    states = ("present" "absent" "unknown");
+}
+
+node dose_reduction_goal_or_request
+{
+    states = ("present" "absent" "unknown");
+}
+
+node maintenance_antipsychotic_eligibility
+{
+    states = ("continue_indicated" "consider_discontinuation_after_review" "emergent_stop_required" "insufficient_information");
+}
+
+node adherence_strategy_priority
+{
+    states = ("lai_or_alternative_formulation_high" "routine_adherence_support" "insufficient_information");
+}
+
+node medication_adjustment_priority
+{
+    states = ("urgent_discontinue_or_switch" "adjust_or_switch_for_tolerability_or_pk" "maintain_lowest_effective_dose" "gradual_reduction_with_close_monitoring" "insufficient_information");
+}
+
+node management_recommendation
+{
+    states = (
+        "continue_antipsychotic_lowest_effective_dose_with_monitoring"
+        "continue_antipsychotic_with_adherence_or_lai_strategy"
+        "adjust_dose_or_change_antipsychotic_with_monitoring"
+        "planned_gradual_dose_reduction_with_close_monitoring"
+        "consider_no_continuing_antipsychotic_after_diagnostic_review"
+        "emergent_discontinue_or_urgent_medication_change"
+        "insufficient_information_reassess"
+    );
+}
+
+potential (diagnosis_context)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (symptom_response_to_antipsychotic)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (serious_or_emergent_medication_harm)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (significant_side_effect_burden)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (adherence_concern)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (formulation_barrier_or_lai_preference)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (pharmacokinetic_dose_change_factor)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (dose_reduction_goal_or_request)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (maintenance_antipsychotic_eligibility | diagnosis_context symptom_response_to_antipsychotic serious_or_emergent_medication_harm)
+{
+    // Qualitative placeholder CPT.
+    // Hard gate: serious_or_emergent_medication_harm=present should map to emergent_stop_required.
+    // Source-favored path: clear_chronic_schizophrenia + improved + absent harm should favor continue_indicated.
+    data = (
+        (((0.000000 0.000000 1.000000 0.000000) (0.900000 0.030000 0.020000 0.050000) (0.150000 0.050000 0.050000 0.750000))
+         ((0.000000 0.000000 1.000000 0.000000) (0.250000 0.100000 0.050000 0.600000) (0.100000 0.050000 0.050000 0.800000))
+         ((0.000000 0.000000 1.000000 0.000000) (0.200000 0.050000 0.050000 0.700000) (0.100000 0.050000 0.050000 0.800000)))
+        (((0.000000 0.000000 1.000000 0.000000) (0.300000 0.550000 0.020000 0.130000) (0.100000 0.300000 0.050000 0.550000))
+         ((0.000000 0.000000 1.000000 0.000000) (0.100000 0.300000 0.050000 0.550000) (0.050000 0.200000 0.050000 0.700000))
+         ((0.000000 0.000000 1.000000 0.000000) (0.100000 0.250000 0.050000 0.600000) (0.050000 0.150000 0.050000 0.750000)))
+        (((0.000000 0.000000 1.000000 0.000000) (0.200000 0.050000 0.050000 0.700000) (0.100000 0.050000 0.050000 0.800000))
+         ((0.000000 0.000000 1.000000 0.000000) (0.100000 0.050000 0.050000 0.800000) (0.050000 0.050000 0.050000 0.850000))
+         ((0.000000 0.000000 1.000000 0.000000) (0.100000 0.050000 0.050000 0.800000) (0.050000 0.050000 0.050000 0.850000)))
+    );
+}
+
+potential (adherence_strategy_priority | adherence_concern formulation_barrier_or_lai_preference)
+{
+    // Parent order: adherence_concern, formulation_barrier_or_lai_preference.
+    data = (
+        ((0.850000 0.100000 0.050000) (0.750000 0.200000 0.050000) (0.500000 0.100000 0.400000))
+        ((0.650000 0.300000 0.050000) (0.050000 0.900000 0.050000) (0.100000 0.500000 0.400000))
+        ((0.500000 0.100000 0.400000) (0.100000 0.500000 0.400000) (0.100000 0.100000 0.800000))
+    );
+}
+
+potential (medication_adjustment_priority | serious_or_emergent_medication_harm significant_side_effect_burden pharmacokinetic_dose_change_factor dose_reduction_goal_or_request)
+{
+    // Qualitative placeholder CPT compressed as repeated defaults.
+    // Any serious_or_emergent_medication_harm=present should favor urgent_discontinue_or_switch.
+    // Otherwise side effects or pharmacokinetic factors favor adjust_or_switch_for_tolerability_or_pk.
+    // A dose reduction goal favors gradual_reduction_with_close_monitoring only when emergent harm is absent.
+    data = (
+        ((((0.950000 0.020000 0.010000 0.010000 0.010000) (0.950000 0.020000 0.010000 0.010000 0.010000) (0.950000 0.020000 0.010000 0.010000 0.010000))
+          ((0.950000 0.020000 0.010000 0.010000 0.010000) (0.950000 0.020000 0.010000 0.010000 0.010000) (0.950000 0.020000 0.010000 0.010000 0.010000))
+          ((0.950000 0.020000 0.010000 0.010000 0.010000) (0.950000 0.020000 0.010000 0.010000 0.010000) (0.950000 0.020000 0.010000 0.010000 0.010000)))
+         (((0.020000 0.750000 0.100000 0.100000 0.030000) (0.020000 0.800000 0.080000 0.070000 0.030000) (0.020000 0.500000 0.080000 0.100000 0.300000))
+          ((0.020000 0.650000 0.150000 0.150000 0.030000) (0.010000 0.200000 0.700000 0.060000 0.030000) (0.010000 0.150000 0.400000 0.050000 0.390000))
+          ((0.020000 0.400000 0.100000 0.100000 0.380000) (0.010000 0.150000 0.400000 0.050000 0.390000) (0.010000 0.100000 0.200000 0.050000 0.640000)))
+         (((0.250000 0.150000 0.050000 0.050000 0.500000) (0.250000 0.150000 0.050000 0.050000 0.500000) (0.250000 0.150000 0.050000 0.050000 0.500000))
+          ((0.250000 0.150000 0.050000 0.050000 0.500000) (0.200000 0.100000 0.200000 0.050000 0.450000) (0.200000 0.100000 0.100000 0.050000 0.550000))
+          ((0.250000 0.100000 0.050000 0.050000 0.550000) (0.200000 0.100000 0.100000 0.050000 0.550000) (0.100000 0.100000 0.100000 0.050000 0.650000))))
+    );
+}
+
+potential (management_recommendation | maintenance_antipsychotic_eligibility adherence_strategy_priority medication_adjustment_priority)
+{
+    // Qualitative placeholder CPT.
+    // Hard gate priority: emergent_stop_required or urgent_discontinue_or_switch should favor emergent_discontinue_or_urgent_medication_change.
+    // High adherence priority shifts continuation toward adherence/LAI strategy.
+    // Adjustment priority shifts continuation toward dose or medication adjustment.
+    data = (
+        (((0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.100000 0.100000 0.650000 0.050000 0.020000 0.030000 0.050000)
+          (0.200000 0.700000 0.030000 0.020000 0.010000 0.010000 0.030000)
+          (0.150000 0.150000 0.050000 0.550000 0.030000 0.020000 0.050000)
+          (0.150000 0.100000 0.100000 0.050000 0.050000 0.050000 0.500000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.150000 0.050000 0.650000 0.050000 0.020000 0.030000 0.050000)
+          (0.800000 0.050000 0.030000 0.020000 0.010000 0.010000 0.080000)
+          (0.250000 0.050000 0.050000 0.550000 0.030000 0.020000 0.050000)
+          (0.150000 0.050000 0.100000 0.050000 0.050000 0.050000 0.550000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.650000 0.100000)
+          (0.100000 0.100000 0.400000 0.050000 0.020000 0.030000 0.300000)
+          (0.300000 0.200000 0.030000 0.020000 0.010000 0.010000 0.430000)
+          (0.150000 0.100000 0.050000 0.300000 0.030000 0.020000 0.350000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000)))
+        (((0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.150000 0.100000 0.550000 0.020000 0.080000)
+          (0.050000 0.100000 0.050000 0.100000 0.600000 0.010000 0.090000)
+          (0.020000 0.050000 0.050000 0.250000 0.550000 0.010000 0.070000)
+          (0.050000 0.050000 0.050000 0.050000 0.300000 0.050000 0.450000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.030000 0.150000 0.100000 0.550000 0.020000 0.100000)
+          (0.100000 0.030000 0.050000 0.100000 0.600000 0.010000 0.110000)
+          (0.050000 0.030000 0.050000 0.250000 0.550000 0.010000 0.060000)
+          (0.050000 0.030000 0.050000 0.050000 0.300000 0.050000 0.470000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.650000 0.100000)
+          (0.050000 0.050000 0.100000 0.050000 0.300000 0.050000 0.400000)
+          (0.100000 0.050000 0.050000 0.050000 0.300000 0.050000 0.400000)
+          (0.050000 0.050000 0.050000 0.150000 0.300000 0.050000 0.350000)
+          (0.050000 0.050000 0.050000 0.050000 0.150000 0.050000 0.600000)))
+        (((0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.500000 0.250000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.700000 0.050000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.500000 0.250000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.600000 0.150000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.500000 0.250000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.500000 0.250000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.500000 0.250000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.300000 0.450000)))
+        (((0.050000 0.050000 0.050000 0.050000 0.050000 0.600000 0.150000)
+          (0.050000 0.050000 0.100000 0.050000 0.050000 0.050000 0.650000)
+          (0.100000 0.100000 0.050000 0.050000 0.050000 0.050000 0.600000)
+          (0.050000 0.050000 0.050000 0.100000 0.050000 0.050000 0.650000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.600000 0.150000)
+          (0.050000 0.050000 0.100000 0.050000 0.050000 0.050000 0.650000)
+          (0.100000 0.050000 0.050000 0.050000 0.050000 0.050000 0.650000)
+          (0.050000 0.050000 0.050000 0.100000 0.050000 0.050000 0.650000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000))
+         ((0.050000 0.050000 0.050000 0.050000 0.050000 0.500000 0.250000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000)
+          (0.050000 0.050000 0.050000 0.050000 0.050000 0.050000 0.700000)))
+    );
+}

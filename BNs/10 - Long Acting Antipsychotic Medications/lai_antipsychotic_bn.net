@@ -1,0 +1,644 @@
+net
+{
+  name = "LAI_Antipsychotic_CDS_BN";
+  node_size = (120 45);
+}
+
+node DiagnosisStatus
+{
+  label = "Schizophrenia or schizoaffective diagnosis";
+  states = ("present" "absent" "uncertain");
+}
+
+node AntipsychoticIndicated
+{
+  label = "Ongoing antipsychotic treatment indicated";
+  states = ("yes" "no" "uncertain");
+}
+
+node PatientPrefersLAI
+{
+  label = "Patient preference for long-acting injectable antipsychotic";
+  states = ("yes" "no" "unknown");
+}
+
+node PriorPositiveLAIExperience
+{
+  label = "Prior positive experience with LAI antipsychotic";
+  states = ("yes" "no" "none_or_unknown");
+}
+
+node OralAdherence
+{
+  label = "Current adherence to oral antipsychotic treatment";
+  states = ("good" "poor" "uncertain");
+}
+
+node LimitedIllnessInsight
+{
+  label = "Limited awareness of need for treatment";
+  states = ("yes" "no" "unknown");
+}
+
+node SubstanceUseDisorder
+{
+  label = "Co-occurring substance use disorder";
+  states = ("yes" "no" "unknown");
+}
+
+node CareTransition
+{
+  label = "Transition between care settings or release from supervised setting";
+  states = ("yes" "no");
+}
+
+node RepeatedHospitalOrED
+{
+  label = "Repeated psychiatric hospitalization or emergency visits";
+  states = ("yes" "no");
+}
+
+node PoorOralResponse
+{
+  label = "Poor or partial response to oral antipsychotic";
+  states = ("yes" "no" "unclear");
+}
+
+node SuspectedUnrecognizedNonadherence
+{
+  label = "Suspected unrecognized nonadherence despite prescribed oral treatment";
+  states = ("likely" "possible" "unlikely");
+}
+
+node AdherenceRisk
+{
+  label = "Prospective risk of poor adherence";
+  states = ("high" "moderate" "low");
+}
+
+node PreferenceIndication
+{
+  label = "LAI indication strength from patient preference";
+  states = ("strong" "moderate" "weak" "none");
+}
+
+node AdherenceIndication
+{
+  label = "LAI indication strength from adherence history and risk";
+  states = ("strong" "moderate" "weak" "none");
+}
+
+node UtilizationIndication
+{
+  label = "LAI indication strength from utilization, transition, or hidden nonadherence";
+  states = ("strong" "moderate" "weak" "none");
+}
+
+node LAIIndicationStrength
+{
+  label = "Overall clinical indication strength for LAI antipsychotic";
+  states = ("strong" "moderate" "weak" "none");
+}
+
+node OralFormulationTolerated
+{
+  label = "Oral formulation of candidate antipsychotic tolerated";
+  states = ("yes" "no" "not_tried");
+}
+
+node PriorResponseCandidateAntipsychotic
+{
+  label = "Prior therapeutic response to candidate antipsychotic";
+  states = ("good" "partial" "poor" "unknown");
+}
+
+node PriorNMS
+{
+  label = "Prior neuroleptic malignant syndrome";
+  states = ("yes" "no" "unknown");
+}
+
+node InjectionAcceptability
+{
+  label = "Acceptability of receiving injections";
+  states = ("accepts" "reluctant" "refuses" "unknown");
+}
+
+node LAIFormulationAvailable
+{
+  label = "LAI formulation availability for current or candidate medication";
+  states = ("yes_same_drug" "yes_switch_needed" "no");
+}
+
+node DrugTolerabilityStatus
+{
+  label = "Medication tolerability status for LAI use";
+  states = ("suitable" "caution" "unsuitable");
+}
+
+node PracticalAcceptability
+{
+  label = "Practical acceptability of LAI route and formulation";
+  states = ("suitable" "caution" "unsuitable");
+}
+
+node LAISafetySuitability
+{
+  label = "Overall LAI safety and suitability";
+  states = ("suitable" "caution" "unsuitable");
+}
+
+node CostInsuranceBarrier
+{
+  label = "Cost or insurance authorization barrier";
+  states = ("none" "manageable" "major");
+}
+
+node TransportScheduleBarrier
+{
+  label = "Transport, schedule, childcare, school, or work barrier";
+  states = ("none" "manageable" "major");
+}
+
+node AdministrationFeasibility
+{
+  label = "Clinic or partner capacity to administer LAI safely";
+  states = ("feasible" "feasible_with_support" "not_feasible");
+}
+
+node ImplementationBarriers
+{
+  label = "Overall implementation barriers";
+  states = ("low" "moderate" "high");
+}
+
+node ExpectedBenefitFromLAI
+{
+  label = "Expected clinical benefit from LAI treatment";
+  states = ("high" "moderate" "low");
+}
+
+node ExpectedHarmBurdenFromLAI
+{
+  label = "Expected harm or burden from LAI treatment";
+  states = ("high" "moderate" "low");
+}
+
+node NetClinicalFavorability
+{
+  label = "Net clinical favorability of LAI treatment";
+  states = ("favorable" "conditional" "unfavorable");
+}
+
+node LAIRecommendation
+{
+  label = "CDS recommendation for long-acting injectable antipsychotic";
+  states = ("recommend_lai" "offer_shared_decision" "consider_with_barrier_mitigation" "defer_lai" "avoid_or_specialist_review");
+}
+
+potential (DiagnosisStatus)
+{
+  data = (0.70 0.05 0.25);
+}
+
+potential (PatientPrefersLAI | PriorPositiveLAIExperience)
+{
+  data =
+    ((0.70 0.15 0.15)
+     (0.15 0.65 0.20)
+     (0.25 0.25 0.50));
+}
+
+potential (PriorPositiveLAIExperience)
+{
+  data = (0.15 0.20 0.65);
+}
+
+potential (OralAdherence)
+{
+  data = (0.45 0.25 0.30);
+}
+
+potential (LimitedIllnessInsight)
+{
+  data = (0.30 0.45 0.25);
+}
+
+potential (SubstanceUseDisorder)
+{
+  data = (0.25 0.55 0.20);
+}
+
+potential (CareTransition)
+{
+  data = (0.25 0.75);
+}
+
+potential (RepeatedHospitalOrED)
+{
+  data = (0.30 0.70);
+}
+
+potential (PoorOralResponse)
+{
+  data = (0.25 0.50 0.25);
+}
+
+potential (AntipsychoticIndicated | DiagnosisStatus)
+{
+  data =
+    ((0.95 0.02 0.03)
+     (0.05 0.85 0.10)
+     (0.40 0.20 0.40));
+}
+
+potential (SuspectedUnrecognizedNonadherence | OralAdherence PoorOralResponse)
+{
+  data =
+    (((0.10 0.30 0.60)
+      (0.03 0.12 0.85)
+      (0.05 0.25 0.70))
+     ((0.85 0.12 0.03)
+      (0.60 0.30 0.10)
+      (0.70 0.25 0.05))
+     ((0.45 0.45 0.10)
+      (0.20 0.55 0.25)
+      (0.30 0.55 0.15)));
+}
+
+potential (AdherenceRisk | LimitedIllnessInsight SubstanceUseDisorder CareTransition)
+{
+  data =
+    ((((0.80 0.18 0.02)
+       (0.70 0.25 0.05))
+      ((0.70 0.25 0.05)
+       (0.45 0.40 0.15))
+      ((0.60 0.32 0.08)
+       (0.40 0.45 0.15)))
+     (((0.65 0.28 0.07)
+       (0.35 0.45 0.20))
+      ((0.35 0.45 0.20)
+       (0.10 0.30 0.60))
+      ((0.40 0.45 0.15)
+       (0.15 0.45 0.40)))
+     (((0.65 0.28 0.07)
+       (0.45 0.40 0.15))
+      ((0.45 0.40 0.15)
+       (0.15 0.45 0.40))
+      ((0.45 0.45 0.10)
+       (0.20 0.50 0.30))));
+}
+
+potential (PreferenceIndication | AntipsychoticIndicated PatientPrefersLAI)
+{
+  data =
+    (((0.85 0.12 0.03 0.00)
+      (0.00 0.10 0.35 0.55)
+      (0.10 0.45 0.35 0.10))
+     ((0.00 0.02 0.08 0.90)
+      (0.00 0.01 0.04 0.95)
+      (0.00 0.02 0.08 0.90))
+     ((0.15 0.40 0.30 0.15)
+      (0.00 0.05 0.25 0.70)
+      (0.03 0.22 0.45 0.30)));
+}
+
+potential (AdherenceIndication | AntipsychoticIndicated OralAdherence AdherenceRisk)
+{
+  data =
+    ((((0.45 0.35 0.15 0.05)
+       (0.20 0.45 0.25 0.10)
+       (0.05 0.25 0.45 0.25))
+      ((0.90 0.08 0.02 0.00)
+       (0.80 0.15 0.04 0.01)
+       (0.70 0.22 0.06 0.02))
+      ((0.75 0.20 0.04 0.01)
+       (0.60 0.30 0.08 0.02)
+       (0.35 0.45 0.15 0.05)))
+     (((0.00 0.02 0.08 0.90)
+       (0.00 0.02 0.08 0.90)
+       (0.00 0.01 0.04 0.95))
+      ((0.02 0.08 0.20 0.70)
+       (0.01 0.06 0.18 0.75)
+       (0.01 0.04 0.15 0.80))
+      ((0.01 0.06 0.18 0.75)
+       (0.01 0.05 0.16 0.78)
+       (0.00 0.03 0.12 0.85)))
+     (((0.20 0.35 0.30 0.15)
+       (0.10 0.30 0.40 0.20)
+       (0.03 0.18 0.45 0.34))
+      ((0.45 0.35 0.15 0.05)
+       (0.35 0.40 0.20 0.05)
+       (0.25 0.42 0.25 0.08))
+      ((0.35 0.40 0.20 0.05)
+       (0.25 0.45 0.22 0.08)
+       (0.15 0.40 0.30 0.15))));
+}
+
+potential (UtilizationIndication | AntipsychoticIndicated RepeatedHospitalOrED SuspectedUnrecognizedNonadherence CareTransition)
+{
+  data =
+    ((((0.88 0.10 0.02 0.00)
+       (0.70 0.22 0.06 0.02))
+      ((0.65 0.25 0.08 0.02)
+       (0.45 0.40 0.12 0.03))
+      ((0.40 0.40 0.15 0.05)
+       (0.25 0.45 0.22 0.08)))
+     (((0.10 0.25 0.35 0.30)
+       (0.05 0.20 0.40 0.35))
+      ((0.06 0.20 0.38 0.36)
+       (0.03 0.16 0.38 0.43))
+      ((0.03 0.12 0.30 0.55)
+       (0.01 0.08 0.26 0.65)))
+     (((0.45 0.35 0.15 0.05)
+       (0.30 0.45 0.20 0.05))
+      ((0.30 0.42 0.22 0.06)
+       (0.18 0.42 0.30 0.10))
+      ((0.18 0.38 0.32 0.12)
+       (0.10 0.32 0.38 0.20))));
+}
+
+potential (LAIIndicationStrength | PreferenceIndication AdherenceIndication UtilizationIndication)
+{
+  data =
+    (((0.97 0.03 0.00 0.00)
+      (0.95 0.05 0.00 0.00)
+      (0.92 0.07 0.01 0.00)
+      (0.90 0.08 0.02 0.00))
+     ((0.95 0.05 0.00 0.00)
+      (0.88 0.10 0.02 0.00)
+      (0.75 0.20 0.05 0.00)
+      (0.65 0.25 0.08 0.02))
+     ((0.92 0.07 0.01 0.00)
+      (0.75 0.20 0.05 0.00)
+      (0.40 0.45 0.13 0.02)
+      (0.18 0.50 0.25 0.07))
+     ((0.90 0.08 0.02 0.00)
+      (0.65 0.25 0.08 0.02)
+      (0.18 0.50 0.25 0.07)
+      (0.02 0.10 0.35 0.53))
+     ((0.95 0.05 0.00 0.00)
+      (0.88 0.10 0.02 0.00)
+      (0.75 0.20 0.05 0.00)
+      (0.65 0.25 0.08 0.02))
+     ((0.88 0.10 0.02 0.00)
+      (0.75 0.22 0.03 0.00)
+      (0.45 0.45 0.08 0.02)
+      (0.25 0.55 0.15 0.05))
+     ((0.75 0.20 0.05 0.00)
+      (0.45 0.45 0.08 0.02)
+      (0.15 0.55 0.25 0.05)
+      (0.08 0.35 0.40 0.17))
+     ((0.65 0.25 0.08 0.02)
+      (0.25 0.55 0.15 0.05)
+      (0.08 0.35 0.40 0.17)
+      (0.02 0.10 0.35 0.53))
+     ((0.92 0.07 0.01 0.00)
+      (0.75 0.20 0.05 0.00)
+      (0.40 0.45 0.13 0.02)
+      (0.18 0.50 0.25 0.07))
+     ((0.75 0.20 0.05 0.00)
+      (0.45 0.45 0.08 0.02)
+      (0.15 0.55 0.25 0.05)
+      (0.08 0.35 0.40 0.17))
+     ((0.40 0.45 0.13 0.02)
+      (0.15 0.55 0.25 0.05)
+      (0.05 0.25 0.55 0.15)
+      (0.02 0.12 0.45 0.41))
+     ((0.18 0.50 0.25 0.07)
+      (0.08 0.35 0.40 0.17)
+      (0.02 0.12 0.45 0.41)
+      (0.01 0.05 0.25 0.69))
+     ((0.90 0.08 0.02 0.00)
+      (0.65 0.25 0.08 0.02)
+      (0.18 0.50 0.25 0.07)
+      (0.02 0.10 0.35 0.53))
+     ((0.65 0.25 0.08 0.02)
+      (0.25 0.55 0.15 0.05)
+      (0.08 0.35 0.40 0.17)
+      (0.02 0.10 0.35 0.53))
+     ((0.18 0.50 0.25 0.07)
+      (0.08 0.35 0.40 0.17)
+      (0.02 0.12 0.45 0.41)
+      (0.01 0.05 0.25 0.69))
+     ((0.02 0.10 0.35 0.53)
+      (0.02 0.10 0.35 0.53)
+      (0.01 0.05 0.25 0.69)
+      (0.00 0.02 0.10 0.88)));
+}
+
+potential (OralFormulationTolerated)
+{
+  data = (0.65 0.15 0.20);
+}
+
+potential (PriorResponseCandidateAntipsychotic)
+{
+  data = (0.35 0.30 0.15 0.20);
+}
+
+potential (PriorNMS)
+{
+  data = (0.02 0.90 0.08);
+}
+
+potential (InjectionAcceptability)
+{
+  data = (0.45 0.25 0.10 0.20);
+}
+
+potential (LAIFormulationAvailable)
+{
+  data = (0.55 0.35 0.10);
+}
+
+potential (DrugTolerabilityStatus | OralFormulationTolerated PriorNMS)
+{
+  data =
+    (((0.05 0.75 0.20)
+      (0.90 0.09 0.01)
+      (0.50 0.45 0.05))
+     ((0.01 0.24 0.75)
+      (0.05 0.35 0.60)
+      (0.02 0.28 0.70))
+     ((0.02 0.78 0.20)
+      (0.35 0.55 0.10)
+      (0.15 0.70 0.15)));
+}
+
+potential (PracticalAcceptability | InjectionAcceptability LAIFormulationAvailable)
+{
+  data =
+    (((0.95 0.04 0.01)
+      (0.75 0.22 0.03)
+      (0.02 0.15 0.83))
+     ((0.40 0.55 0.05)
+      (0.25 0.65 0.10)
+      (0.01 0.10 0.89))
+     ((0.00 0.05 0.95)
+      (0.00 0.05 0.95)
+      (0.00 0.02 0.98))
+     ((0.35 0.55 0.10)
+      (0.25 0.60 0.15)
+      (0.01 0.10 0.89)));
+}
+
+potential (LAISafetySuitability | DrugTolerabilityStatus PracticalAcceptability)
+{
+  data =
+    (((0.95 0.04 0.01)
+      (0.55 0.40 0.05)
+      (0.02 0.13 0.85))
+     ((0.45 0.50 0.05)
+      (0.15 0.75 0.10)
+      (0.01 0.15 0.84))
+     ((0.02 0.18 0.80)
+      (0.01 0.15 0.84)
+      (0.00 0.05 0.95)));
+}
+
+potential (CostInsuranceBarrier)
+{
+  data = (0.45 0.35 0.20);
+}
+
+potential (TransportScheduleBarrier)
+{
+  data = (0.45 0.35 0.20);
+}
+
+potential (AdministrationFeasibility)
+{
+  data = (0.60 0.30 0.10);
+}
+
+potential (ImplementationBarriers | CostInsuranceBarrier TransportScheduleBarrier AdministrationFeasibility)
+{
+  data =
+    ((((0.95 0.04 0.01)
+       (0.70 0.28 0.02)
+       (0.05 0.25 0.70))
+      ((0.70 0.28 0.02)
+       (0.45 0.50 0.05)
+       (0.03 0.22 0.75))
+      ((0.20 0.55 0.25)
+       (0.08 0.42 0.50)
+       (0.01 0.10 0.89)))
+     (((0.70 0.28 0.02)
+       (0.45 0.50 0.05)
+       (0.03 0.22 0.75))
+      ((0.45 0.50 0.05)
+       (0.20 0.65 0.15)
+       (0.02 0.18 0.80))
+      ((0.08 0.42 0.50)
+       (0.03 0.25 0.72)
+       (0.01 0.06 0.93)))
+     (((0.20 0.55 0.25)
+       (0.08 0.42 0.50)
+       (0.01 0.10 0.89))
+      ((0.08 0.42 0.50)
+       (0.03 0.25 0.72)
+       (0.01 0.06 0.93))
+      ((0.02 0.18 0.80)
+       (0.01 0.08 0.91)
+       (0.00 0.03 0.97))));
+}
+
+potential (ExpectedBenefitFromLAI | LAIIndicationStrength PriorResponseCandidateAntipsychotic)
+{
+  data =
+    (((0.80 0.18 0.02)
+      (0.70 0.27 0.03)
+      (0.45 0.40 0.15)
+      (0.65 0.30 0.05))
+     ((0.50 0.45 0.05)
+      (0.40 0.52 0.08)
+      (0.20 0.55 0.25)
+      (0.35 0.55 0.10))
+     ((0.15 0.55 0.30)
+      (0.10 0.50 0.40)
+      (0.05 0.35 0.60)
+      (0.08 0.45 0.47))
+     ((0.03 0.20 0.77)
+      (0.02 0.18 0.80)
+      (0.01 0.10 0.89)
+      (0.02 0.15 0.83)));
+}
+
+potential (ExpectedHarmBurdenFromLAI | LAISafetySuitability ImplementationBarriers)
+{
+  data =
+    (((0.03 0.12 0.85)
+      (0.08 0.42 0.50)
+      (0.25 0.55 0.20))
+     ((0.15 0.55 0.30)
+      (0.25 0.60 0.15)
+      (0.45 0.45 0.10))
+     ((0.80 0.18 0.02)
+      (0.85 0.14 0.01)
+      (0.92 0.07 0.01)));
+}
+
+potential (NetClinicalFavorability | ExpectedBenefitFromLAI ExpectedHarmBurdenFromLAI LAISafetySuitability)
+{
+  data =
+    ((((0.90 0.09 0.01)
+       (0.65 0.32 0.03)
+       (0.05 0.25 0.70))
+      ((0.70 0.27 0.03)
+       (0.45 0.48 0.07)
+       (0.03 0.20 0.77))
+      ((0.35 0.50 0.15)
+       (0.20 0.55 0.25)
+       (0.01 0.12 0.87)))
+     (((0.65 0.32 0.03)
+       (0.35 0.55 0.10)
+       (0.02 0.18 0.80))
+      ((0.45 0.48 0.07)
+       (0.20 0.60 0.20)
+       (0.01 0.12 0.87))
+      ((0.15 0.55 0.30)
+       (0.08 0.45 0.47)
+       (0.00 0.08 0.92)))
+     (((0.25 0.55 0.20)
+       (0.10 0.50 0.40)
+       (0.00 0.10 0.90))
+      ((0.12 0.50 0.38)
+       (0.05 0.35 0.60)
+       (0.00 0.06 0.94))
+      ((0.03 0.22 0.75)
+       (0.01 0.15 0.84)
+       (0.00 0.03 0.97))));
+}
+
+potential (LAIRecommendation | NetClinicalFavorability ImplementationBarriers LAISafetySuitability)
+{
+  data =
+    ((((0.80 0.15 0.04 0.01 0.00)
+       (0.35 0.35 0.25 0.04 0.01)
+       (0.00 0.05 0.05 0.05 0.85))
+      ((0.45 0.25 0.25 0.04 0.01)
+       (0.15 0.35 0.40 0.07 0.03)
+       (0.00 0.03 0.04 0.08 0.85))
+      ((0.10 0.20 0.60 0.07 0.03)
+       (0.03 0.20 0.55 0.15 0.07)
+       (0.00 0.02 0.03 0.10 0.85)))
+     (((0.20 0.65 0.10 0.05 0.00)
+       (0.05 0.55 0.20 0.15 0.05)
+       (0.00 0.03 0.05 0.12 0.80))
+      ((0.08 0.55 0.25 0.10 0.02)
+       (0.02 0.45 0.30 0.18 0.05)
+       (0.00 0.02 0.04 0.14 0.80))
+      ((0.02 0.25 0.45 0.22 0.06)
+       (0.01 0.20 0.40 0.30 0.09)
+       (0.00 0.01 0.03 0.16 0.80)))
+     (((0.02 0.10 0.05 0.80 0.03)
+       (0.00 0.08 0.05 0.72 0.15)
+       (0.00 0.01 0.02 0.17 0.80))
+      ((0.01 0.08 0.05 0.76 0.10)
+       (0.00 0.05 0.05 0.65 0.25)
+       (0.00 0.01 0.02 0.17 0.80))
+      ((0.00 0.04 0.08 0.70 0.18)
+       (0.00 0.02 0.06 0.60 0.32)
+       (0.00 0.00 0.01 0.19 0.80))));
+}

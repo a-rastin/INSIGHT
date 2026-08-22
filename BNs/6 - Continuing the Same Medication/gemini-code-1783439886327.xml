@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3">
+  <NETWORK>
+    <NAME>Antipsychotic_Continuation_BN</NAME>
+    
+    <VARIABLE TYPE="nature">
+      <NAME>Symptom_Response</NAME>
+      <OUTCOME>Improved</OUTCOME>
+      <OUTCOME>Residual_Symptoms</OUTCOME>
+      <OUTCOME>Unknown</OUTCOME>
+      <PROPERTY>Efficacy of the current antipsychotic medication[cite: 1]</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Medication_Tolerability</NAME>
+      <OUTCOME>Tolerable</OUTCOME>
+      <OUTCOME>Significant_Side_Effects</OUTCOME>
+      <OUTCOME>Unknown</OUTCOME>
+      <PROPERTY>Presence of metabolic syndrome, weight gain, or other severe side effects[cite: 1]</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Alternative_Treatment_Preference</NAME>
+      <OUTCOME>Prefers_Alternative</OUTCOME>
+      <OUTCOME>No_Alternative_Preference</OUTCOME>
+      <OUTCOME>Unknown</OUTCOME>
+      <PROPERTY>Patient preference or logistical need for LAI formulation[cite: 1]</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>Management_Recommendation</NAME>
+      <OUTCOME>Continue_Same_Antipsychotic</OUTCOME>
+      <OUTCOME>Consider_Antipsychotic_Switch</OUTCOME>
+      <PROPERTY>Clinical action pattern for ongoing management[cite: 1, 2]</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION>
+      <FOR>Symptom_Response</FOR>
+      <TABLE>0.60 0.30 0.10</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Medication_Tolerability</FOR>
+      <TABLE>0.70 0.20 0.10</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Alternative_Treatment_Preference</FOR>
+      <TABLE>0.20 0.70 0.10</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>Management_Recommendation</FOR>
+      <GIVEN>Symptom_Response</GIVEN>
+      <GIVEN>Medication_Tolerability</GIVEN>
+      <GIVEN>Alternative_Treatment_Preference</GIVEN>
+      <TABLE>
+        <!-- GIVEN: Improved -->
+        <!-- Tolerable, Prefers_Alternative --> 0.40 0.60
+        <!-- Tolerable, No_Alternative_Preference --> 0.99 0.01
+        <!-- Tolerable, Unknown --> 0.90 0.10
+        <!-- Significant_Side_Effects, Prefers_Alternative --> 0.10 0.90
+        <!-- Significant_Side_Effects, No_Alternative_Preference --> 0.30 0.70
+        <!-- Significant_Side_Effects, Unknown --> 0.20 0.80
+        <!-- Unknown, Prefers_Alternative --> 0.30 0.70
+        <!-- Unknown, No_Alternative_Preference --> 0.80 0.20
+        <!-- Unknown, Unknown --> 0.70 0.30
+        
+        <!-- GIVEN: Residual_Symptoms -->
+        <!-- Tolerable, Prefers_Alternative --> 0.10 0.90
+        <!-- Tolerable, No_Alternative_Preference --> 0.30 0.70
+        <!-- Tolerable, Unknown --> 0.20 0.80
+        <!-- Significant_Side_Effects, Prefers_Alternative --> 0.05 0.95
+        <!-- Significant_Side_Effects, No_Alternative_Preference --> 0.10 0.90
+        <!-- Significant_Side_Effects, Unknown --> 0.05 0.95
+        <!-- Unknown, Prefers_Alternative --> 0.10 0.90
+        <!-- Unknown, No_Alternative_Preference --> 0.20 0.80
+        <!-- Unknown, Unknown --> 0.15 0.85
+
+        <!-- GIVEN: Unknown -->
+        <!-- Tolerable, Prefers_Alternative --> 0.30 0.70
+        <!-- Tolerable, No_Alternative_Preference --> 0.80 0.20
+        <!-- Tolerable, Unknown --> 0.70 0.30
+        <!-- Significant_Side_Effects, Prefers_Alternative --> 0.10 0.90
+        <!-- Significant_Side_Effects, No_Alternative_Preference --> 0.20 0.80
+        <!-- Significant_Side_Effects, Unknown --> 0.15 0.85
+        <!-- Unknown, Prefers_Alternative --> 0.20 0.80
+        <!-- Unknown, No_Alternative_Preference --> 0.70 0.30
+        <!-- Unknown, Unknown --> 0.50 0.50
+      </TABLE>
+    </DEFINITION>
+  </NETWORK>
+</BIF>

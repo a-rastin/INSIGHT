@@ -1,0 +1,164 @@
+net
+{
+    name = "Clozapine_Aggressive_Behavior";
+}
+
+node TargetPopulation
+{
+    states = ("schizophrenia_target_population" "outside_statement_scope" "unknown");
+    label = "Target population for APA Statement 9";
+}
+
+node AggressionRiskAfterOtherTreatments
+{
+    states = ("substantial_despite_other_treatments" "not_substantial_or_controlled" "insufficient_other_treatment_or_adherence_assessment" "unknown");
+    label = "Aggression risk after other treatments";
+}
+
+node ClozapineMonitoringSafetyFeasibility
+{
+    states = ("feasible_no_serious_barrier" "feasible_with_relative_risk" "barrier_or_required_monitoring_unavailable" "unknown");
+    label = "Clozapine monitoring and safety feasibility";
+}
+
+node PatientPreferenceAndAccess
+{
+    states = ("accepts_or_prefers" "concerns_but_open_with_support" "declines_or_refuses" "unknown");
+    label = "Patient preference and access for clozapine";
+}
+
+node ClozapineIndicationPriority
+{
+    states = ("high_priority" "optimize_first_then_reassess" "low_priority" "unknown");
+    label = "Clinical priority for clozapine";
+}
+
+node ClozapineEligibility
+{
+    states = ("eligible" "eligible_with_caution" "not_eligible_now" "unknown");
+    label = "Clozapine eligibility";
+}
+
+node ManagementRecommendation
+{
+    states = ("offer_clozapine_with_required_monitoring" "optimize_adherence_modifiable_risks_then_reassess" "resolve_safety_monitoring_access_or_preference_barriers" "no_clozapine_currently_continue_person_centered_care" "obtain_missing_structured_information");
+    label = "Management recommendation";
+}
+
+potential (TargetPopulation)
+{
+    data = (0.3333 0.3333 0.3334);
+}
+
+potential (AggressionRiskAfterOtherTreatments)
+{
+    data = (0.25 0.25 0.25 0.25);
+}
+
+potential (ClozapineMonitoringSafetyFeasibility)
+{
+    data = (0.25 0.25 0.25 0.25);
+}
+
+potential (PatientPreferenceAndAccess)
+{
+    data = (0.25 0.25 0.25 0.25);
+}
+
+potential (ClozapineIndicationPriority | TargetPopulation AggressionRiskAfterOtherTreatments)
+{
+    data = (
+        (0.90 0.05 0.03 0.02)
+        (0.03 0.05 0.90 0.02)
+        (0.05 0.85 0.05 0.05)
+        (0.05 0.10 0.05 0.80)
+        (0.05 0.05 0.80 0.10)
+        (0.02 0.03 0.90 0.05)
+        (0.02 0.10 0.75 0.13)
+        (0.02 0.05 0.20 0.73)
+        (0.10 0.10 0.10 0.70)
+        (0.05 0.05 0.20 0.70)
+        (0.05 0.15 0.10 0.70)
+        (0.025 0.025 0.05 0.90)
+    );
+}
+
+potential (ClozapineEligibility | ClozapineMonitoringSafetyFeasibility)
+{
+    data = (
+        (0.90 0.08 0.01 0.01)
+        (0.10 0.85 0.03 0.02)
+        (0.01 0.04 0.90 0.05)
+        (0.05 0.05 0.10 0.80)
+    );
+}
+
+potential (ManagementRecommendation | ClozapineIndicationPriority ClozapineEligibility PatientPreferenceAndAccess)
+{
+    data = (
+        (0.90 0.02 0.03 0.02 0.03)
+        (0.75 0.03 0.15 0.02 0.05)
+        (0.02 0.03 0.80 0.12 0.03)
+        (0.10 0.02 0.30 0.03 0.55)
+        (0.75 0.03 0.10 0.02 0.10)
+        (0.65 0.03 0.20 0.02 0.10)
+        (0.02 0.03 0.75 0.15 0.05)
+        (0.05 0.02 0.35 0.03 0.55)
+        (0.01 0.02 0.90 0.03 0.04)
+        (0.01 0.02 0.88 0.03 0.06)
+        (0.00 0.01 0.82 0.12 0.05)
+        (0.00 0.01 0.70 0.04 0.25)
+        (0.05 0.02 0.15 0.02 0.76)
+        (0.04 0.02 0.15 0.02 0.77)
+        (0.01 0.01 0.20 0.08 0.70)
+        (0.01 0.01 0.10 0.03 0.85)
+        (0.03 0.85 0.03 0.03 0.06)
+        (0.03 0.82 0.07 0.03 0.05)
+        (0.01 0.15 0.55 0.24 0.05)
+        (0.02 0.35 0.05 0.03 0.55)
+        (0.03 0.82 0.07 0.03 0.05)
+        (0.03 0.78 0.10 0.03 0.06)
+        (0.01 0.12 0.55 0.25 0.07)
+        (0.02 0.30 0.10 0.03 0.55)
+        (0.01 0.10 0.85 0.02 0.02)
+        (0.01 0.10 0.83 0.02 0.04)
+        (0.00 0.05 0.75 0.15 0.05)
+        (0.00 0.05 0.60 0.05 0.30)
+        (0.02 0.15 0.08 0.03 0.72)
+        (0.02 0.12 0.08 0.03 0.75)
+        (0.00 0.05 0.20 0.10 0.65)
+        (0.00 0.05 0.10 0.03 0.82)
+        (0.03 0.03 0.03 0.88 0.03)
+        (0.02 0.03 0.05 0.85 0.05)
+        (0.00 0.02 0.20 0.72 0.06)
+        (0.00 0.01 0.05 0.50 0.44)
+        (0.02 0.03 0.08 0.82 0.05)
+        (0.02 0.03 0.10 0.80 0.05)
+        (0.00 0.02 0.20 0.70 0.08)
+        (0.00 0.01 0.08 0.50 0.41)
+        (0.00 0.02 0.45 0.48 0.05)
+        (0.00 0.02 0.45 0.46 0.07)
+        (0.00 0.01 0.35 0.55 0.09)
+        (0.00 0.01 0.25 0.35 0.39)
+        (0.01 0.01 0.05 0.28 0.65)
+        (0.01 0.01 0.05 0.28 0.65)
+        (0.00 0.01 0.10 0.25 0.64)
+        (0.00 0.01 0.05 0.20 0.74)
+        (0.03 0.02 0.10 0.05 0.80)
+        (0.03 0.02 0.12 0.05 0.78)
+        (0.00 0.01 0.20 0.10 0.69)
+        (0.00 0.01 0.10 0.04 0.85)
+        (0.02 0.02 0.12 0.05 0.79)
+        (0.02 0.02 0.15 0.05 0.76)
+        (0.00 0.01 0.20 0.10 0.69)
+        (0.00 0.01 0.10 0.04 0.85)
+        (0.00 0.01 0.25 0.05 0.69)
+        (0.00 0.01 0.25 0.05 0.69)
+        (0.00 0.01 0.20 0.10 0.69)
+        (0.00 0.01 0.15 0.04 0.80)
+        (0.01 0.01 0.08 0.05 0.85)
+        (0.01 0.01 0.08 0.05 0.85)
+        (0.00 0.01 0.10 0.08 0.81)
+        (0.00 0.01 0.05 0.04 0.90)
+    );
+}

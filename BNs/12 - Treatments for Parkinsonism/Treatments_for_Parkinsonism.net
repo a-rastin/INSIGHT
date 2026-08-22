@@ -1,0 +1,89 @@
+net
+{
+     node_size = (90 40);
+     name = "Treatments_for_Parkinsonism";
+     UnBBayes_Color_Probabilistic_Description = "-256";
+     UnBBayes_Color_Probabilistic_Explanation = "-16711936";
+}
+
+node Dose_Reduction_Feasible
+{
+     label = "Antipsychotic dose reduction feasible?";
+     position = (77 37);
+     states = ("Yes" "No");
+}
+
+node Psychotic_Relapse_Risk
+{
+     label = "Risk of psychotic symptom increase with dose change / switch";
+     position = (260 40);
+     states = ("High" "Low");
+}
+
+node Tardive_Dyskinesia
+{
+     label = "Tardive dyskinesia present? (anticholinergics worsen TD)";
+     position = (450 30);
+     states = ("Present" "Absent");
+}
+
+node Age
+{
+     label = "Age (older = greater anticholinergic sensitivity)";
+     position = (620 45);
+     states = ("Above65" "Under65");
+}
+
+node Anticholinergic_Caution
+{
+     label = "Caution against anticholinergic burden (derived)";
+     position = (520 150);
+     states = ("High" "Low");
+}
+
+node Parkinsonism_Treatment
+{
+     label = "Recommended treatment for medication-induced parkinsonism";
+     position = (270 252);
+     states = ("Reduce_Dose" "Switch_Antipsychotic" "Anticholinergic" "Amantadine");
+}
+
+potential (Dose_Reduction_Feasible)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Psychotic_Relapse_Risk)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Tardive_Dyskinesia)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Age)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Anticholinergic_Caution | Tardive_Dyskinesia Age)
+{
+ data = ((( 1.0 0.0 )
+( 1.0 0.0 ))
+(( 1.0 0.0 )
+( 0.0 1.0 )));
+}
+
+potential (Parkinsonism_Treatment | Dose_Reduction_Feasible Psychotic_Relapse_Risk Anticholinergic_Caution)
+{
+ data = (((( 0.15 0.05 0.10 0.70 )
+( 0.20 0.05 0.65 0.10 ))
+(( 0.70 0.15 0.03 0.12 )
+( 0.65 0.15 0.15 0.05 )))
+((( 0.00 0.05 0.10 0.85 )
+( 0.00 0.05 0.80 0.15 ))
+(( 0.00 0.45 0.05 0.50 )
+( 0.00 0.45 0.45 0.10 ))));
+}

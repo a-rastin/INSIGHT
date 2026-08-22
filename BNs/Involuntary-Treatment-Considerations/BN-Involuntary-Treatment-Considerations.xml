@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="XSD.xml">
+  <NETWORK>
+    <NAME>involuntary_treatment_considerations_bn</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>treatment_participation</NAME>
+      <OUTCOME>accepts_treatment</OUTCOME>
+      <OUTCOME>declines_or_resists_treatment</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Patient willingness to participate in treatment or take medication.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>decision_making_capacity</NAME>
+      <OUTCOME>has_capacity</OUTCOME>
+      <OUTCOME>lacks_capacity</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Current capacity to participate in treatment decision-making.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>psychiatric_advance_directive</NAME>
+      <OUTCOME>available_and_applicable</OUTCOME>
+      <OUTCOME>absent_or_not_applicable</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Previously stated treatment preferences may guide choices during later incapacity.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>severe_symptoms_requiring_treatment</NAME>
+      <OUTCOME>present</OUTCOME>
+      <OUTCOME>absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Severe symptoms and a clinical requirement for treatment.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>engagement_efforts_status</NAME>
+      <OUTCOME>accepted_after_psychotherapeutic_or_support_engagement</OUTCOME>
+      <OUTCOME>not_accepted_despite_engagement</OUTCOME>
+      <OUTCOME>not_yet_attempted</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Psychotherapeutic interactions should identify distressing symptoms previously responsive to treatment; family and support persons may encourage engagement.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>lawful_involuntary_treatment_pathway</NAME>
+      <OUTCOME>administrative_process_available</OUTCOME>
+      <OUTCOME>judicial_hearing_required</OUTCOME>
+      <OUTCOME>no_pathway_or_criteria_not_met</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Prevailing jurisdictional law determines whether involuntary medication can use a state process or requires judicial permission.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>recurrent_nonadherence_related_deterioration</NAME>
+      <OUTCOME>repeated_relapse_rehospitalization_or_reincarceration</OUTCOME>
+      <OUTCOME>pattern_absent</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Repeated adverse episodes associated with nonadherence or impaired insight identify the small subgroup for whom outpatient commitment may be considered.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>implementation_resources_and_individualized_plan</NAME>
+      <OUTCOME>adequate</OUTCOME>
+      <OUTCOME>inadequate</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>Effective outpatient commitment implementation requires adequate resources and individualized treatment planning.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>immediate_treatment_path</NAME>
+      <OUTCOME>continue_voluntary_collaborative_treatment</OUTCOME>
+      <OUTCOME>follow_advance_directive_and_reassess</OUTCOME>
+      <OUTCOME>pursue_lawful_involuntary_process</OUTCOME>
+      <OUTCOME>defer_involuntary_treatment_continue_engagement</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Rationale label: preserve autonomy through voluntary engagement or applicable prior preferences; use involuntary treatment only when incapacity, treatment need, and a lawful pathway support it.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>outpatient_commitment_priority</NAME>
+      <OUTCOME>consider_with_ethical_balancing</OUTCOME>
+      <OUTCOME>do_not_prioritize</OUTCOME>
+      <OUTCOME>insufficient_information</OUTCOME>
+      <PROPERTY>Rationale label: outpatient commitment may enter the plan for the recurrent nonadherence-related deterioration subgroup when implementation resources are adequate, balancing autonomy and best interest.</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>management_recommendation</NAME>
+      <OUTCOME>voluntary_treatment_with_psychotherapeutic_and_support_engagement</OUTCOME>
+      <OUTCOME>follow_applicable_advance_directive_with_capacity_and_clinical_reassessment</OUTCOME>
+      <OUTCOME>initiate_state_authorized_involuntary_treatment_process</OUTCOME>
+      <OUTCOME>seek_judicial_permission_before_involuntary_treatment</OUTCOME>
+      <OUTCOME>consider_involuntary_outpatient_commitment_with_resources_individualized_plan_and_ethical_review</OUTCOME>
+      <OUTCOME>insufficient_information_verify_capacity_need_preferences_and_local_law</OUTCOME>
+      <PROPERTY>Final ranked clinical action pattern for involuntary treatment considerations.</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION><FOR>treatment_participation</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>decision_making_capacity</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>psychiatric_advance_directive</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>severe_symptoms_requiring_treatment</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>engagement_efforts_status</FOR><TABLE>0.250000 0.250000 0.250000 0.250000</TABLE></DEFINITION>
+    <DEFINITION><FOR>lawful_involuntary_treatment_pathway</FOR><TABLE>0.250000 0.250000 0.250000 0.250000</TABLE></DEFINITION>
+    <DEFINITION><FOR>recurrent_nonadherence_related_deterioration</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+    <DEFINITION><FOR>implementation_resources_and_individualized_plan</FOR><TABLE>0.333333 0.333333 0.333334</TABLE></DEFINITION>
+
+    <DEFINITION>
+      <FOR>immediate_treatment_path</FOR>
+      <GIVEN>treatment_participation</GIVEN>
+      <GIVEN>decision_making_capacity</GIVEN>
+      <GIVEN>psychiatric_advance_directive</GIVEN>
+      <GIVEN>severe_symptoms_requiring_treatment</GIVEN>
+      <GIVEN>engagement_efforts_status</GIVEN>
+      <GIVEN>lawful_involuntary_treatment_pathway</GIVEN>
+      <TABLE>
+        <!-- Qualitative placeholder CPT: neutral pending clinical calibration. -->
+        0.200000 0.200000 0.200000 0.200000 0.200000
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>outpatient_commitment_priority</FOR>
+      <GIVEN>recurrent_nonadherence_related_deterioration</GIVEN>
+      <GIVEN>implementation_resources_and_individualized_plan</GIVEN>
+      <TABLE>
+        0.900000 0.050000 0.050000
+        0.100000 0.850000 0.050000
+        0.200000 0.200000 0.600000
+        0.050000 0.900000 0.050000
+        0.050000 0.900000 0.050000
+        0.100000 0.300000 0.600000
+        0.200000 0.200000 0.600000
+        0.100000 0.300000 0.600000
+        0.100000 0.100000 0.800000
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>management_recommendation</FOR>
+      <GIVEN>immediate_treatment_path</GIVEN>
+      <GIVEN>outpatient_commitment_priority</GIVEN>
+      <GIVEN>lawful_involuntary_treatment_pathway</GIVEN>
+      <TABLE>
+        <!-- Qualitative placeholder CPT: neutral pending clinical and jurisdiction-specific calibration. -->
+        0.166667 0.166667 0.166667 0.166667 0.166666 0.166666
+      </TABLE>
+    </DEFINITION>
+  </NETWORK>
+</BIF>

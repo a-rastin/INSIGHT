@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BIF VERSION="0.3">
+  <NETWORK>
+    <NAME>Clozapine_Aggressive_Behavior</NAME>
+
+    <VARIABLE TYPE="nature">
+      <NAME>TargetPopulation</NAME>
+      <OUTCOME>schizophrenia_target_population</OUTCOME>
+      <OUTCOME>outside_statement_scope</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>label = Target population for APA Statement 9</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>AggressionRiskAfterOtherTreatments</NAME>
+      <OUTCOME>substantial_despite_other_treatments</OUTCOME>
+      <OUTCOME>not_substantial_or_controlled</OUTCOME>
+      <OUTCOME>insufficient_other_treatment_or_adherence_assessment</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>label = Aggression risk after other treatments</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ClozapineMonitoringSafetyFeasibility</NAME>
+      <OUTCOME>feasible_no_serious_barrier</OUTCOME>
+      <OUTCOME>feasible_with_relative_risk</OUTCOME>
+      <OUTCOME>barrier_or_required_monitoring_unavailable</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>label = Clozapine monitoring and safety feasibility</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>PatientPreferenceAndAccess</NAME>
+      <OUTCOME>accepts_or_prefers</OUTCOME>
+      <OUTCOME>concerns_but_open_with_support</OUTCOME>
+      <OUTCOME>declines_or_refuses</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>label = Patient preference and access for clozapine</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ClozapineIndicationPriority</NAME>
+      <OUTCOME>high_priority</OUTCOME>
+      <OUTCOME>optimize_first_then_reassess</OUTCOME>
+      <OUTCOME>low_priority</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>label = Clinical priority for clozapine</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ClozapineEligibility</NAME>
+      <OUTCOME>eligible</OUTCOME>
+      <OUTCOME>eligible_with_caution</OUTCOME>
+      <OUTCOME>not_eligible_now</OUTCOME>
+      <OUTCOME>unknown</OUTCOME>
+      <PROPERTY>label = Clozapine eligibility</PROPERTY>
+    </VARIABLE>
+
+    <VARIABLE TYPE="nature">
+      <NAME>ManagementRecommendation</NAME>
+      <OUTCOME>offer_clozapine_with_required_monitoring</OUTCOME>
+      <OUTCOME>optimize_adherence_modifiable_risks_then_reassess</OUTCOME>
+      <OUTCOME>resolve_safety_monitoring_access_or_preference_barriers</OUTCOME>
+      <OUTCOME>no_clozapine_currently_continue_person_centered_care</OUTCOME>
+      <OUTCOME>obtain_missing_structured_information</OUTCOME>
+      <PROPERTY>label = Management recommendation</PROPERTY>
+    </VARIABLE>
+
+    <DEFINITION>
+      <FOR>TargetPopulation</FOR>
+      <TABLE>0.3333 0.3333 0.3334</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>AggressionRiskAfterOtherTreatments</FOR>
+      <TABLE>0.25 0.25 0.25 0.25</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ClozapineMonitoringSafetyFeasibility</FOR>
+      <TABLE>0.25 0.25 0.25 0.25</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>PatientPreferenceAndAccess</FOR>
+      <TABLE>0.25 0.25 0.25 0.25</TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ClozapineIndicationPriority</FOR>
+      <GIVEN>TargetPopulation</GIVEN>
+      <GIVEN>AggressionRiskAfterOtherTreatments</GIVEN>
+      <TABLE>
+        0.90 0.05 0.03 0.02
+        0.03 0.05 0.90 0.02
+        0.05 0.85 0.05 0.05
+        0.05 0.10 0.05 0.80
+        0.05 0.05 0.80 0.10
+        0.02 0.03 0.90 0.05
+        0.02 0.10 0.75 0.13
+        0.02 0.05 0.20 0.73
+        0.10 0.10 0.10 0.70
+        0.05 0.05 0.20 0.70
+        0.05 0.15 0.10 0.70
+        0.025 0.025 0.05 0.90
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ClozapineEligibility</FOR>
+      <GIVEN>ClozapineMonitoringSafetyFeasibility</GIVEN>
+      <TABLE>
+        0.90 0.08 0.01 0.01
+        0.10 0.85 0.03 0.02
+        0.01 0.04 0.90 0.05
+        0.05 0.05 0.10 0.80
+      </TABLE>
+    </DEFINITION>
+
+    <DEFINITION>
+      <FOR>ManagementRecommendation</FOR>
+      <GIVEN>ClozapineIndicationPriority</GIVEN>
+      <GIVEN>ClozapineEligibility</GIVEN>
+      <GIVEN>PatientPreferenceAndAccess</GIVEN>
+      <TABLE>
+        0.90 0.02 0.03 0.02 0.03
+        0.75 0.03 0.15 0.02 0.05
+        0.02 0.03 0.80 0.12 0.03
+        0.10 0.02 0.30 0.03 0.55
+        0.75 0.03 0.10 0.02 0.10
+        0.65 0.03 0.20 0.02 0.10
+        0.02 0.03 0.75 0.15 0.05
+        0.05 0.02 0.35 0.03 0.55
+        0.01 0.02 0.90 0.03 0.04
+        0.01 0.02 0.88 0.03 0.06
+        0.00 0.01 0.82 0.12 0.05
+        0.00 0.01 0.70 0.04 0.25
+        0.05 0.02 0.15 0.02 0.76
+        0.04 0.02 0.15 0.02 0.77
+        0.01 0.01 0.20 0.08 0.70
+        0.01 0.01 0.10 0.03 0.85
+        0.03 0.85 0.03 0.03 0.06
+        0.03 0.82 0.07 0.03 0.05
+        0.01 0.15 0.55 0.24 0.05
+        0.02 0.35 0.05 0.03 0.55
+        0.03 0.82 0.07 0.03 0.05
+        0.03 0.78 0.10 0.03 0.06
+        0.01 0.12 0.55 0.25 0.07
+        0.02 0.30 0.10 0.03 0.55
+        0.01 0.10 0.85 0.02 0.02
+        0.01 0.10 0.83 0.02 0.04
+        0.00 0.05 0.75 0.15 0.05
+        0.00 0.05 0.60 0.05 0.30
+        0.02 0.15 0.08 0.03 0.72
+        0.02 0.12 0.08 0.03 0.75
+        0.00 0.05 0.20 0.10 0.65
+        0.00 0.05 0.10 0.03 0.82
+        0.03 0.03 0.03 0.88 0.03
+        0.02 0.03 0.05 0.85 0.05
+        0.00 0.02 0.20 0.72 0.06
+        0.00 0.01 0.05 0.50 0.44
+        0.02 0.03 0.08 0.82 0.05
+        0.02 0.03 0.10 0.80 0.05
+        0.00 0.02 0.20 0.70 0.08
+        0.00 0.01 0.08 0.50 0.41
+        0.00 0.02 0.45 0.48 0.05
+        0.00 0.02 0.45 0.46 0.07
+        0.00 0.01 0.35 0.55 0.09
+        0.00 0.01 0.25 0.35 0.39
+        0.01 0.01 0.05 0.28 0.65
+        0.01 0.01 0.05 0.28 0.65
+        0.00 0.01 0.10 0.25 0.64
+        0.00 0.01 0.05 0.20 0.74
+        0.03 0.02 0.10 0.05 0.80
+        0.03 0.02 0.12 0.05 0.78
+        0.00 0.01 0.20 0.10 0.69
+        0.00 0.01 0.10 0.04 0.85
+        0.02 0.02 0.12 0.05 0.79
+        0.02 0.02 0.15 0.05 0.76
+        0.00 0.01 0.20 0.10 0.69
+        0.00 0.01 0.10 0.04 0.85
+        0.00 0.01 0.25 0.05 0.69
+        0.00 0.01 0.25 0.05 0.69
+        0.00 0.01 0.20 0.10 0.69
+        0.00 0.01 0.15 0.04 0.80
+        0.01 0.01 0.08 0.05 0.85
+        0.01 0.01 0.08 0.05 0.85
+        0.00 0.01 0.10 0.08 0.81
+        0.00 0.01 0.05 0.04 0.90
+      </TABLE>
+    </DEFINITION>
+
+  </NETWORK>
+</BIF>

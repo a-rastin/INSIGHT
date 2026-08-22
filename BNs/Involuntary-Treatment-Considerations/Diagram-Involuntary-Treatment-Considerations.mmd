@@ -1,0 +1,46 @@
+%% Bayesian Network: Involuntary Treatment Considerations
+%% Generated from BN-Involuntary-Treatment-Considerations.xml
+%% Node states shown as sub-labels; arrows denote dependency (GIVEN -> FOR)
+
+flowchart TD
+
+  %% ===== Patient State Nodes (Patient State Node) =====
+  treatment_participation["treatment_participation<br/>━ Patient State ━<br/>accepts_treatment<br/>declines_or_resists_treatment<br/>unknown"]
+  decision_making_capacity["decision_making_capacity<br/>━ Patient State ━<br/>has_capacity<br/>lacks_capacity<br/>unknown"]
+  psychiatric_advance_directive["psychiatric_advance_directive<br/>━ Patient State ━<br/>available_and_applicable<br/>absent_or_not_applicable<br/>unknown"]
+  severe_symptoms_requiring_treatment["severe_symptoms_requiring_treatment<br/>━ Patient State ━<br/>present<br/>absent<br/>unknown"]
+  engagement_efforts_status["engagement_efforts_status<br/>━ Patient State ━<br/>accepted_after_psychotherapeutic_or_support_engagement<br/>not_accepted_despite_engagement<br/>not_yet_attempted<br/>unknown"]
+  lawful_involuntary_treatment_pathway["lawful_involuntary_treatment_pathway<br/>━ Patient State ━<br/>administrative_process_available<br/>judicial_hearing_required<br/>no_pathway_or_criteria_not_met<br/>unknown"]
+  recurrent_nonadherence_related_deterioration["recurrent_nonadherence_related_deterioration<br/>━ Patient State ━<br/>repeated_relapse_rehospitalization_or_reincarceration<br/>pattern_absent<br/>unknown"]
+  implementation_resources_and_individualized_plan["implementation_resources_and_individualized_plan<br/>━ Patient State ━<br/>adequate<br/>inadequate<br/>unknown"]
+
+  %% ===== Intermediate Decision Nodes =====
+  immediate_treatment_path["immediate_treatment_path<br/>━ Intermediate ━<br/>continue_voluntary_collaborative_treatment<br/>follow_advance_directive_and_reassess<br/>pursue_lawful_involuntary_process<br/>defer_involuntary_treatment_continue_engagement<br/>insufficient_information"]
+  outpatient_commitment_priority["outpatient_commitment_priority<br/>━ Intermediate ━<br/>consider_with_ethical_balancing<br/>do_not_prioritize<br/>insufficient_information"]
+
+  %% ===== Management Recommendation (Root) =====
+  management_recommendation["management_recommendation<br/>━ Management Recommendation ━<br/>voluntary_treatment_with_psychotherapeutic_and_support_engagement<br/>follow_applicable_advance_directive_with_capacity_and_clinical_reassessment<br/>initiate_state_authorized_involuntary_treatment_process<br/>seek_judicial_permission_before_involuntary_treatment<br/>consider_involuntary_outpatient_commitment_with_resources_individualized_plan_and_ethical_review<br/>insufficient_information_verify_capacity_need_preferences_and_local_law"]
+
+  %% ===== Edges (GIVEN -> FOR) =====
+  treatment_participation --> immediate_treatment_path
+  decision_making_capacity --> immediate_treatment_path
+  psychiatric_advance_directive --> immediate_treatment_path
+  severe_symptoms_requiring_treatment --> immediate_treatment_path
+  engagement_efforts_status --> immediate_treatment_path
+  lawful_involuntary_treatment_pathway --> immediate_treatment_path
+
+  recurrent_nonadherence_related_deterioration --> outpatient_commitment_priority
+  implementation_resources_and_individualized_plan --> outpatient_commitment_priority
+
+  immediate_treatment_path --> management_recommendation
+  outpatient_commitment_priority --> management_recommendation
+  lawful_involuntary_treatment_pathway --> management_recommendation
+
+  %% ===== Styling =====
+  classDef patientState fill:#e1f5ff,stroke:#0277bd,color:#01579b
+  classDef intermediate fill:#fff4e1,stroke:#ef6c00,color:#bf360c
+  classDef recommendation fill:#e8f5e9,stroke:#1b5e20,color:#0b3d12
+
+  class treatment_participation,decision_making_capacity,psychiatric_advance_directive,severe_symptoms_requiring_treatment,engagement_efforts_status,lawful_involuntary_treatment_pathway,recurrent_nonadherence_related_deterioration,implementation_resources_and_individualized_plan patientState
+  class immediate_treatment_path,outpatient_commitment_priority intermediate
+  class management_recommendation recommendation

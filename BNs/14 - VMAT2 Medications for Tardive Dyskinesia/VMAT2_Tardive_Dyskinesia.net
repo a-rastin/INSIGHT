@@ -1,0 +1,275 @@
+net
+{
+     node_size = (90 40);
+     name = "VMAT2_Tardive_Dyskinesia";
+     UnBBayes_Color_Probabilistic_Description = "-256";
+     UnBBayes_Color_Probabilistic_Explanation = "-16711936";
+     UnBBayes_Color_Decision_Description = "-16776961";
+     UnBBayes_Color_Utility_Description = "-65536";
+}
+
+node TD_Severity
+{
+     label = "Tardive dyskinesia severity";
+     position = (40 30);
+     states = ("Mild" "Moderate_to_Severe_or_Disabling");
+}
+
+node Contributing_Etiology
+{
+     label = "Other contributing etiology for movement disorder";
+     position = (300 30);
+     states = ("Identified" "Not_Identified");
+}
+
+node Withdrawal_Emergent_Context
+{
+     label = "Dyskinesia emerged/increased after antipsychotic dose reduction";
+     position = (560 30);
+     states = ("Present" "Absent");
+}
+
+node Patient_Preference
+{
+     label = "Patient preference (shared decision-making)";
+     position = (820 30);
+     states = ("Favor_Treatment" "Favor_Observation");
+}
+
+node Hepatic_Impairment
+{
+     label = "Hepatic impairment";
+     position = (1080 30);
+     states = ("Present" "Absent");
+}
+
+node Renal_Impairment_Severe
+{
+     label = "Severe renal impairment (CrCl < 30)";
+     position = (1320 30);
+     states = ("Present" "Absent");
+}
+
+node CYP2D6_Status
+{
+     label = "Poor CYP2D6 metabolizer or strong CYP2D6 inhibitor";
+     position = (1560 30);
+     states = ("Poor_or_Inhibited" "Normal");
+}
+
+node CYP3A4_Inducer_Strong
+{
+     label = "Concomitant strong CYP3A4 inducer";
+     position = (1800 30);
+     states = ("Present" "Absent");
+}
+
+node Depression_Suicidality_Risk
+{
+     label = "Depression / suicidal ideation risk";
+     position = (2040 30);
+     states = ("Elevated" "Not_Elevated");
+}
+
+node VMAT2_Indication
+{
+     label = "VMAT2 inhibitor indication";
+     position = (300 200);
+     states = ("Recommended" "Optional_Consider" "Not_Indicated");
+}
+
+node Agent_Suitability
+{
+     label = "Selected VMAT2 agent suitability vs contraindications";
+     position = (1400 360);
+     states = ("Acceptable" "Use_With_Caution" "Contraindicated");
+}
+
+decision Treatment_Approach
+{
+     label = "Tardive dyskinesia treatment approach";
+     position = (300 360);
+     states = ("VMAT2_Inhibitor" "Antipsychotic_Change_Clozapine" "Antipsychotic_Dose_Reduction" "Benzodiazepine" "Observe_Monitor");
+}
+
+decision VMAT2_Agent
+{
+     label = "VMAT2 inhibitor selection";
+     position = (1000 360);
+     states = ("Deutetrabenazine" "Valbenazine" "Tetrabenazine" "Not_Applicable");
+}
+
+utility U_Efficacy
+{
+     label = "Motor symptom benefit";
+     position = (300 540);
+}
+
+utility U_Safety
+{
+     label = "Safety / tolerability";
+     position = (1200 540);
+}
+
+potential (TD_Severity)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Contributing_Etiology)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Withdrawal_Emergent_Context)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Patient_Preference)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Hepatic_Impairment)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Renal_Impairment_Severe)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (CYP2D6_Status)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (CYP3A4_Inducer_Strong)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Depression_Suicidality_Risk)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (VMAT2_Indication | TD_Severity Contributing_Etiology Withdrawal_Emergent_Context)
+{
+ data = (((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 1 0 )))
+((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 1 0 0 ))));
+}
+
+potential (Treatment_Approach | VMAT2_Indication Patient_Preference)
+{
+}
+
+potential (VMAT2_Agent | Treatment_Approach Hepatic_Impairment Renal_Impairment_Severe CYP2D6_Status CYP3A4_Inducer_Strong)
+{
+}
+
+potential (Agent_Suitability | VMAT2_Agent Hepatic_Impairment Renal_Impairment_Severe CYP2D6_Status CYP3A4_Inducer_Strong)
+{
+ data = (((((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 0 1 )))
+((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 0 1 ))))
+(((( 0 1 0 )
+( 0 1 0 ))
+(( 1 0 0 )
+( 1 0 0 )))
+((( 0 1 0 )
+( 0 1 0 ))
+(( 1 0 0 )
+( 1 0 0 )))))
+((((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 0 1 )))
+((( 0 0 1 )
+( 0 1 0 ))
+(( 0 0 1 )
+( 0 1 0 ))))
+(((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 0 1 )))
+((( 0 0 1 )
+( 0 1 0 ))
+(( 0 0 1 )
+( 1 0 0 )))))
+((((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 0 1 )))
+((( 0 0 1 )
+( 0 0 1 ))
+(( 0 0 1 )
+( 0 0 1 ))))
+(((( 0 1 0 )
+( 0 1 0 ))
+(( 1 0 0 )
+( 1 0 0 )))
+((( 0 1 0 )
+( 0 1 0 ))
+(( 1 0 0 )
+( 1 0 0 )))))
+((((( 1 0 0 )
+( 1 0 0 ))
+(( 1 0 0 )
+( 1 0 0 )))
+((( 1 0 0 )
+( 1 0 0 ))
+(( 1 0 0 )
+( 1 0 0 ))))
+(((( 1 0 0 )
+( 1 0 0 ))
+(( 1 0 0 )
+( 1 0 0 )))
+((( 1 0 0 )
+( 1 0 0 ))
+(( 1 0 0 )
+( 1 0 0 ))))));
+}
+
+potential (U_Efficacy | Treatment_Approach TD_Severity Withdrawal_Emergent_Context)
+{
+ data = ((( 4 6 )
+( 8 10 ))
+(( 1 3 )
+( 5 7 ))
+(( -1 1 )
+( -1 1 ))
+(( 1 3 )
+( 1 3 ))
+(( 6 0 )
+( 6 0 )));
+}
+
+potential (U_Safety | VMAT2_Agent Agent_Suitability Depression_Suicidality_Risk)
+{
+ data = ((( 0 2 )
+( -6 -4 )
+( -17 -15 ))
+(( 0 2 )
+( -6 -4 )
+( -17 -15 ))
+(( -6 0 )
+( -12 -6 )
+( -23 -17 ))
+(( 0 0 )
+( 0 0 )
+( 0 0 )));
+}

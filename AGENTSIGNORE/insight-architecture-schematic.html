@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>INSIGHT Architecture Schematic</title>
+  <style>
+    :root {
+      --primary: #0a9e8f;
+      --primary-hover: #088a7d;
+      --primary-light: #e6f6f5;
+      --ink: #111827;
+      --ink-muted: #6b7280;
+      --ink-subtle: #9ca3af;
+      --canvas: #ffffff;
+      --surface-1: #f9fafb;
+      --surface-2: #f3f4f6;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --urgent: #b91c1c;
+      --urgent-bg: #fef2f2;
+      --warning: #b45309;
+      --warning-bg: #fffbeb;
+      --normal: #047857;
+      --normal-bg: #ecfdf5;
+      --info: #0369a1;
+      --info-bg: #f0f9ff;
+      --purple: #6d28d9;
+      --purple-bg: #f5f3ff;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--surface-1);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    a { color: #075e57; text-underline-offset: 2px; }
+    a:hover { color: var(--primary-hover); }
+    code, .mono {
+      font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .92em;
+    }
+    button { font: inherit; }
+
+    .page { max-width: 1580px; margin: 0 auto; padding: 24px; }
+    .hero {
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--primary);
+      border-radius: 12px;
+      background: var(--canvas);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+    .hero-top { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+    .eyebrow { margin: 0 0 4px; color: #075e57; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.12; letter-spacing: -.02em; }
+    .subtitle { max-width: 900px; margin: 10px 0 0; color: var(--ink-muted); font-size: 15px; }
+    .snapshot { min-width: 250px; padding: 12px 14px; border-left: 3px solid var(--info); background: var(--info-bg); }
+    .snapshot strong { display: block; }
+    .snapshot span { color: var(--ink-muted); font-size: 13px; }
+
+    .truth-banner {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .truth {
+      min-height: 88px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-1);
+    }
+    .truth strong { display: block; margin-bottom: 5px; }
+    .truth p { margin: 0; color: var(--ink-muted); font-size: 13px; }
+    .truth.implemented { border-left: 4px solid var(--normal); }
+    .truth.target { border-left: 4px solid var(--info); }
+    .truth.safety { border-left: 4px solid var(--urgent); background: var(--urgent-bg); }
+
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin: 18px 0;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,.96);
+      box-shadow: var(--shadow);
+    }
+    .tab {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: var(--ink-muted);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .tab:hover { color: var(--ink); background: var(--surface-2); }
+    .tab[aria-selected="true"] { color: #064e47; border-color: #99d9d2; background: var(--primary-light); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .section-card {
+      margin-bottom: 18px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--canvas);
+      box-shadow: var(--shadow);
+    }
+    .section-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 16px; }
+    h2 { margin: 0; font-size: 24px; line-height: 1.2; }
+    h3 { margin: 0 0 9px; font-size: 16px; }
+    h4 { margin: 0 0 6px; font-size: 14px; }
+    .section-head p, .caption { margin: 5px 0 0; color: var(--ink-muted); font-size: 13px; }
+    .sources { max-width: 520px; text-align: right; color: var(--ink-muted); font-size: 12px; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 9px 14px; margin-bottom: 16px; font-size: 12px; color: var(--ink-muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border-strong); }
+    .swatch.planned { background: var(--info-bg); border-color: #7dd3fc; }
+    .swatch.implemented { background: var(--normal-bg); border-color: #6ee7b7; }
+    .swatch.external { background: var(--purple-bg); border-color: #c4b5fd; }
+    .swatch.gated { background: var(--warning-bg); border-color: #fcd34d; }
+    .swatch.risk { background: var(--urgent-bg); border-color: #fca5a5; }
+
+    .boundary {
+      padding: 14px;
+      border: 2px dashed var(--border-strong);
+      border-radius: 12px;
+      background: var(--surface-1);
+    }
+    .boundary-title { margin-bottom: 12px; color: var(--ink-muted); font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .row-flow { display: flex; align-items: stretch; justify-content: center; gap: 8px; }
+    .node {
+      position: relative;
+      flex: 1 1 180px;
+      min-width: 145px;
+      max-width: 300px;
+      padding: 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--canvas);
+      box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    }
+    .node strong { display: block; margin-bottom: 5px; font-size: 14px; }
+    .node small { display: block; color: var(--ink-muted); font-size: 11px; line-height: 1.4; }
+    .node.planned { border-color: #7dd3fc; background: var(--info-bg); }
+    .node.implemented { border-color: #6ee7b7; background: var(--normal-bg); }
+    .node.external { border-color: #c4b5fd; background: var(--purple-bg); }
+    .node.gated { border-color: #fcd34d; background: var(--warning-bg); }
+    .node.risk { border-color: #fca5a5; background: var(--urgent-bg); }
+    .arrow {
+      flex: 0 0 76px;
+      align-self: center;
+      color: var(--ink-muted);
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+    .arrow::after { content: "→"; display: block; color: var(--primary); font-size: 24px; line-height: 1; }
+    .arrow.bi::after { content: "↔"; }
+    .arrow.down::after { content: "↓"; }
+
+    .system-grid { display: grid; grid-template-columns: 180px minmax(0,1fr); gap: 14px; align-items: stretch; }
+    .actors { display: grid; gap: 10px; align-content: start; }
+    .actor { padding: 12px; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 8px; background: var(--canvas); }
+    .actor strong { display: block; }
+    .actor small { color: var(--ink-muted); font-size: 11px; }
+    .stack { display: grid; gap: 12px; }
+    .lane { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 8px; align-items: center; }
+    .lane .arrow { min-width: 0; width: auto; flex-basis: auto; }
+    .lane-storage { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 12px; }
+    .connector-label { color: var(--ink-muted); font-size: 11px; text-align: center; }
+
+    .module-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .module {
+      padding: 14px;
+      border: 1px solid #bae6fd;
+      border-top: 3px solid var(--info);
+      border-radius: 8px;
+      background: var(--info-bg);
+    }
+    .module p { margin: 5px 0; color: var(--ink-muted); font-size: 12px; }
+    .module .not-own { padding-top: 5px; border-top: 1px solid #dbeafe; color: #7c2d12; }
+
+    .workflow { display: grid; gap: 8px; }
+    .workflow-row { display: grid; grid-template-columns: repeat(5, minmax(155px,1fr)); gap: 8px; }
+    .state {
+      min-height: 82px;
+      padding: 11px 12px;
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+      background: var(--info-bg);
+    }
+    .state .num { color: var(--info); font: 700 11px/1 "JetBrains Mono", monospace; }
+    .state strong { display: block; margin: 5px 0; font-size: 12px; overflow-wrap: anywhere; }
+    .state small { color: var(--ink-muted); font-size: 11px; }
+    .state.final { border-color: #6ee7b7; background: var(--normal-bg); }
+    .state.deleted { border-color: #fca5a5; background: var(--urgent-bg); }
+    .branch-note { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+    .note { padding: 12px; border-left: 3px solid var(--warning); background: var(--warning-bg); font-size: 12px; }
+    .note.info { border-color: var(--info); background: var(--info-bg); }
+    .note.danger { border-color: var(--urgent); background: var(--urgent-bg); }
+
+    .tool-boundary { display: grid; grid-template-columns: 1fr 70px 1.35fr 70px 1fr; gap: 8px; align-items: stretch; }
+    .tool-list { display: grid; gap: 8px; }
+    .tool { padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--canvas); }
+    .tool strong { font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    .tool small { display: block; color: var(--ink-muted); margin-top: 3px; }
+    .context-box { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+    .context-box ul { columns: 2; margin: 8px 0 0; padding-left: 20px; font-size: 12px; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: #374151; background: var(--surface-1); font-weight: 800; }
+    tr:last-child td { border-bottom: 0; }
+    .none { color: var(--ink-muted); }
+
+    .entity-layout { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .entity-group { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+    .entity-group h3 { font-size: 14px; color: #374151; }
+    .entity { margin: 7px 0; padding: 9px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--canvas); }
+    .entity strong { font: 700 12px/1.3 "JetBrains Mono", monospace; }
+    .entity small { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 11px; }
+    .relation-list { columns: 2; column-gap: 30px; margin: 16px 0 0; padding-left: 20px; font-size: 12px; }
+    .relation-list li { break-inside: avoid; margin-bottom: 5px; }
+
+    .repo-map { display: grid; grid-template-columns: 1fr 62px 1fr 62px 1.4fr; gap: 10px; align-items: stretch; }
+    .file-list { margin: 8px 0 0; padding-left: 18px; color: var(--ink-muted); font-size: 11px; }
+    .file-list li { margin: 3px 0; }
+    .asset-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .asset-grid > * { min-width: 0; }
+    details { border: 1px solid var(--border); border-radius: 8px; background: var(--canvas); }
+    summary { cursor: pointer; padding: 12px; font-weight: 700; }
+    details > div { padding: 0 12px 12px; color: var(--ink-muted); font-size: 12px; }
+    details code { overflow-wrap: anywhere; word-break: break-word; }
+    details ul { margin: 6px 0; padding-left: 20px; }
+
+    .risk-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .risk-block { padding: 14px; border: 1px solid #fca5a5; border-radius: 8px; background: var(--urgent-bg); }
+    .risk-block h3 { color: var(--urgent); }
+    .risk-block ul, .scope-block ul { margin: 8px 0 0; padding-left: 20px; font-size: 12px; }
+    .scope-block { padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+    .adr-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+    .adr { padding: 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--canvas); font-size: 12px; }
+    .adr strong { display: block; margin-bottom: 3px; }
+    .adr span { color: var(--ink-muted); }
+
+    .gate { padding: 12px 14px; border-left: 4px solid var(--warning); background: var(--warning-bg); font-size: 12px; }
+    .gate strong { display: block; margin-bottom: 4px; }
+    .footer { margin: 18px 0 4px; color: var(--ink-muted); text-align: center; font-size: 11px; }
+
+    @media (max-width: 1120px) {
+      .module-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .lane { grid-template-columns: repeat(4,minmax(130px,1fr)); }
+      .lane .arrow { display: none; }
+      .workflow-row { grid-template-columns: repeat(3,minmax(150px,1fr)); }
+      .entity-layout { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .adr-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width: 760px) {
+      .page { padding: 10px; }
+      .hero, .section-card { padding: 15px; }
+      .hero-top, .section-head { display: block; }
+      .snapshot, .sources { max-width: none; margin-top: 14px; text-align: left; }
+      .truth-banner, .branch-note, .risk-grid, .asset-grid { grid-template-columns: 1fr; }
+      .system-grid { grid-template-columns: 1fr; }
+      .actors { grid-template-columns: 1fr; }
+      .row-flow { flex-direction: column; }
+      .row-flow > .node { width: 100%; max-width: none; }
+      .row-flow > .arrow { transform: rotate(90deg); min-height: 44px; align-self: center; }
+      .lane, .lane-storage, .module-grid, .workflow-row, .entity-layout, .adr-grid { grid-template-columns: 1fr; }
+      .tool-boundary, .repo-map { grid-template-columns: 1fr; }
+      .tool-boundary > .arrow, .repo-map > .arrow { transform: rotate(90deg); min-height: 44px; }
+      .relation-list, .context-box ul { columns: 1; }
+    }
+    @media print {
+      .tabs { display: none; }
+      .panel { display: block !important; break-before: page; }
+      .panel:first-of-type { break-before: auto; }
+      .section-card { box-shadow: none; break-inside: avoid; }
+      body { background: white; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Repository-evidenced schematic</p>
+          <h1>INSIGHT architecture</h1>
+          <p class="subtitle">Accepted target architecture, runtime trust boundaries, Research Case state machine, MCP contract, domain model, storage behavior, and current repository implementation—kept separate so planned capabilities are never presented as working software.</p>
+        </div>
+        <div class="snapshot">
+          <strong>Evidence snapshot: 2026-08-22</strong>
+          <span>ADR-001–ADR-023 accepted. Architecture source: repository files only. No inferred services or undocumented data flows.</span>
+        </div>
+      </div>
+      <div class="truth-banner">
+        <div class="truth implemented">
+          <strong>Implemented now</strong>
+          <p>Standalone Electron/React/TypeScript Bayes Engine XMLBIF editor only. It is not integrated into INSIGHT.</p>
+        </div>
+        <div class="truth target">
+          <strong>Accepted target</strong>
+          <p>Single-tenant TypeScript modular monolith: React/Vite, Fastify, internal MCP Gateway, durable jobs, and PostgreSQL in one container.</p>
+        </div>
+        <div class="truth safety">
+          <strong>Research-only boundary</strong>
+          <p>No executable INSIGHT app, patient database, DDI engine, authentication service, plan orchestrator, or unified deployment exists yet.</p>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Architecture views">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="system" id="tab-system">System map</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="workflow" id="tab-workflow">Workflow</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="modules" id="tab-modules">Modules</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="mcp" id="tab-mcp">MCP & jobs</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="data" id="tab-data">Domain & storage</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="repository" id="tab-repository">Repository reality</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="governance" id="tab-governance">Risks & evidence</button>
+    </nav>
+
+    <main>
+      <section id="system" class="panel active" role="tabpanel" aria-labelledby="tab-system">
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>Target runtime and trust boundaries</h2><p>One browser-facing boundary, one in-process MCP Gateway, one database, one artifact volume, one allowed external egress.</p></div>
+            <div class="sources">Sources: <a href="docs/architecture/system-architecture.md">system architecture</a>, <a href="docs/decisions/0015-mcp-jobs-and-browser-boundary.md">ADR-015</a>, <a href="docs/decisions/0021-tenancy-network-and-deletion.md">ADR-021</a></div>
+          </div>
+          <div class="legend" aria-label="Diagram legend">
+            <span><i class="swatch planned"></i>Accepted target, not implemented</span>
+            <span><i class="swatch implemented"></i>Implemented repository code</span>
+            <span><i class="swatch external"></i>External boundary</span>
+            <span><i class="swatch gated"></i>Governance/activation gate</span>
+            <span><i class="swatch risk"></i>Accepted limitation</span>
+          </div>
+
+          <div class="system-grid">
+            <aside class="actors" aria-label="System actors">
+              <div class="actor"><strong>Administrator</strong><small>Users, endpoint, knowledge, operational audit, backup/restore. No Patient content; no break-glass.</small></div>
+              <div class="actor"><strong>Psychiatrist</strong><small>Shared Patient registry, Research Case, draft review, DDI recheck, finalization, immediate hard deletion.</small></div>
+            </aside>
+            <div class="stack">
+              <div class="row-flow">
+                <div class="node planned"><strong>React / Vite browser</strong><small>Desktop-first. Untrusted. Same-origin API only. Holds no model, DB, MCP, master-key, or re-identification secret.</small></div>
+                <div class="arrow bi">REST/JSON commands<br>authenticated SSE progress</div>
+                <div class="node planned"><strong>Fastify backend</strong><small>Only browser-facing application boundary. AuthN, role authorization, runtime validation, CSRF, rate limits, idempotency, OpenAPI.</small></div>
+              </div>
+
+              <div class="boundary">
+                <div class="boundary-title">Single production container · one research organization/project · unsupported horizontal scaling</div>
+                <div class="lane">
+                  <div class="node planned"><strong>Persisted workflow state machine</strong><small>Owns transitions and state-specific tool allowlists. Browser and model cannot advance state.</small></div>
+                  <div class="arrow">creates command job</div>
+                  <div class="node planned"><strong>PostgreSQL durable jobs + worker</strong><small>Transactional leases, retries, progress events, idempotency, restart recovery.</small></div>
+                  <div class="arrow">claimed execution</div>
+                  <div class="node planned"><strong>Server-side model agent runtime</strong><small>Physical MCP client. Sends allowed schemas, validates model tool calls, executes them, preserves provenance.</small></div>
+                  <div class="arrow">allowlisted projection</div>
+                  <div class="node planned"><strong>De-identification gateway</strong><small>Ephemeral subject reference; allowlists and redacts fields; filters tool results. No names, identifiers, UUIDs, or mapping leave.</small></div>
+                </div>
+
+                <div class="lane" style="margin-top:12px">
+                  <div class="node planned"><strong>Internal MCP Gateway</strong><small>No public listener. Namespaced, typed, versioned, in-process tools only.</small></div>
+                  <div class="arrow bi">validated tool calls</div>
+                  <div class="node planned"><strong>Domain modules</strong><small>Assessment · Medication · DDI · Bayesian · Treatment Plan · bounded Research Case context.</small></div>
+                  <div class="arrow bi">module-owned contracts</div>
+                  <div class="node planned"><strong>PostgreSQL server</strong><small>System of record, embedded in same container. Module-owned tables, workflow/jobs, audit, endpoint config, master key, artifact metadata.</small></div>
+                  <div class="arrow bi">relative paths + hashes</div>
+                  <div class="node planned"><strong>Artifact service</strong><small>XMLBIF, DDI source documents, exports, large provenance. Filesystem-first best effort; authorization on every read.</small></div>
+                </div>
+              </div>
+
+              <div class="lane-storage">
+                <div class="node external"><strong>Configured OpenAI-compatible HTTPS endpoint</strong><small>Only required runtime egress. Logical MCP client. Connected only through the server-side agent and de-identification gateway above. One pinned endpoint/model; bounded retries; no automatic fallback.</small></div>
+                <div class="node planned"><strong>External persistent volume</strong><small>Distinct PostgreSQL-data and artifact subdirectories. Required for startup. Artifact loss is not recoverable from app backup.</small></div>
+                <div class="node gated"><strong>Governed local knowledge</strong><small>DDI source snapshot, C-SSRS artifact, medication/comorbidity/adverse-effect catalogs, routing artifact, BN versions.</small></div>
+                <div class="node risk"><strong>Database-held master key</strong><small>Stored beside ciphertext. Prevents routine plaintext storage but provides no protection from complete database compromise.</small></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="branch-note">
+            <div class="note info"><strong>Network rule</strong><br>Browser uses only same-origin REST and SSE. Backend egress is limited to the configured hosted-model endpoint. DDI, BN, assessments, PostgreSQL, and artifacts stay local.</div>
+            <div class="note"><strong>Backup rule</strong><br>Manual Administrator action exports PostgreSQL custom format plus JSON manifest. Artifacts are excluded. Restore replaces the full database in maintenance mode.</div>
+            <div class="note danger"><strong>Clinical authority rule</strong><br>Model output is a structured draft. Only an authenticated Psychiatrist can finalize. No model tool finalizes, deletes Patients, administers users, activates knowledge, or restores backups.</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="workflow" class="panel" role="tabpanel" aria-labelledby="tab-workflow" hidden>
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>Persisted Research Case state machine</h2><p>Exactly one Research Case per Patient. No Encounter, visit, follow-up, or second-case entity.</p></div>
+            <div class="sources">Sources: <a href="docs/architecture/system-architecture.md">system architecture</a>, <a href="docs/architecture/mcp-contracts.md">MCP contract</a>, <a href="docs/decisions/0013-single-research-case-and-clinical-history.md">ADR-013</a></div>
+          </div>
+          <div class="workflow" aria-label="Research Case workflow states">
+            <div class="workflow-row">
+              <div class="state"><span class="num">01</span><strong>DATA_COLLECTION</strong><small>Patient, assessments, medical history, current medicines. Model tools: none.</small></div>
+              <div class="state"><span class="num">02</span><strong>NORMALIZING_MEDICATIONS</strong><small>Catalog search and automatic mapping or <code>UNKNOWN</code>.</small></div>
+              <div class="state"><span class="num">03</span><strong>IMPUTING_BYPASSED_ASSESSMENTS</strong><small>Separate hidden <code>AI_IMPUTED</code> objects; official records stay <code>BYPASSED</code>.</small></div>
+              <div class="state"><span class="num">04</span><strong>ROUTING_BN</strong><small>Deterministic backend routing artifact; model cannot select pathways.</small></div>
+              <div class="state"><span class="num">05</span><strong>GENERATING_CPTS</strong><small>All CPTs generated for selected models; schema/dimension/normalization validation.</small></div>
+            </div>
+            <div class="workflow-row">
+              <div class="state"><span class="num">06</span><strong>RUNNING_BN</strong><small>Deterministic inference over accepted snapshot; no Patient facts clamped as evidence.</small></div>
+              <div class="state"><span class="num">07</span><strong>CHECKING_PRIMARY_DDI</strong><small>Exact normalized regimen; <code>UNKNOWN</code> pairs omitted; any finding excludes candidate from auto-plan.</small></div>
+              <div class="state"><span class="num">08</span><strong>GENERATING_PRIMARY_PLAN</strong><small>Versioned structured draft; evidence/provenance references required.</small></div>
+              <div class="state"><span class="num">09</span><strong>CLINICIAN_REVIEW</strong><small>Psychiatrist accepts or edits. No override rationale required.</small></div>
+              <div class="state"><span class="num">10</span><strong>RECHECKING_FINAL_DDI</strong><small>Required only after medication change; exact final regimen.</small></div>
+            </div>
+            <div class="workflow-row">
+              <div class="state"><span class="num">11</span><strong>READY_TO_FINALIZE</strong><small>All required successful, current, provenance-linked dependencies are present.</small></div>
+              <div class="state final"><span class="num">12</span><strong>FINALIZED</strong><small>Immutable active Final Plan version created transactionally and idempotently.</small></div>
+              <div class="state"><span class="num">13</span><strong>REVISION_DRAFT</strong><small>New mutable version seeded from active plan; predecessor stays immutable.</small></div>
+              <div class="state deleted"><span class="num">14</span><strong>DELETED</strong><small>Operational aggregate hard-deleted; complete clinical audit history survives.</small></div>
+              <div class="state final"><span class="num">↺</span><strong>SUPERSESSION</strong><small>Revision goes through final DDI recheck. New plan becomes <code>ACTIVE</code>; previous becomes <code>SUPERSEDED</code>.</small></div>
+            </div>
+          </div>
+          <div class="branch-note">
+            <div class="note"><strong>CPT failure</strong><br>First generation plus at most two diagnostic retries. No clipping, repair, filling, or renormalization. Third invalid attempt blocks BN output and finalization.</div>
+            <div class="note info"><strong>Warning-only outcomes</strong><br>Completed C-SSRS band and successful DDI findings never block finalization. A failed/unavailable required DDI execution does block.</div>
+            <div class="note danger"><strong>Deletion branch</strong><br>Any enabled Psychiatrist may delete immediately: no confirmation, password re-entry, delay, second approval, or Administrator action.</div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>Finalization gate</h2><p>All conditions are server-side; HTTP success or worker completion alone never proves domain success.</p></div>
+            <div class="sources">Source: <a href="docs/architecture/system-architecture.md">Finalization transaction</a></div>
+          </div>
+          <div class="module-grid">
+            <div class="module"><h3>Identity</h3><p>Authenticated Psychiatrist session.</p></div>
+            <div class="module"><h3>State</h3><p>Current persisted state is exactly <code>READY_TO_FINALIZE</code>.</p></div>
+            <div class="module"><h3>Final DDI</h3><p>Successful execution linked to the exact final regimen and pinned source.</p></div>
+            <div class="module"><h3>BN/CPT</h3><p>Successful routed execution when required; accepted snapshot and provenance current.</p></div>
+            <div class="module"><h3>Plan</h3><p>Structured plan validates against supported schema.</p></div>
+            <div class="module"><h3>Dependencies</h3><p>No required dependency failure, timeout, stale result, or provenance mismatch.</p></div>
+            <div class="module"><h3>Idempotency</h3><p>Unique key per Research Case; retry returns same created version.</p></div>
+            <div class="module"><h3>Transaction</h3><p>Insert immutable plan, supersede prior active version, record audit/provenance, advance state.</p></div>
+          </div>
+        </article>
+      </section>
+
+      <section id="modules" class="panel" role="tabpanel" aria-labelledby="tab-modules" hidden>
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>Target backend module ownership</h2><p>Logical boundaries inside one Fastify modular monolith—not separately deployed services.</p></div>
+            <div class="sources">Source: <a href="docs/architecture/system-architecture.md">Backend modules</a></div>
+          </div>
+          <div class="module-grid">
+            <div class="module"><h3>Identity</h3><p><strong>Owns:</strong> users, Argon2id passwords, opaque sessions, fixed roles.</p><p class="not-own"><strong>Does not own:</strong> Patient content.</p></div>
+            <div class="module"><h3>Patient</h3><p><strong>Owns:</strong> canonical Patient identity, encrypted demographics, official-identifier uniqueness, one Research Case.</p><p class="not-own"><strong>Does not own:</strong> assessment scoring or plans.</p></div>
+            <div class="module"><h3>Assessment</h3><p><strong>Owns:</strong> DSM-5-TR, PANSS, C-SSRS answers, bypass, deterministic results.</p><p class="not-own"><strong>Does not own:</strong> plan finalization.</p></div>
+            <div class="module"><h3>Medical History</h3><p><strong>Owns:</strong> presentation status, prior trials, comorbidities, current medicines.</p><p class="not-own"><strong>Does not own:</strong> canonical terminology.</p></div>
+            <div class="module"><h3>Medication</h3><p><strong>Owns:</strong> canonical catalog, normalization mappings, <code>UNKNOWN</code> state.</p><p class="not-own"><strong>Does not own:</strong> DDI conclusions.</p></div>
+            <div class="module"><h3>DDI</h3><p><strong>Owns:</strong> source versions, normalized-pair evaluation, warnings.</p><p class="not-own"><strong>Does not own:</strong> medication normalization.</p></div>
+            <div class="module"><h3>Bayesian</h3><p><strong>Owns:</strong> model versions, deterministic routing, CPT validation/snapshots, inference.</p><p class="not-own"><strong>Does not own:</strong> treatment authority.</p></div>
+            <div class="module"><h3>Treatment Plan</h3><p><strong>Owns:</strong> structured drafts, clinician edits, DDI rechecks, immutable final versions.</p><p class="not-own"><strong>Does not own:</strong> user authentication.</p></div>
+            <div class="module"><h3>Knowledge Administration</h3><p><strong>Owns:</strong> catalog/model/source version lifecycle.</p><p class="not-own"><strong>Does not own:</strong> Patient-scoped use decisions.</p></div>
+            <div class="module"><h3>Jobs</h3><p><strong>Owns:</strong> durable execution, leases, retries, progress, idempotency.</p><p class="not-own"><strong>Does not own:</strong> domain success semantics.</p></div>
+            <div class="module"><h3>Audit</h3><p><strong>Owns:</strong> operational and clinical event persistence.</p><p class="not-own"><strong>Does not own:</strong> tamper evidence.</p></div>
+            <div class="module"><h3>Artifact</h3><p><strong>Owns:</strong> relative paths, metadata, SHA-256 verification, access checks.</p><p class="not-own"><strong>Does not own:</strong> atomic filesystem/database transactions.</p></div>
+          </div>
+          <div class="gate" style="margin-top:14px"><strong>Cross-module rule</strong>Each module owns and writes its tables through module services. Cross-module reads use application contracts. Shared transactions are allowed only through an explicit orchestration service.</div>
+        </article>
+      </section>
+
+      <section id="mcp" class="panel" role="tabpanel" aria-labelledby="tab-mcp" hidden>
+        <article class="section-card">
+          <div class="section-head">
+            <div><h2>Logical client, physical executor, internal gateway</h2><p>Hosted model chooses only among schemas exposed for the current state. Server injects trusted context and executes calls.</p></div>
+            <div class="sources">Source: <a href="docs/architecture/mcp-contracts.md">MCP contract</a></div>
+          </div>
+          <div class="tool-boundary">
+            <div class="node external"><strong>Hosted model<br>logical MCP client</strong><small>Receives de-identified projections and allowlisted tool schemas. Emits structured calls. Cannot select Patient, role, workflow state, knowledge version, or arbitrary fields.</small></div>
+            <div class="arrow bi">HTTPS model/tool loop</div>
+            <div class="node planned"><strong>Server-side agent runtime<br>physical MCP client</strong><small>Injects <code>TrustedToolContext</code>, validates calls, enforces state allowlist, invokes one gateway, filters results, records hashes/versions/attempts.</small></div>
+            <div class="arrow bi">in-process typed call</div>
+            <div class="node planned"><strong>Internal MCP Gateway</strong><small>No browser or public endpoint. Namespaces route to owning module and cannot bypass its authorization, validation, transaction, or provenance rules.</small></div>
+          </div>
+
+          <div class="context-box">
+            <h3>Trusted execution envelope (backend-injected)</h3>
+            <ul>
+              <li><code>executionId</code></li><li><code>jobId</code></li><li><code>subjectRef</code> (ephemeral; not UUID)</li><li><code>researchCaseRevision</code></li><li><code>workflowState</code></li><li><code>actorRole = PSYCHIATRIST</code></li><li><code>allowedToolNames[]</code></li><li><code>idempotencyKey</code></li>
+            </ul>
+          </div>
+          <div class="context-box">
+            <h3>Common tool-result boundary</h3>
+            <p class="caption"><strong>Success:</strong> typed <code>data</code> + provenance (<code>toolName</code>, semantic <code>toolVersion</code>, input/output hashes, knowledge versions, execution time) + structured warnings. <strong>Failure:</strong> typed error code + retryable flag + safe message + optional internal diagnostics.</p>
+            <p class="caption">Raw exceptions, SQL details, absolute paths, credentials, internal UUIDs, names, and official identifiers never enter model-visible results.</p>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Complete model-callable tool surface</h2><p>Nine tools across six namespaces. No other operation is presented to the model.</p></div><div class="sources">Source: <a href="docs/architecture/mcp-contracts.md">Gateway namespaces and tools</a></div></div>
+          <div class="module-grid">
+            <div class="module"><h3><code>research_case.*</code></h3><p><code>get_context</code> returns one fixed projection: <code>MEDICATION_NORMALIZATION</code>, <code>ASSESSMENT_IMPUTATION</code>, <code>CPT_GENERATION</code>, or <code>PLAN_DRAFT</code>.</p></div>
+            <div class="module"><h3><code>assessment.*</code></h3><p><code>submit_imputation</code> validates separate AI imputations for all currently bypassed assessments.</p></div>
+            <div class="module"><h3><code>medication.*</code></h3><p><code>search_candidates</code><br><code>commit_mapping</code> (returned candidate or <code>UNKNOWN</code>).</p></div>
+            <div class="module"><h3><code>ddi.*</code></h3><p><code>evaluate_regimen</code> for <code>PRIMARY_FILTER</code> or <code>FINAL_RECHECK</code>.</p></div>
+            <div class="module"><h3><code>bn.*</code></h3><p><code>get_routed_contracts</code><br><code>submit_cpt_snapshot</code><br><code>run_inference</code>.</p></div>
+            <div class="module"><h3><code>treatment_plan.*</code></h3><p><code>submit_primary</code> validates and persists a structured draft; never finalizes.</p></div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>State-specific model tool allowlist</h2><p>Calls outside this table fail with <code>TOOL_NOT_ALLOWED_IN_STATE</code>.</p></div><div class="sources">Source: <a href="docs/architecture/mcp-contracts.md">State allowlist</a></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Workflow state</th><th>Model-callable tools</th></tr></thead>
+              <tbody>
+                <tr><td><code>DATA_COLLECTION</code></td><td class="none">None</td></tr>
+                <tr><td><code>NORMALIZING_MEDICATIONS</code></td><td><code>research_case.get_context</code>, <code>medication.search_candidates</code>, <code>medication.commit_mapping</code></td></tr>
+                <tr><td><code>IMPUTING_BYPASSED_ASSESSMENTS</code></td><td><code>research_case.get_context</code>, <code>assessment.submit_imputation</code></td></tr>
+                <tr><td><code>ROUTING_BN</code></td><td class="none">None; backend routing only</td></tr>
+                <tr><td><code>GENERATING_CPTS</code></td><td><code>research_case.get_context</code>, <code>bn.get_routed_contracts</code>, <code>bn.submit_cpt_snapshot</code></td></tr>
+                <tr><td><code>RUNNING_BN</code></td><td><code>bn.run_inference</code></td></tr>
+                <tr><td><code>CHECKING_PRIMARY_DDI</code></td><td><code>ddi.evaluate_regimen</code></td></tr>
+                <tr><td><code>GENERATING_PRIMARY_PLAN</code></td><td><code>research_case.get_context</code>, <code>treatment_plan.submit_primary</code></td></tr>
+                <tr><td><code>CLINICIAN_REVIEW</code></td><td class="none">None</td></tr>
+                <tr><td><code>RECHECKING_FINAL_DDI</code></td><td><code>ddi.evaluate_regimen</code></td></tr>
+                <tr><td><code>REVISION_DRAFT</code></td><td class="none">Not listed in the current MCP-contract allowlist; this is an explicit specification gap, not an inferred permission.</td></tr>
+                <tr><td><code>READY_TO_FINALIZE</code>, <code>FINALIZED</code>, <code>DELETED</code></td><td class="none">None</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="gate" style="margin-top:14px"><strong>Backend-only commands</strong>Create/update/delete Patient; identifier handling; authentication/session/user administration; knowledge activation/retirement; endpoint configuration; backup/restore; direct state changes; clinician approval; finalization/supersession; Patient deletion; clinical audit reads.</div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Durable execution and failure closure</h2><p>Job success is necessary but never sufficient; owning domain validates result and provenance before state advances.</p></div><div class="sources">Sources: <a href="docs/decisions/0015-mcp-jobs-and-browser-boundary.md">ADR-015</a>, <a href="docs/architecture/mcp-contracts.md">error codes</a></div></div>
+          <div class="row-flow">
+            <div class="node planned"><strong>REST command</strong><small>Validate role + state; create job with input/dependency fingerprint and idempotency key.</small></div>
+            <div class="arrow">queue</div>
+            <div class="node planned"><strong>Lease claim</strong><small><code>QUEUED → RUNNING</code>; attempt, owner, expiry recorded.</small></div>
+            <div class="arrow">execute</div>
+            <div class="node planned"><strong>Typed domain result</strong><small>Immutable result/provenance; failure remains failure.</small></div>
+            <div class="arrow">transaction</div>
+            <div class="node planned"><strong>State transition</strong><small>Only after validation; progress events stream by authenticated resumable SSE.</small></div>
+          </div>
+          <div class="branch-note">
+            <div class="note"><strong>Retryable, bounded</strong><br><code>DEPENDENCY_UNAVAILABLE</code>, <code>MODEL_ENDPOINT_FAILED</code>, plan schema correction, and CPT diagnostics within exact limits.</div>
+            <div class="note danger"><strong>Non-retryable/current-run stop</strong><br>Unauthorized state, stale Research Case revision, inactive knowledge, invalid candidate, stale snapshot, provenance mismatch.</div>
+            <div class="note info"><strong>Restart recovery</strong><br>Expired leases permit a safe retry. Refreshing/closing browser does not cancel work. SSE reconnects after last event identifier.</div>
+          </div>
+          <div class="table-wrap" style="margin-top:14px">
+            <table>
+              <thead><tr><th>Contract error</th><th>Retry rule</th><th>Workflow effect</th></tr></thead>
+              <tbody>
+                <tr><td><code>TOOL_NOT_ALLOWED_IN_STATE</code></td><td>No</td><td>Agent execution fails.</td></tr>
+                <tr><td><code>STALE_RESEARCH_CASE_REVISION</code></td><td>No</td><td>Cancel job; user starts a new execution.</td></tr>
+                <tr><td><code>INVALID_TOOL_INPUT</code></td><td>No job retry</td><td>Model may correct within remaining turn budget.</td></tr>
+                <tr><td><code>DEPENDENCY_UNAVAILABLE</code></td><td>Yes, bounded</td><td>Fail closed after job retries.</td></tr>
+                <tr><td><code>KNOWLEDGE_VERSION_INACTIVE</code></td><td>No</td><td>Block dependent workflow.</td></tr>
+                <tr><td><code>MEDICATION_CANDIDATE_INVALID</code></td><td>No</td><td>Model must choose returned candidate or <code>UNKNOWN</code>.</td></tr>
+                <tr><td><code>DDI_SOURCE_DISABLED</code></td><td>No</td><td>Block finalization.</td></tr>
+                <tr><td><code>CPT_VALIDATION_FAILED</code></td><td>Yes; at most 2 diagnostic retries</td><td>Block BN and finalization after third invalid attempt.</td></tr>
+                <tr><td><code>CPT_SNAPSHOT_STALE</code></td><td>No</td><td>Create new imputation/CPT execution.</td></tr>
+                <tr><td><code>PLAN_SCHEMA_INVALID</code></td><td>Yes, bounded within job</td><td>No clinician draft until valid.</td></tr>
+                <tr><td><code>PROVENANCE_MISMATCH</code></td><td>No</td><td>Block finalization.</td></tr>
+                <tr><td><code>MODEL_ENDPOINT_FAILED</code></td><td>Yes, bounded</td><td>Fail closed; no endpoint fallback.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="data" class="panel" role="tabpanel" aria-labelledby="tab-data" hidden>
+        <article class="section-card">
+          <div class="section-head"><div><h2>Domain aggregates and relationships</h2><p>PostgreSQL is authoritative. Every derived result pins all inputs capable of changing it.</p></div><div class="sources">Source: <a href="docs/architecture/domain-model.md">Domain model</a></div></div>
+          <div class="entity-layout">
+            <div class="entity-group">
+              <h3>Identity & audit</h3>
+              <div class="entity"><strong>USER</strong><small>UUID, normalized username, Argon2id password hash, ADMINISTRATOR | PSYCHIATRIST, account status.</small></div>
+              <div class="entity"><strong>SESSION</strong><small>Opaque token hash, user, timestamps, expiry, revocation, client/security metadata.</small></div>
+              <div class="entity"><strong>AUDIT_EVENT</strong><small>Actor/time/target/version and role-appropriate payload or reference. Ordinary mutable PostgreSQL row.</small></div>
+            </div>
+            <div class="entity-group">
+              <h3>Patient aggregate</h3>
+              <div class="entity"><strong>PATIENT</strong><small>Canonical UUID; encrypted official identifier, name, DOB; binary sex; lookup hash and uniqueness constraint.</small></div>
+              <div class="entity"><strong>RESEARCH_CASE</strong><small>Exactly one per Patient; start date, presentation status, workflow state, last-write-wins mutable data.</small></div>
+              <div class="entity"><strong>ASSESSMENT</strong><small>DSM5TR | PANSS | CSSRS_RECENT; status, structured answers, deterministic result; bypass discards partial answers.</small></div>
+              <div class="entity"><strong>AI_IMPUTATION</strong><small>Separate hidden generated assessment values + model/prompt/schema/input provenance and dependency fingerprint.</small></div>
+            </div>
+            <div class="entity-group">
+              <h3>History & medication</h3>
+              <div class="entity"><strong>MEDICATION_ENTRY</strong><small>CURRENT | PROPOSED; raw text; NORMALIZED | UNKNOWN; optional regimen fields; LLM mapping provenance.</small></div>
+              <div class="entity"><strong>ANTIPSYCHOTIC_TRIAL</strong><small>Medication required; dose/period/response/adverse effect/discontinuation/notes optional.</small></div>
+              <div class="entity"><strong>COMORBIDITY_SELECTION</strong><small>Pinned governed catalog version + stable term; optional supplemental text.</small></div>
+              <div class="entity"><strong>DDI_EXECUTION</strong><small>Exact regimen snapshot, unknown omissions, source version, findings, status, timestamp, provenance.</small></div>
+            </div>
+            <div class="entity-group">
+              <h3>Bayes, plan & operations</h3>
+              <div class="entity"><strong>BN_MODEL_VERSION</strong><small>Immutable pathway version, source hash, topology hash, validation/evidence states, lifecycle.</small></div>
+              <div class="entity"><strong>CPT_EXECUTION</strong><small>Model version, dependency fingerprint, ≤3 attempts, immutable full snapshot, deterministic inference.</small></div>
+              <div class="entity"><strong>PLAN_DRAFT</strong><small>Versioned structured schema, regimen, execution references, clinician edits; mutable.</small></div>
+              <div class="entity"><strong>FINAL_PLAN_VERSION</strong><small>Immutable snapshot, ACTIVE | SUPERSEDED, predecessor, exact DDI/CPT/BN/source provenance, idempotency key.</small></div>
+              <div class="entity"><strong>JOB</strong><small>Typed payload, lease/retries/progress/idempotency/result reference.</small></div>
+              <div class="entity"><strong>ARTIFACT</strong><small>Relative path, media type, bytes, SHA-256, lifecycle/version/access classification.</small></div>
+              <div class="entity"><strong>ARTIFACT_REFERENCE</strong><small>Referenced by one Artifact; detailed fields are not specified in the current domain document.</small></div>
+            </div>
+          </div>
+          <ul class="relation-list">
+            <li><code>USER 1 → many SESSION</code></li>
+            <li><code>USER 1 → many AUDIT_EVENT</code></li>
+            <li><code>PATIENT 1 ↔ 1 RESEARCH_CASE</code></li>
+            <li><code>RESEARCH_CASE 1 → many ASSESSMENT</code></li>
+            <li><code>RESEARCH_CASE 1 → many MEDICATION_ENTRY</code></li>
+            <li><code>RESEARCH_CASE 1 → many ANTIPSYCHOTIC_TRIAL</code></li>
+            <li><code>RESEARCH_CASE 1 → many COMORBIDITY_SELECTION</code></li>
+            <li><code>RESEARCH_CASE 1 → many AI_IMPUTATION</code></li>
+            <li><code>RESEARCH_CASE 1 → many DDI_EXECUTION</code></li>
+            <li><code>RESEARCH_CASE 1 → many CPT_EXECUTION</code></li>
+            <li><code>RESEARCH_CASE 1 → many PLAN_DRAFT</code></li>
+            <li><code>RESEARCH_CASE 1 → many FINAL_PLAN_VERSION</code></li>
+            <li><code>CPT_EXECUTION many → 1 BN_MODEL_VERSION</code></li>
+            <li><code>FINAL_PLAN_VERSION many → 1 DDI_EXECUTION</code></li>
+            <li><code>FINAL_PLAN_VERSION many → 1 CPT_EXECUTION</code></li>
+            <li><code>ARTIFACT 1 → many ARTIFACT_REFERENCE</code></li>
+            <li><code>JOB many → 1 RESEARCH_CASE</code></li>
+          </ul>
+          <div class="branch-note">
+            <div class="note info"><strong>Identity invariant</strong><br>Official identifier tuple (type, issuer, normalized value) is unique. A match opens the existing Patient and atomically overwrites submitted name, birth date, and sex differences with an immutable audit event.</div>
+            <div class="note"><strong>Demographic invariant</strong><br>Date of birth and <code>MALE | FEMALE</code> are mandatory. Age is derived—today for live profile, Research Case start date for case artifacts. No persisted age snapshot.</div>
+            <div class="note danger"><strong>Version-pinning invariant</strong><br>Derived results pin clinical artifact, catalog/rule, DDI source, BN route/model, endpoint/model config, prompt/schema/settings, de-identified input fingerprint, CPT snapshot, and clinician edits.</div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Persistence, artifacts, backup, restore, deletion</h2><p>Cross-storage limitations and deletion residue are architectural decisions, not implementation accidents.</p></div><div class="sources">Sources: <a href="docs/decisions/0018-key-backup-and-session-architecture.md">ADR-018</a>–<a href="docs/decisions/0020-backup-files-and-patient-deletion.md">ADR-020</a>, <a href="docs/decisions/0023-audit-reset-and-vertical-slice.md">ADR-023</a></div></div>
+          <div class="row-flow">
+            <div class="node planned"><strong>File creation</strong><small>Generate UUID relative path; write target file first. No staging/atomic rename/content-address rule.</small></div>
+            <div class="arrow">file succeeds</div>
+            <div class="node planned"><strong>Metadata insert</strong><small>PostgreSQL row stores path, hash, size, owner, access class, lifecycle, provenance.</small></div>
+            <div class="arrow">on read</div>
+            <div class="node planned"><strong>Authorized verification</strong><small>Backend resolves relative path and verifies SHA-256; browser never selects arbitrary paths.</small></div>
+          </div>
+          <div class="branch-note">
+            <div class="note danger"><strong>Orphan risk</strong><br>If file succeeds and metadata insert fails—or process crashes—unreferenced file may remain indefinitely. No automatic scanner or cleanup worker.</div>
+            <div class="note"><strong>Backup gap</strong><br>PostgreSQL dump includes database-held master key and protected data, but excludes every artifact file. Restore expects matching volume to survive independently.</div>
+            <div class="note info"><strong>Deletion residue</strong><br>Patient aggregate and non-audit artifacts are removed, then file deletion gets one best-effort attempt. Complete clinical audit rows and required audit payloads remain.</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="repository" class="panel" role="tabpanel" aria-labelledby="tab-repository" hidden>
+        <article class="section-card">
+          <div class="section-head"><div><h2>Current executable code: standalone Bayes Engine</h2><p>Electron source implementation only. Production target explicitly removes Electron and migrates reusable pure TypeScript logic into integrated BN Manager.</p></div><div class="sources">Sources: indexed code graph, <a href="Bayesian-Engine/README.md">Bayesian-Engine README</a>, <a href="docs/decisions/0016-stack-bayes-and-model-endpoint.md">ADR-016</a></div></div>
+          <div class="repo-map">
+            <div class="node implemented"><strong>Electron main process</strong><small><code>src/main/main.ts</code></small><ul class="file-list"><li>BrowserWindow lifecycle</li><li>native application menu</li><li>safe XML file open/save IPC</li><li>input limits and authorized paths</li></ul></div>
+            <div class="arrow bi">context-isolated IPC</div>
+            <div class="node implemented"><strong>Preload bridge</strong><small><code>src/preload/api.ts</code><br><code>src/preload/index.ts</code></small><ul class="file-list"><li>typed <code>BayesEngineApi</code></li><li>no Node integration in renderer</li></ul></div>
+            <div class="arrow bi">typed API</div>
+            <div class="node implemented"><strong>React renderer + state</strong><small><code>src/renderer/*</code> + <code>src/store/documentStore.ts</code></small><ul class="file-list"><li>App shell and commands</li><li>new/open/save/undo/redo</li><li>graph/code/table synchronized views</li><li>dirty state and fidelity guard</li></ul></div>
+          </div>
+          <div class="asset-grid" style="margin-top:14px">
+            <details open><summary>UI components (9 files)</summary><div><ul><li>CptEditor</li><li>DiagnosticsPanel</li><li>GraphView</li><li>NodeInspector</li><li>RawValueEditor</li><li>XmlCodeView</li><li>CPT table projection</li><li>graph projection</li><li>raw-table projection</li></ul></div></details>
+            <details open><summary>Pure domain layer (9 files)</summary><div><ul><li>cptTensor</li><li>diagnostics</li><li>fidelity</li><li>inputLimits</li><li>model</li><li>mutations</li><li>parser</li><li>serializer</li><li>validator</li></ul></div></details>
+            <details open><summary>Implemented scope</summary><div><ul><li>XMLBIF 0.3 discrete BN/influence-diagram editor</li><li>nature/decision/utility node editing</li><li>CPT and raw finite-value tables</li><li>structural and probability checks</li><li>safe dimension transforms</li><li>deterministic XML synchronization</li><li>tests and packaging configuration</li></ul><strong>Not present:</strong> inference, learning, policy optimization, Patient context, DDI, plan workflow.</div></details>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Clinical and knowledge artifacts in repository</h2><p>Files are evidence inputs and research artifacts—not active runtime services or clinically approved content.</p></div><div class="sources">Sources: repository inventory, <a href="README.md">root README</a>, <a href="docs/decisions/0005-knowledge-activation-and-failure.md">ADR-005</a>, <a href="docs/decisions/0022-clinical-routing-and-plan-schema.md">ADR-022</a></div></div>
+          <div class="asset-grid">
+            <details open><summary>13 Bayesian XML artifacts</summary><div>
+              <ul>
+                <li>Treatment Setting</li><li>Pharmacotherapy</li><li>Involuntary Treatment Considerations</li><li>Clozapine in Suicide Risk</li><li>Continuing Medications</li><li>Continuing the Same Medication</li><li>Clozapine in Treatment-Resistant Schizophrenia</li><li>Clozapine in Aggressive Behavior</li><li>Long-Acting Antipsychotic Medications</li><li>Acute Dystonia / anticholinergic therapy</li><li>Treatments for Parkinsonism</li><li>Treatments for Akathisia</li><li>VMAT2 medications for Tardive Dyskinesia</li>
+              </ul>
+              <strong>Audit status:</strong> 6 of 13 fail CPT dimension or normalization checks; a separate seventh declares unsupported BIF 1.0. Pharmacotherapy is the first vertical-slice candidate but is not clinically validated. Akathisia artifact appears content-mismatched.
+            </div></details>
+            <details open><summary>DDI source archive</summary><div><strong>Local count:</strong> 121 Medscape text files + 8 Medscape PDFs.<ul><li>No live scraping at runtime.</li><li>No fallback source or LLM-generated interaction mode.</li><li>Disabled until written permission/legal basis and per-item versioned manifest are stored.</li><li>No time-based expiry after activation; Administrator must retire/supersede.</li></ul></div></details>
+            <details open><summary>Suicide-risk source</summary><div><strong>One local PDF:</strong> C-SSRS Screen Version - Recent.<ul><li>SHA-256: <code>8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2</code></li><li>6 visible Yes/No questions with deterministic branching/bands.</li><li>Permission/training/source-approval record required for production activation.</li><li>No governed transcription, approved Persian translation, or clinical review of band mapping exists in repository.</li></ul></div></details>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Implementation status</h2><p>Plan packets 0–8 are unchecked. Target INSIGHT runtime has not begun.</p></div><div class="sources">Source: <a href="Plan.md">implementation plan</a></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Packet</th><th>Target increment</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>TypeScript workspace, React/Vite, Fastify, embedded PostgreSQL, single image, REST/OpenAPI/SSE, CI.</td><td>Not started</td></tr>
+                <tr><td>1</td><td>First synthetic end-to-end Research Case through auth, assessments, DDI, Pharmacotherapy BN, draft, final plan, jobs/audit.</td><td>Not started</td></tr>
+                <tr><td>2</td><td>Identity, sessions, Patient uniqueness/shared lifecycle, Administrator isolation, hard deletion.</td><td>Not started</td></tr>
+                <tr><td>3</td><td>Assessment and medical-history completion.</td><td>Not started</td></tr>
+                <tr><td>4</td><td>Medication catalog and DDI expansion.</td><td>Not started</td></tr>
+                <tr><td>5</td><td>MCP, model, and durable-job hardening.</td><td>Not started</td></tr>
+                <tr><td>6</td><td>Bayesian library extraction and integrated BN Manager.</td><td>Not started</td></tr>
+                <tr><td>7</td><td>Treatment, audit, and artifact lifecycle completion.</td><td>Not started</td></tr>
+                <tr><td>8</td><td>Backup/restore, failure exercises, research hardening, acceptance suite.</td><td>Not started</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="governance" class="panel" role="tabpanel" aria-labelledby="tab-governance" hidden>
+        <article class="section-card">
+          <div class="section-head"><div><h2>Deliberately accepted architecture risks</h2><p>Explicit decisions from the accepted specification; none are “filled in” or softened here.</p></div><div class="sources">Source: <a href="docs/architecture/system-architecture.md">Deliberately accepted risks</a></div></div>
+          <div class="risk-grid">
+            <div class="risk-block"><h3>Security, privacy, operations</h3><ul><li>Enabled <code>admin/admin</code>; no forced change.</li><li>No MFA or SSO.</li><li>Master key stored with ciphertext.</li><li>Provider retention/training terms do not gate activation.</li><li>Any Psychiatrist can immediately hard-delete any shared Patient without confirmation.</li><li>Audit tables are ordinary mutable PostgreSQL rows.</li><li>Manual database-only backups; no artifact backup.</li><li>Best-effort filesystem/database consistency; orphan files possible.</li><li>Hard deletion preserves complete clinical audit payloads and Patient linkage.</li></ul></div>
+            <div class="risk-block"><h3>Clinical and model behavior</h3><ul><li>DDI and completed suicide-risk findings are warning-only.</li><li>AI-imputed details remain hidden; generic notice disappears from final/exported plans.</li><li>Medication normalization is accepted automatically without clinician confirmation.</li><li><code>UNKNOWN</code> medications omit all related DDI pairs but do not block finalization.</li><li>Structurally passing BN versions activate automatically without clinical approval.</li><li>LLM regenerates every CPT; software-valid tables are not calibrated clinical probabilities.</li><li>Patient facts affect inference only through generated CPTs; no evidence clamping.</li><li>Mutable drafts are last-write-wins; concurrent edits may be silently lost.</li></ul></div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Explicitly out of scope</h2><p>These boxes are architectural absences, not missing diagram nodes.</p></div><div class="sources">Source: <a href="docs/product/product-and-workflow-requirements.md">Product and workflow requirements</a></div></div>
+          <div class="scope-block"><ul class="relation-list" style="margin-top:0">
+            <li>Multiple organizations in one deployment.</li><li>Multiple Research Cases, visits, or Encounters.</li><li>Administrator access to Patient content.</li><li>MFA, SSO, public signup, or email recovery.</li><li>Mobile-first clinical use.</li><li>Microservices, Redis, or object storage.</li><li>Live medical-source scraping.</li><li>Automated backups or artifact backups.</li><li>Autonomous plan finalization.</li><li>Clinical approval gate for structurally passing BN models.</li><li>Hard safety blocks for DDI findings or suicide-risk results.</li><li>Horizontal scaling, high availability, multiple app replicas, managed DB failover.</li>
+          </ul></div>
+        </article>
+
+        <article class="section-card">
+          <div class="section-head"><div><h2>Authoritative evidence map</h2><p>Accepted ADRs override implementation-facing documents if a conflict is found.</p></div><div class="sources">All links resolve inside this repository.</div></div>
+          <div class="adr-grid">
+            <div class="adr"><strong><a href="docs/decisions/0001-product-foundation.md">ADR-001 · Product Foundation</a></strong><span>Research-only stage, integrated BN Manager, modular monolith.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0002-data-and-mcp-boundary.md">ADR-002 · Data and MCP Boundary</a></strong><span>Jurisdiction-neutral core, approved identified research mode, LLM as client.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0003-identity-and-llm-boundary.md">ADR-003 · Identity and Hosted LLM</a></strong><span>Dual identity, backend workflow authority, de-identification.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0004-runtime-data-and-roles.md">ADR-004 · Runtime, Data, Roles</a></strong><span>Desktop-first web, PostgreSQL, two fixed roles.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0005-knowledge-activation-and-failure.md">ADR-005 · Knowledge and Failure</a></strong><span>Medscape gate, BN checks, fail-closed dependencies.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0006-operational-scope.md">ADR-006 · Operational Scope</a></strong><span>Immediate BN activation, manual DDI freshness, all-in-one container.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0007-auth-access-and-concurrency.md">ADR-007 · Auth and Concurrency</a></strong><span>Password auth, Administrator isolation, last-write-wins drafts.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0008-cpt-admin-and-patient-scope.md">ADR-008 · CPT/Admin/Patient Scope</a></strong><span>Patient-specific CPTs, admin/admin, shared Psychiatrist registry.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0009-cpt-snapshot-and-assessment-bypass.md">ADR-009 · CPT Lifecycle and Bypass</a></strong><span>Three-attempt CPT limit, reuse/invalidation, unrestricted bypass.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0010-suicide-risk-and-ddi-warning-policy.md">ADR-010 · Warning-only Policy</a></strong><span>Completed suicide risk and DDI findings never hard-block.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0011-medication-normalization-and-assessment-imputation.md">ADR-011 · Normalization and Imputation</a></strong><span>Automatic mapping, UNKNOWN behavior, hidden AI imputations.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0012-patient-identity-and-demographics.md">ADR-012 · Patient Demographics</a></strong><span>Hard uniqueness, DOB-derived age, binary sex, overwrite on identifier match.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0013-single-research-case-and-clinical-history.md">ADR-013 · Single Research Case</a></strong><span>No visits/Encounters; structured presentation/history.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0014-plan-supersession-and-trial-details.md">ADR-014 · Plan Supersession</a></strong><span>Immutable versions, optional trial details, governed adverse effects.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0015-mcp-jobs-and-browser-boundary.md">ADR-015 · MCP, Jobs, Browser</a></strong><span>Internal gateway, PostgreSQL jobs, browser-only backend access.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0016-stack-bayes-and-model-endpoint.md">ADR-016 · Stack and Bayes Integration</a></strong><span>TypeScript stack, no production Electron, direct endpoint client.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0017-api-model-secrets-and-fallback.md">ADR-017 · API and Model Secrets</a></strong><span>REST/OpenAPI/SSE, write-only credential, no fallback.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0018-key-backup-and-session-architecture.md">ADR-018 · Key, Backup, Sessions</a></strong><span>DB-held key, manual DB dump, opaque PostgreSQL sessions.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0019-artifacts-audit-and-restore.md">ADR-019 · Artifacts, Audit, Restore</a></strong><span>Volume artifacts, ordinary audit tables, full DB replacement.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0020-backup-files-and-patient-deletion.md">ADR-020 · Backup, Files, Deletion</a></strong><span>Database-only backup, best-effort files, hard Patient deletion.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0021-tenancy-network-and-deletion.md">ADR-021 · Tenancy, Network, Deletion</a></strong><span>One tenant, LLM-only egress, immediate single-Psychiatrist deletion.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0022-clinical-routing-and-plan-schema.md">ADR-022 · Clinical Routing and Plans</a></strong><span>Governed C-SSRS, deterministic BN routes, structured plans/rules.</span></div>
+            <div class="adr"><strong><a href="docs/decisions/0023-audit-reset-and-vertical-slice.md">ADR-023 · Audit, Reset, Slice</a></strong><span>Surviving clinical audit, temporary passwords, vertical slice first.</span></div>
+          </div>
+          <div class="gate" style="margin-top:14px"><strong>Implementation-facing specifications</strong><a href="docs/architecture/system-architecture.md">System architecture</a> · <a href="docs/architecture/domain-model.md">Domain model</a> · <a href="docs/architecture/mcp-contracts.md">MCP contract</a> · <a href="docs/product/product-and-workflow-requirements.md">Product/workflow requirements</a> · <a href="Plan.md">Implementation plan</a> · <a href="README.md">Repository status</a></div>
+        </article>
+      </section>
+    </main>
+
+    <p class="footer">INSIGHT research prototype · schematic generated only from repository evidence · accepted target architecture is not current implementation</p>
+  </div>
+
+  <script>
+    (() => {
+      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+      function activate(tab, focus = false) {
+        tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+        panels.forEach((panel) => {
+          const selected = panel.id === tab.getAttribute('aria-controls');
+          panel.hidden = !selected;
+          panel.classList.toggle('active', selected);
+        });
+        if (focus) tab.focus();
+        history.replaceState(null, '', `#${tab.getAttribute('aria-controls')}`);
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(tab));
+        tab.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          let next = index;
+          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          activate(tabs[next], true);
+        });
+      });
+
+      const requested = location.hash.slice(1);
+      const initial = tabs.find((tab) => tab.getAttribute('aria-controls') === requested);
+      if (initial) activate(initial);
+    })();
+  </script>
+</body>
+</html>

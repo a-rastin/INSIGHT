@@ -1,0 +1,119 @@
+net
+{
+     node_size = (90 40);
+     name = "Treatments_for_Parkinsonism";
+     UnBBayes_Color_Probabilistic_Description = "-256";
+     UnBBayes_Color_Probabilistic_Explanation = "-16711936";
+}
+
+node Parkinsonism_Status
+{
+     label = "Medication-induced parkinsonism: symptomatic vs at-risk";
+     position = (40 30);
+     states = ("Present" "At_Risk");
+}
+
+node Dose_Reduction_Feasible
+{
+     label = "Antipsychotic dose reduction feasible?";
+     position = (300 30);
+     states = ("Yes" "No");
+}
+
+node Psychotic_Relapse_Risk
+{
+     label = "Risk of psychotic symptom increase with dose change / switch";
+     position = (560 30);
+     states = ("High" "Low");
+}
+
+node Tardive_Dyskinesia
+{
+     label = "Tardive dyskinesia present? (anticholinergics worsen TD)";
+     position = (820 30);
+     states = ("Present" "Absent");
+}
+
+node Age
+{
+     label = "Age (older = greater anticholinergic sensitivity)";
+     position = (1080 30);
+     states = ("Above65" "Under65");
+}
+
+node Anticholinergic_Caution
+{
+     label = "Caution against anticholinergic burden (derived)";
+     position = (940 190);
+     states = ("High" "Low");
+}
+
+decision Parkinsonism_Treatment
+{
+     label = "Treatment for medication-induced parkinsonism (decision)";
+     position = (440 340);
+     states = ("Reduce_Dose" "Switch_Antipsychotic" "Anticholinergic" "Amantadine");
+}
+
+utility U_NetBenefit
+{
+     label = "Net clinical benefit";
+     position = (440 500);
+}
+
+potential (Parkinsonism_Status)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Dose_Reduction_Feasible)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Psychotic_Relapse_Risk)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Tardive_Dyskinesia)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Age)
+{
+ data = ( 0.5 0.5 );
+}
+
+potential (Anticholinergic_Caution | Tardive_Dyskinesia Age)
+{
+ data = ((( 1.0 0.0 )
+( 1.0 0.0 ))
+(( 1.0 0.0 )
+( 0.0 1.0 )));
+}
+
+potential (Parkinsonism_Treatment | Parkinsonism_Status Dose_Reduction_Feasible Psychotic_Relapse_Risk Anticholinergic_Caution)
+{
+}
+
+potential (U_NetBenefit | Parkinsonism_Treatment Dose_Reduction_Feasible Psychotic_Relapse_Risk Anticholinergic_Caution)
+{
+ data = (((( 3 2 )
+( 12 11 ))
+(( -4 -4 )
+( -2 -2 )))
+((( 4 3 )
+( 9 8 ))
+(( 4 3 )
+( 9 8 )))
+((( -6 10 )
+( -6 7 ))
+(( -6 10 )
+( -6 8 )))
+((( 7 5 )
+( 7 5 ))
+(( 7 5 )
+( 7 5 ))));
+}

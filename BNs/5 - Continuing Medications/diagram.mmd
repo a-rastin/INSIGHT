@@ -1,0 +1,38 @@
+flowchart TD
+    diagnosis_context["diagnosis_context"]
+    symptom_response["symptom_response_to_antipsychotic"]
+    emergent_harm["serious_or_emergent_medication_harm"]
+    side_effects["significant_side_effect_burden"]
+    adherence["adherence_concern"]
+    formulation["formulation_barrier_or_lai_preference"]
+    pk_factor["pharmacokinetic_dose_change_factor"]
+    dose_goal["dose_reduction_goal_or_request"]
+
+    eligibility["maintenance_antipsychotic_eligibility"]
+    adherence_priority["adherence_strategy_priority"]
+    adjustment_priority["medication_adjustment_priority"]
+    recommendation["management_recommendation"]
+
+    diagnosis_context --> eligibility
+    symptom_response --> eligibility
+    emergent_harm --> eligibility
+
+    adherence --> adherence_priority
+    formulation --> adherence_priority
+
+    emergent_harm --> adjustment_priority
+    side_effects --> adjustment_priority
+    pk_factor --> adjustment_priority
+    dose_goal --> adjustment_priority
+
+    eligibility --> recommendation
+    adherence_priority --> recommendation
+    adjustment_priority --> recommendation
+
+    classDef patient fill:#e8f1fb,stroke:#2f5597,color:#111;
+    classDef intermediate fill:#eef7e8,stroke:#548235,color:#111;
+    classDef output fill:#fff2cc,stroke:#bf9000,color:#111;
+
+    class diagnosis_context,symptom_response,emergent_harm,side_effects,adherence,formulation,pk_factor,dose_goal patient;
+    class eligibility,adherence_priority,adjustment_priority intermediate;
+    class recommendation output;

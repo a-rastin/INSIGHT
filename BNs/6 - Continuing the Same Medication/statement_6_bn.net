@@ -1,0 +1,194 @@
+net
+{
+    name = "APA_Statement_6_Continuing_Same_Antipsychotic";
+    comment = "Qualitative source-backed BN. Placeholder CPTs are not clinically calibrated.";
+}
+
+node schizophrenia_dx
+{
+    states = ("yes" "no" "unknown");
+    label = "Schizophrenia diagnosis";
+}
+
+node symptom_response_current_ap
+{
+    states = ("improved" "not_improved_or_unclear" "unknown");
+    label = "Symptoms improved on current antipsychotic";
+}
+
+node source_population_applicability
+{
+    states = ("applicable" "not_applicable" "unknown");
+    label = "Source population applicability";
+}
+
+node residual_symptoms_functioning
+{
+    states = ("none_or_mild" "significant" "unknown");
+    label = "Residual symptoms or functioning problem";
+}
+
+node side_effect_driver
+{
+    states = ("none_or_mild" "metabolic_weight_diabetes_metabolic_syndrome" "tardive_or_other_serious" "unknown");
+    label = "Side effects or long-term adverse-effect risk";
+}
+
+node lai_need_current_no_lai
+{
+    states = ("no" "yes" "unknown");
+    label = "LAI need and current medication has no LAI formulation";
+}
+
+node medication_availability_barrier
+{
+    states = ("no" "yes" "unknown");
+    label = "Medication availability barrier";
+}
+
+node patient_preference_current_med
+{
+    states = ("prefers_continue_or_neutral" "prefers_change" "anxious_about_change" "unknown");
+    label = "Patient preference about current medication";
+}
+
+node change_driver_type
+{
+    states = ("none" "residual_or_functioning" "side_effect_or_long_term_risk" "lai_access" "preference_or_availability" "multiple" "unknown");
+    label = "Dominant source-backed change driver";
+}
+
+node continue_same_eligibility
+{
+    states = ("eligible" "relative_caution" "not_source_applicable" "unknown");
+    label = "Continue same medication eligibility";
+}
+
+node switch_medication_eligibility
+{
+    states = ("eligible_with_caution" "defer_no_clear_driver" "not_source_applicable" "unknown");
+    label = "Switch medication eligibility";
+}
+
+node continue_same_priority
+{
+    states = ("high" "moderate" "low" "unknown");
+    label = "Continue same medication priority";
+}
+
+node switch_medication_priority
+{
+    states = ("high" "moderate" "low" "unknown");
+    label = "Switch medication priority";
+}
+
+node shared_decision_ready
+{
+    states = ("yes" "no" "unknown");
+    label = "Shared decision-making review completed";
+}
+
+node monitoring_plan_ready
+{
+    states = ("yes" "no" "unknown");
+    label = "Monitoring plan ready for medication change";
+}
+
+node management_recommendation
+{
+    states = (
+        "not_source_applicable_use_other_pathway"
+        "continue_same_antipsychotic_with_routine_monitoring"
+        "continue_same_with_targeted_side_effect_management_and_reassessment"
+        "discuss_medication_change_in_shared_decision_making"
+        "change_antipsychotic_with_careful_monitoring_and_cross_taper"
+        "change_to_lai_available_antipsychotic_with_monitoring"
+        "obtain_more_information_or_clinical_reassessment"
+    );
+    label = "Management recommendation";
+}
+
+potential (schizophrenia_dx)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (symptom_response_current_ap)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (source_population_applicability | schizophrenia_dx symptom_response_current_ap)
+{
+    comment = "Deterministic placeholder gate. Parent order: schizophrenia_dx, symptom_response_current_ap.";
+    data = (
+        ((1.0 0.0 0.0) (0.0 1.0 0.0) (0.0 0.0 1.0))
+        ((0.0 1.0 0.0) (0.0 1.0 0.0) (0.0 1.0 0.0))
+        ((0.0 0.0 1.0) (0.0 1.0 0.0) (0.0 0.0 1.0))
+    );
+}
+
+potential (residual_symptoms_functioning)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (side_effect_driver)
+{
+    data = (0.25 0.25 0.25 0.25);
+}
+
+potential (lai_need_current_no_lai)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (medication_availability_barrier)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (patient_preference_current_med)
+{
+    data = (0.25 0.25 0.25 0.25);
+}
+
+potential (change_driver_type | residual_symptoms_functioning side_effect_driver lai_need_current_no_lai medication_availability_barrier patient_preference_current_med)
+{
+    comment = "Placeholder qualitative CPT. Expand deterministically per statement_6_bn_design.md: none if all drivers absent, single driver if one present, multiple if more than one present, unknown if unresolved unknowns.";
+}
+
+potential (continue_same_eligibility | source_population_applicability change_driver_type)
+{
+    comment = "Placeholder qualitative CPT. Applicable/no driver -> eligible; applicable/side-effect or multiple driver -> relative_caution; not_applicable -> not_source_applicable.";
+}
+
+potential (switch_medication_eligibility | source_population_applicability change_driver_type)
+{
+    comment = "Placeholder qualitative CPT. Applicable/clear driver -> eligible_with_caution; applicable/no driver -> defer_no_clear_driver; not_applicable -> not_source_applicable.";
+}
+
+potential (continue_same_priority | continue_same_eligibility patient_preference_current_med)
+{
+    comment = "Placeholder qualitative CPT. High for eligible continuation and no change preference; lower with relative caution or preference for change.";
+}
+
+potential (switch_medication_priority | switch_medication_eligibility patient_preference_current_med)
+{
+    comment = "Placeholder qualitative CPT. High for eligible switch with clinical driver and preference support; low for no clear driver.";
+}
+
+potential (shared_decision_ready)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (monitoring_plan_ready)
+{
+    data = (0.333333 0.333333 0.333334);
+}
+
+potential (management_recommendation | source_population_applicability continue_same_priority switch_medication_priority shared_decision_ready monitoring_plan_ready change_driver_type)
+{
+    comment = "Placeholder qualitative recommendation CPT. Direct switch outputs require source applicability, a clear change driver, shared_decision_ready=yes, and monitoring_plan_ready=yes. Otherwise prefer continuation, discussion, or information gathering as specified in statement_6_bn_design.md.";
+}

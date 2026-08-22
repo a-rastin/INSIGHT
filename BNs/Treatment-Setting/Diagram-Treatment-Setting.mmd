@@ -1,0 +1,24 @@
+flowchart TD
+  acute["acute_safety_or_supervision_need<br/>serious threat of harm to self/others &#124; unable to self-care, needs constant support &#124; neither present &#124; unknown"]
+  outpatient["outpatient_treatment_feasibility<br/>unsafe/ineffective due to psychiatric problem &#124; unsafe/ineffective due to medical problem &#124; safe and effective &#124; unknown"]
+  newonset["new_onset_psychosis_stabilization_need<br/>initial inpatient stabilization warranted &#124; not warranted &#124; unknown"]
+  medical["medical_surgical_service_need<br/>significant intervention/monitoring unavailable on psychiatric service &#124; manageable on psychiatric service with medical consultants &#124; no significant additional health service need &#124; unknown"]
+  monitoring["monitoring_assistance_need_if_not_inpatient<br/>more than routine outpatient care &#124; routine outpatient care sufficient &#124; unknown"]
+  acceptance["hospitalization_acceptance<br/>accepts voluntary hospitalization &#124; does not accept voluntary hospitalization &#124; unknown/not yet discussed"]
+
+  inpcare["inpatient_care_priority<br/>inpatient care essential &#124; inpatient care not indicated &#124; insufficient information"]
+  inpservice["inpatient_service_priority<br/>general hospital/ICU with consultation-liaison psychiatry &#124; psychiatric inpatient service with medical consultants &#124; standard psychiatric inpatient service &#124; insufficient information"]
+  lessrestrictive["less_restrictive_care_priority<br/>enhanced outpatient program &#124; routine outpatient care &#124; insufficient information"]
+
+  mgmt["management_recommendation<br/>voluntary general hospital/ICU with CL psychiatry &#124; voluntary psychiatric inpatient care with needed medical consultation &#124; voluntary standard psychiatric inpatient care &#124; follow jurisdictional requirements for involuntary hospitalization in appropriate inpatient service &#124; use enhanced outpatient program (ACT/assisted outpatient/intensive outpatient/partial or day hospitalization) &#124; use routine outpatient care &#124; insufficient information, reassess safety, feasibility, service needs, and acceptance"]
+
+  acute --> inpcare
+  outpatient --> inpcare
+  newonset --> inpcare
+  medical --> inpservice
+  monitoring --> lessrestrictive
+
+  inpcare --> mgmt
+  inpservice --> mgmt
+  lessrestrictive --> mgmt
+  acceptance --> mgmt
