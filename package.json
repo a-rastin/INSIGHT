@@ -16,7 +16,7 @@
     "format": "prettier --check apps packages package.json tsconfig.base.json tsconfig.json eslint.config.mjs prettier.config.mjs",
     "lint": "eslint apps packages",
     "typecheck": "tsc -b",
-    "test": "node --test test/*.test.mjs",
+    "test": "npm run build --workspace @insight/contracts && node --test test/*.test.mjs",
     "build": "npm run build --workspaces --if-present"
   },
   "devDependencies": {

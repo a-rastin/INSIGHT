@@ -140,7 +140,7 @@ The root now contains the initial TypeScript workspace for INSIGHT:
 
 - `apps/web` is the minimal React/Vite browser entry point.
 - `apps/server` is the minimal Fastify backend entry point.
-- `packages/contracts` contains shared browser/server types.
+- `packages/contracts` owns browser-safe version 1 TypeBox runtime schemas and inferred types for UUIDs, RFC 3339 timestamps, fixed roles, API errors, pagination, and provenance. It also provides deterministic JSON serialization, Web Crypto SHA-256 helpers, and explicit unsupported-version errors; lint and contract tests prohibit server, database, secret, and Node-only imports at the browser boundary.
 - `packages/bayes` is the migration boundary for environment-independent Bayesian logic.
 - `Bayesian-Engine/` remains intact as the standalone Electron migration source and is not a root workspace.
 

@@ -16,4 +16,33 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: ["apps/web/**/*.{ts,tsx}", "packages/contracts/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "node:*",
+                "@insight/server",
+                "@insight/server/*",
+                "@insight/database",
+                "@insight/database/*",
+                "@insight/db",
+                "@insight/db/*",
+                "**/apps/server/**",
+                "**/database/**",
+                "**/db/**",
+                "pg",
+                "postgres",
+              ],
+              message: "Browser-safe code cannot import server, database, or Node-only modules.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
