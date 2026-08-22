@@ -17,6 +17,7 @@ export type SecurityEventType =
   | "USER_CREATED"
   | "USER_RENAMED"
   | "PASSWORD_CHANGED"
+  | "PASSWORD_REHASHED"
   | "PASSWORD_RESET"
   | "ACCOUNT_ENABLED"
   | "ACCOUNT_DISABLED"
@@ -63,6 +64,12 @@ export interface SecurityMetadata {
   readonly userAgent?: string;
 }
 
+export interface OperationalAuditDetails {
+  readonly targetVersion?: Date;
+  readonly beforeMetadata?: Readonly<Record<string, unknown>>;
+  readonly afterMetadata?: Readonly<Record<string, unknown>>;
+}
+
 const hash = (value: string): Buffer => createHash("sha256").update(value).digest();
 const opaqueToken = (): string => randomBytes(32).toString("base64url");
 
@@ -72,17 +79,22 @@ export async function auditSecurityEvent(
   actorUserId: string | null,
   subjectUserId: string | null,
   metadata: SecurityMetadata = {},
+  details: OperationalAuditDetails = {},
 ): Promise<void> {
   await database.query(
     `INSERT INTO insight.security_audit_events
-       (event_type, actor_user_id, subject_user_id, request_id, source_address)
-     VALUES ($1, $2, $3, $4, $5)`,
+       (event_type, actor_user_id, subject_user_id, request_id, source_address,
+        target_version, before_metadata, after_metadata)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [
       eventType,
       actorUserId,
       subjectUserId,
       metadata.requestId ?? null,
       metadata.sourceAddress ?? null,
+      details.targetVersion ?? null,
+      details.beforeMetadata ?? null,
+      details.afterMetadata ?? null,
     ],
   );
 }

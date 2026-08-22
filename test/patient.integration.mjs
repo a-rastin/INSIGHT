@@ -135,6 +135,10 @@ test("PAT-01 transactional Patient identity and one Research Case", async (suite
 
       const finalAudit = await listPatientAuditEvents(pool, actor, patientId);
       assert.equal(finalAudit.length, 3);
+      assert.deepEqual(
+        finalAudit.map(({ targetVersion }) => targetVersion),
+        [1, 2, 3],
+      );
       assert.deepEqual(finalAudit[2].before, overwriteAudit.after);
       assert.deepEqual(finalAudit[2].after, {
         firstName: "Latest",

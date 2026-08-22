@@ -90,6 +90,16 @@ function publicUser(row: UserRow): User {
   };
 }
 
+function auditMetadata(row: UserRow): Readonly<Record<string, unknown>> {
+  return {
+    username: row.username,
+    role: row.role,
+    status: row.status,
+    passwordPolicyVersion: row.password_policy_version,
+    bootstrapCredentialActive: row.bootstrap_credential_active,
+  };
+}
+
 function isSqlState(error: unknown, state: string, constraint?: string): boolean {
   if (typeof error !== "object" || error === null) return false;
   const candidate = error as { code?: unknown; constraint?: unknown };
@@ -147,9 +157,27 @@ export async function createUser(
   policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
 ): Promise<User> {
   const passwordHash = await hashPassword(input.password, policy);
-  return withTransaction(pool, (client) =>
-    insertUser(client, input.username, passwordHash, policy.version, input.role),
-  );
+  return withTransaction(pool, async (client) => {
+    const user = await insertUser(client, input.username, passwordHash, policy.version, input.role);
+    await auditSecurityEvent(
+      client,
+      "USER_CREATED",
+      null,
+      user.id,
+      {},
+      {
+        targetVersion: user.updatedAt,
+        afterMetadata: {
+          username: user.username,
+          role: user.role,
+          status: user.status,
+          passwordPolicyVersion: policy.version,
+          bootstrapCredentialActive: user.bootstrapCredentialActive,
+        },
+      },
+    );
+    return user;
+  });
 }
 
 export async function createManagedUser(
@@ -162,7 +190,16 @@ export async function createManagedUser(
   const passwordHash = await hashPassword(input.password, policy);
   return withTransaction(pool, async (client) => {
     const user = await insertUser(client, input.username, passwordHash, policy.version, input.role);
-    await auditSecurityEvent(client, "USER_CREATED", actorUserId, user.id, metadata);
+    await auditSecurityEvent(client, "USER_CREATED", actorUserId, user.id, metadata, {
+      targetVersion: user.updatedAt,
+      afterMetadata: {
+        username: user.username,
+        role: user.role,
+        status: user.status,
+        passwordPolicyVersion: policy.version,
+        bootstrapCredentialActive: user.bootstrapCredentialActive,
+      },
+    });
     return user;
   });
 }
@@ -183,6 +220,11 @@ export async function renameUser(
 ): Promise<User | null> {
   try {
     return await withTransaction(pool, async (client) => {
+      const before = await client.query<UserRow>(
+        "SELECT * FROM insight.users WHERE id = $1 FOR UPDATE",
+        [userId],
+      );
+      if (!before.rows[0]) return null;
       const result = await client.query<UserRow>(
         `UPDATE insight.users
          SET username = $1, updated_at = clock_timestamp()
@@ -190,8 +232,11 @@ export async function renameUser(
          RETURNING *`,
         [canonicalUsername(username), userId],
       );
-      if (!result.rows[0]) return null;
-      await auditSecurityEvent(client, "USER_RENAMED", actorUserId, userId, metadata);
+      await auditSecurityEvent(client, "USER_RENAMED", actorUserId, userId, metadata, {
+        targetVersion: result.rows[0].updated_at,
+        beforeMetadata: auditMetadata(before.rows[0]),
+        afterMetadata: auditMetadata(result.rows[0]),
+      });
       return publicUser(result.rows[0]);
     });
   } catch (error) {
@@ -230,14 +275,29 @@ export async function authenticateUser(
 
   if (verification.needsRehash) {
     const replacement = await hashPassword(password, policy);
-    const updated = await pool.query<UserRow>(
-      `UPDATE insight.users
-       SET password_hash = $1, password_policy_version = $2, updated_at = clock_timestamp()
-       WHERE id = $3 AND password_hash = $4
-       RETURNING *`,
-      [replacement, policy.version, row.id, row.password_hash],
-    );
-    if (updated.rows[0]) Object.assign(row, updated.rows[0]);
+    await withTransaction(pool, async (client) => {
+      const updated = await client.query<UserRow>(
+        `UPDATE insight.users
+         SET password_hash = $1, password_policy_version = $2, updated_at = clock_timestamp()
+         WHERE id = $3 AND password_hash = $4
+         RETURNING *`,
+        [replacement, policy.version, row.id, row.password_hash],
+      );
+      if (!updated.rows[0]) return;
+      await auditSecurityEvent(
+        client,
+        "PASSWORD_REHASHED",
+        row.id,
+        row.id,
+        {},
+        {
+          targetVersion: updated.rows[0].updated_at,
+          beforeMetadata: auditMetadata(row),
+          afterMetadata: auditMetadata(updated.rows[0]),
+        },
+      );
+      Object.assign(row, updated.rows[0]);
+    });
   }
 
   return {
@@ -256,6 +316,11 @@ export async function changePassword(
 ): Promise<User | null> {
   const passwordHash = await hashPassword(password, policy);
   return withTransaction(pool, async (client) => {
+    const before = await client.query<UserRow>(
+      "SELECT * FROM insight.users WHERE id = $1 FOR UPDATE",
+      [userId],
+    );
+    if (!before.rows[0]) return null;
     const result = await client.query<UserRow>(
       `UPDATE insight.users
        SET password_hash = $1,
@@ -267,9 +332,12 @@ export async function changePassword(
        RETURNING *`,
       [passwordHash, policy.version, userId],
     );
-    if (!result.rows[0]) return null;
     await revokeUserSessions(client, userId);
-    await auditSecurityEvent(client, "PASSWORD_CHANGED", userId, userId, metadata);
+    await auditSecurityEvent(client, "PASSWORD_CHANGED", userId, userId, metadata, {
+      targetVersion: result.rows[0].updated_at,
+      beforeMetadata: auditMetadata(before.rows[0]),
+      afterMetadata: auditMetadata(result.rows[0]),
+    });
     return publicUser(result.rows[0]);
   });
 }
@@ -284,6 +352,11 @@ export async function resetPassword(
 ): Promise<User | null> {
   const passwordHash = await hashPassword(password, policy);
   return withTransaction(pool, async (client) => {
+    const before = await client.query<UserRow>(
+      "SELECT * FROM insight.users WHERE id = $1 FOR UPDATE",
+      [userId],
+    );
+    if (!before.rows[0]) return null;
     const result = await client.query<UserRow>(
       `UPDATE insight.users
        SET password_hash = $1,
@@ -295,9 +368,12 @@ export async function resetPassword(
        RETURNING *`,
       [passwordHash, policy.version, userId],
     );
-    if (!result.rows[0]) return null;
     await revokeUserSessions(client, userId);
-    await auditSecurityEvent(client, "PASSWORD_RESET", actorUserId, userId, metadata);
+    await auditSecurityEvent(client, "PASSWORD_RESET", actorUserId, userId, metadata, {
+      targetVersion: result.rows[0].updated_at,
+      beforeMetadata: auditMetadata(before.rows[0]),
+      afterMetadata: auditMetadata(result.rows[0]),
+    });
     return publicUser(result.rows[0]);
   });
 }
@@ -312,6 +388,11 @@ export async function setPassword(
 ): Promise<User | null> {
   const passwordHash = await hashPassword(password, policy);
   return withTransaction(pool, async (client) => {
+    const before = await client.query<UserRow>(
+      "SELECT * FROM insight.users WHERE id = $1 FOR UPDATE",
+      [userId],
+    );
+    if (!before.rows[0]) return null;
     const result = await client.query<UserRow>(
       `UPDATE insight.users
        SET password_hash = $1,
@@ -323,9 +404,12 @@ export async function setPassword(
        RETURNING *`,
       [passwordHash, policy.version, userId],
     );
-    if (!result.rows[0]) return null;
     await revokeUserSessions(client, userId);
-    await auditSecurityEvent(client, "PASSWORD_CHANGED", actorUserId, userId, metadata);
+    await auditSecurityEvent(client, "PASSWORD_CHANGED", actorUserId, userId, metadata, {
+      targetVersion: result.rows[0].updated_at,
+      beforeMetadata: auditMetadata(before.rows[0]),
+      afterMetadata: auditMetadata(result.rows[0]),
+    });
     return publicUser(result.rows[0]);
   });
 }
@@ -341,6 +425,11 @@ export async function setUserEnabled(
   try {
     return await withTransaction(pool, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock($1)", [LAST_ADMINISTRATOR_LOCK_ID]);
+      const before = await client.query<UserRow>(
+        "SELECT * FROM insight.users WHERE id = $1 FOR UPDATE",
+        [userId],
+      );
+      if (!before.rows[0]) return null;
       const result = await client.query<UserRow>(
         `UPDATE insight.users
          SET status = $1, updated_at = clock_timestamp()
@@ -350,11 +439,30 @@ export async function setUserEnabled(
         [enabled ? "ENABLED" : "DISABLED", userId, expectedRole ?? null],
       );
       if (!result.rows[0]) return null;
+      const auditDetails = {
+        targetVersion: result.rows[0].updated_at,
+        beforeMetadata: auditMetadata(before.rows[0]),
+        afterMetadata: auditMetadata(result.rows[0]),
+      };
       if (!enabled) {
         await revokeUserSessions(client, userId);
-        await auditSecurityEvent(client, "ACCOUNT_DISABLED", actorUserId, userId, metadata);
+        await auditSecurityEvent(
+          client,
+          "ACCOUNT_DISABLED",
+          actorUserId,
+          userId,
+          metadata,
+          auditDetails,
+        );
       } else {
-        await auditSecurityEvent(client, "ACCOUNT_ENABLED", actorUserId, userId, metadata);
+        await auditSecurityEvent(
+          client,
+          "ACCOUNT_ENABLED",
+          actorUserId,
+          userId,
+          metadata,
+          auditDetails,
+        );
       }
       return publicUser(result.rows[0]);
     });

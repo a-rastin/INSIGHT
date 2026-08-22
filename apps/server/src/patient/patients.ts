@@ -53,6 +53,11 @@ export interface PatientSaveResult {
 
 export interface PatientAuditEvent {
   readonly eventType: "PATIENT_CREATED" | "PATIENT_DEMOGRAPHICS_SAVED";
+  readonly patientLink: {
+    readonly patientId: string;
+    readonly researchCaseId: string;
+  };
+  readonly targetVersion: number;
   readonly before: PatientDemographics | null;
   readonly after: PatientDemographics;
   readonly actorUserId: string | null;
@@ -85,12 +90,16 @@ interface PatientRow extends QueryResultRow {
   sex: PatientSex;
   created_at: Date;
   updated_at: Date;
+  record_version: string;
   research_case_id: string;
   started_at: Date;
 }
 
 interface AuditRow extends QueryResultRow {
   event_type: PatientAuditEvent["eventType"];
+  patient_id: string;
+  research_case_id: string;
+  target_version: string;
   before_values_ciphertext: Buffer | null;
   before_values_iv: Buffer | null;
   before_values_tag: Buffer | null;
@@ -236,7 +245,7 @@ export async function createOrOverwritePatient(
     await auditPatientSave(
       client,
       created ? "PATIENT_CREATED" : "PATIENT_DEMOGRAPHICS_SAVED",
-      row.id,
+      row,
       actor.id,
       requestId,
       before,
@@ -274,7 +283,7 @@ export async function savePatientDemographics(
     await auditPatientSave(
       client,
       "PATIENT_DEMOGRAPHICS_SAVED",
-      patientId,
+      row,
       actor.id,
       requestId,
       before,
@@ -329,18 +338,27 @@ export async function listPatientAuditEvents(
   patientId: string,
 ): Promise<readonly PatientAuditEvent[]> {
   requirePsychiatrist(actor);
+  const authorization = await pool.query(
+    `SELECT 1 FROM insight.users
+     WHERE id = $1 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'`,
+    [actor.id],
+  );
+  if (authorization.rowCount !== 1) throw new PatientAuthorizationError();
   const result = await pool.query<AuditRow>(
-    `SELECT a.event_type, a.before_values_ciphertext, a.before_values_iv,
+    `SELECT a.event_type, a.patient_id, a.research_case_id, a.target_version,
+            a.before_values_ciphertext, a.before_values_iv,
             a.before_values_tag, a.after_values_ciphertext, a.after_values_iv,
             a.after_values_tag, k.key_material, a.actor_user_id, a.request_id, a.occurred_at
      FROM insight.patient_audit_events a
      JOIN insight.application_encryption_keys k ON k.version = a.encryption_key_version
      WHERE a.patient_id = $1
-     ORDER BY a.occurred_at, a.id`,
+     ORDER BY a.target_version, a.occurred_at, a.id`,
     [patientId],
   );
   return result.rows.map((row) => ({
     eventType: row.event_type,
+    patientLink: { patientId: row.patient_id, researchCaseId: row.research_case_id },
+    targetVersion: Number(row.target_version),
     before:
       row.before_values_ciphertext && row.before_values_iv && row.before_values_tag
         ? decryptJson(
@@ -616,7 +634,8 @@ async function updatePatient(
        encryption_key_version = $14,
        sex = $15,
        updated_by_user_id = $16,
-       updated_at = $17
+       updated_at = $17,
+       record_version = record_version + 1
      WHERE id = $1`,
     [
       patientId,
@@ -644,7 +663,7 @@ async function updatePatient(
 async function auditPatientSave(
   client: PoolClient,
   eventType: PatientAuditEvent["eventType"],
-  patientId: string,
+  patient: PatientRow,
   actorUserId: string,
   requestId: string,
   before: PatientDemographics | null,
@@ -656,14 +675,16 @@ async function auditPatientSave(
   const encryptedAfter = encryptJson(after, key.key_material, "patient-audit");
   await client.query(
     `INSERT INTO insight.patient_audit_events (
-       event_type, patient_id, actor_user_id, request_id,
+       event_type, patient_id, research_case_id, target_version, actor_user_id, request_id,
        before_values_ciphertext, before_values_iv, before_values_tag,
        after_values_ciphertext, after_values_iv, after_values_tag,
        encryption_key_version, occurred_at
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
     [
       eventType,
-      patientId,
+      patient.id,
+      patient.research_case_id,
+      patient.record_version,
       actorUserId,
       requestId,
       encryptedBefore?.ciphertext ?? null,

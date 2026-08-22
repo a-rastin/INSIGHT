@@ -385,6 +385,98 @@ export const migrations: readonly Migration[] = Object.freeze([
       );
     },
   },
+  {
+    version: 7,
+    name: "operational_and_clinical_audit",
+    sql: `
+      ALTER TABLE insight.security_audit_events
+        DROP CONSTRAINT security_audit_events_event_type_check;
+
+      ALTER TABLE insight.security_audit_events
+        ADD CONSTRAINT security_audit_events_event_type_check CHECK (event_type IN (
+          'SIGN_IN', 'FAILED_SIGN_IN', 'SIGN_OUT', 'USER_CREATED', 'USER_RENAMED',
+          'PASSWORD_CHANGED', 'PASSWORD_REHASHED', 'PASSWORD_RESET',
+          'ACCOUNT_ENABLED', 'ACCOUNT_DISABLED', 'SESSIONS_REVOKED'
+        ));
+
+      ALTER TABLE insight.security_audit_events
+        ADD COLUMN target_version timestamptz,
+        ADD COLUMN before_metadata jsonb,
+        ADD COLUMN after_metadata jsonb;
+
+      ALTER TABLE insight.patients
+        ADD COLUMN record_version bigint NOT NULL DEFAULT 1 CHECK (record_version > 0);
+
+      ALTER TABLE insight.patient_audit_events DISABLE TRIGGER patient_audit_events_immutable;
+
+      ALTER TABLE insight.patient_audit_events
+        ADD COLUMN research_case_id uuid,
+        ADD COLUMN target_version bigint NOT NULL DEFAULT 1 CHECK (target_version > 0),
+        ADD COLUMN payload_reference text;
+
+      UPDATE insight.patient_audit_events audit
+      SET research_case_id = research_case.id
+      FROM insight.research_cases research_case
+      WHERE research_case.patient_id = audit.patient_id;
+
+      WITH versions AS (
+        SELECT id,
+               row_number() OVER (PARTITION BY patient_id ORDER BY occurred_at, id) AS version
+        FROM insight.patient_audit_events
+      )
+      UPDATE insight.patient_audit_events audit
+      SET target_version = versions.version
+      FROM versions
+      WHERE versions.id = audit.id;
+
+      UPDATE insight.patients patient
+      SET record_version = audit.version
+      FROM (
+        SELECT patient_id, max(target_version) AS version
+        FROM insight.patient_audit_events
+        GROUP BY patient_id
+      ) audit
+      WHERE audit.patient_id = patient.id;
+
+      ALTER TABLE insight.patient_audit_events
+        ALTER COLUMN research_case_id SET NOT NULL;
+
+      COMMENT ON COLUMN insight.patient_audit_events.patient_id IS
+        'Original Patient UUID retained without a foreign key so clinical audit survives Patient hard deletion';
+      COMMENT ON COLUMN insight.patient_audit_events.research_case_id IS
+        'Original Research Case UUID retained without a foreign key so clinical audit survives Patient hard deletion';
+      COMMENT ON COLUMN insight.patient_audit_events.payload_reference IS
+        'Optional reference to a retained clinical audit payload artifact; inline encrypted payloads remain authoritative when null';
+
+      DROP TRIGGER patient_audit_events_immutable ON insight.patient_audit_events;
+      DROP FUNCTION insight.protect_patient_audit_event();
+
+      CREATE FUNCTION insight.reject_audit_row_mutation()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        RAISE EXCEPTION 'audit row update/delete is not allowed through normal database writes'
+          USING ERRCODE = '55000';
+      END;
+      $function$;
+
+      CREATE TRIGGER security_audit_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.security_audit_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+
+      CREATE TRIGGER operational_audit_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.operational_audit_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+
+      CREATE TRIGGER patient_audit_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.patient_audit_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+
+      CREATE INDEX security_audit_events_target_idx
+        ON insight.security_audit_events (subject_user_id, occurred_at, id);
+    `,
+  },
 ]);
 
 export function prepareMigrations(
