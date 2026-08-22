@@ -176,10 +176,7 @@ const assessmentQuery = `
   FROM insight.panss_assessments
   WHERE research_case_id = $1`;
 
-function materialize(
-  researchCase: CaseRow,
-  row: AssessmentRow | undefined,
-): PanssAssessmentRecord {
+function materialize(researchCase: CaseRow, row: AssessmentRow | undefined): PanssAssessmentRecord {
   return {
     researchCaseId: researchCase.id,
     assessmentType: "PANSS",

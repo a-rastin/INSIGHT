@@ -13,7 +13,9 @@ import {
   calculatePanss,
 } from "../../packages/contracts/dist/index.js";
 
-test("three assessments resume autosave after refresh and keep bypass explicit", async ({ page }) => {
+test("three assessments resume autosave after refresh and keep bypass explicit", async ({
+  page,
+}) => {
   const patientId = "20000000-0000-4000-8000-000000000003";
   const researchCaseId = "30000000-0000-4000-8000-000000000003";
   const userId = "10000000-0000-4000-8000-000000000002";
@@ -49,7 +51,9 @@ test("three assessments resume autosave after refresh and keep bypass explicit",
       return;
     }
     if (path === `/api/v1/patients/${patientId}`) {
-      await route.fulfill({ json: { schemaVersion: "1", patient: patient(patientId, researchCaseId) } });
+      await route.fulfill({
+        json: { schemaVersion: "1", patient: patient(patientId, researchCaseId) },
+      });
       return;
     }
     if (path.endsWith("/research-case")) {

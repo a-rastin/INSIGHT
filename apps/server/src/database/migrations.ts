@@ -1041,6 +1041,60 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_cssrs_write();
     `,
   },
+  {
+    version: 14,
+    name: "assessment_bypass_payload_deletion",
+    sql: `
+      CREATE OR REPLACE FUNCTION insight.protect_dsm5tr_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.dsm5tr_write', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'DSM-5-TR assessment data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+
+      CREATE OR REPLACE FUNCTION insight.protect_panss_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.panss_write', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'PANSS assessment data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+
+      CREATE OR REPLACE FUNCTION insight.protect_cssrs_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.cssrs_write', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'C-SSRS assessment data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+
+      SELECT set_config('insight.dsm5tr_write', 'allowed', true);
+      SELECT set_config('insight.panss_write', 'allowed', true);
+      SELECT set_config('insight.cssrs_write', 'allowed', true);
+      DELETE FROM insight.dsm5tr_assessments WHERE status = 'BYPASSED';
+      DELETE FROM insight.panss_assessments WHERE status = 'BYPASSED';
+      DELETE FROM insight.cssrs_recent_assessments WHERE status = 'BYPASSED';
+    `,
+  },
 ]);
 
 export function prepareMigrations(

@@ -2327,6 +2327,9 @@ export interface operations {
             };
             assessment: {
               researchCaseId: string;
+              /** @enum {string} */
+              assessmentType: "DSM5TR";
+              /** insight.assessment-status.v1 */
               status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
               answers: {
                 criterionA: {
@@ -2490,6 +2493,8 @@ export interface operations {
             };
             assessment: {
               researchCaseId: string;
+              /** @enum {string} */
+              assessmentType: "DSM5TR";
               status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
               answers: {
                 criterionA: {
@@ -2614,6 +2619,8 @@ export interface operations {
             };
             assessment: {
               researchCaseId: string;
+              /** @enum {string} */
+              assessmentType: "PANSS";
               status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
               answers: {
                 P1?: number;
@@ -2811,6 +2818,8 @@ export interface operations {
             };
             assessment: {
               researchCaseId: string;
+              /** @enum {string} */
+              assessmentType: "PANSS";
               status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
               answers: {
                 P1?: number;
@@ -2967,6 +2976,8 @@ export interface operations {
             };
             assessment: {
               researchCaseId: string;
+              /** @enum {string} */
+              assessmentType: "CSSRS_RECENT";
               status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
               answers: {
                 q1WishDead?: boolean;
@@ -3121,6 +3132,8 @@ export interface operations {
             };
             assessment: {
               researchCaseId: string;
+              /** @enum {string} */
+              assessmentType: "CSSRS_RECENT";
               status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
               answers: {
                 q1WishDead?: boolean;

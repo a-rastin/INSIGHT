@@ -237,12 +237,7 @@ export type JsonPrimitive = null | boolean | number | string;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
 export const ASSESSMENT_TYPES = ["DSM5TR", "PANSS", "CSSRS_RECENT"] as const;
-export const ASSESSMENT_STATUSES = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "BYPASSED",
-] as const;
+export const ASSESSMENT_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BYPASSED"] as const;
 
 export const AssessmentTypeSchema = Type.Union(
   ASSESSMENT_TYPES.map((value) => Type.Literal(value)),

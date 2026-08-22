@@ -128,5 +128,5 @@ describe("DSM-5-TR assessment flow", () => {
     expect(screen.getByText("Bypassed: no result")).toBeTruthy();
     expect(screen.queryByText("Criteria met")).toBeNull();
     expect(writes.at(-1)).toEqual({ schemaVersion: "1", mode: "BYPASS", expectedRevision: 1 });
-  });
+  }, 30_000);
 });

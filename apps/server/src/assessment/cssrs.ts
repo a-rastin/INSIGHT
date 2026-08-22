@@ -192,10 +192,7 @@ const assessmentQuery = `
   FROM insight.cssrs_recent_assessments
   WHERE research_case_id = $1`;
 
-function materialize(
-  researchCase: CaseRow,
-  row: AssessmentRow | undefined,
-): CssrsAssessmentRecord {
+function materialize(researchCase: CaseRow, row: AssessmentRow | undefined): CssrsAssessmentRecord {
   return {
     researchCaseId: researchCase.id,
     assessmentType: "CSSRS_RECENT",

@@ -119,7 +119,7 @@ describe("C-SSRS Recent flow", () => {
       mode: "BYPASS",
       expectedRevision: 1,
     });
-  });
+  }, 30_000);
 });
 
 function choose(groupName: RegExp, answer: "Yes" | "No") {

@@ -3319,6 +3319,7 @@
                       "type": "object",
                       "required": [
                         "researchCaseId",
+                        "assessmentType",
                         "status",
                         "answers",
                         "calculation",
@@ -3334,13 +3335,15 @@
                           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
                           "type": "string"
                         },
+                        "assessmentType": { "type": "string", "enum": ["DSM5TR"] },
                         "status": {
                           "anyOf": [
                             { "type": "string", "enum": ["NOT_STARTED"] },
                             { "type": "string", "enum": ["IN_PROGRESS"] },
                             { "type": "string", "enum": ["COMPLETED"] },
                             { "type": "string", "enum": ["BYPASSED"] }
-                          ]
+                          ],
+                          "title": "insight.assessment-status.v1"
                         },
                         "answers": {
                           "anyOf": [
@@ -3754,6 +3757,7 @@
                       "type": "object",
                       "required": [
                         "researchCaseId",
+                        "assessmentType",
                         "status",
                         "answers",
                         "calculation",
@@ -3769,6 +3773,7 @@
                           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
                           "type": "string"
                         },
+                        "assessmentType": { "type": "string", "enum": ["DSM5TR"] },
                         "status": {
                           "anyOf": [
                             { "type": "string", "enum": ["NOT_STARTED"] },
@@ -4102,6 +4107,7 @@
                       "type": "object",
                       "required": [
                         "researchCaseId",
+                        "assessmentType",
                         "status",
                         "answers",
                         "calculation",
@@ -4116,6 +4122,7 @@
                           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
                           "type": "string"
                         },
+                        "assessmentType": { "type": "string", "enum": ["PANSS"] },
                         "status": {
                           "anyOf": [
                             { "type": "string", "enum": ["NOT_STARTED"] },
@@ -4506,6 +4513,7 @@
                       "type": "object",
                       "required": [
                         "researchCaseId",
+                        "assessmentType",
                         "status",
                         "answers",
                         "calculation",
@@ -4520,6 +4528,7 @@
                           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
                           "type": "string"
                         },
+                        "assessmentType": { "type": "string", "enum": ["PANSS"] },
                         "status": {
                           "anyOf": [
                             { "type": "string", "enum": ["NOT_STARTED"] },
@@ -4843,6 +4852,7 @@
                       "type": "object",
                       "required": [
                         "researchCaseId",
+                        "assessmentType",
                         "status",
                         "answers",
                         "calculation",
@@ -4858,6 +4868,7 @@
                           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
                           "type": "string"
                         },
+                        "assessmentType": { "type": "string", "enum": ["CSSRS_RECENT"] },
                         "status": {
                           "anyOf": [
                             { "type": "string", "enum": ["NOT_STARTED"] },
@@ -5223,6 +5234,7 @@
                       "type": "object",
                       "required": [
                         "researchCaseId",
+                        "assessmentType",
                         "status",
                         "answers",
                         "calculation",
@@ -5238,6 +5250,7 @@
                           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
                           "type": "string"
                         },
+                        "assessmentType": { "type": "string", "enum": ["CSSRS_RECENT"] },
                         "status": {
                           "anyOf": [
                             { "type": "string", "enum": ["NOT_STARTED"] },
