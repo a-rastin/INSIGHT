@@ -8,6 +8,19 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ["scripts/**/*.mjs", "test/**/*.mjs", "playwright.config.mjs"],
+    languageOptions: {
+      globals: {
+        Buffer: "readonly",
+        Request: "readonly",
+        URL: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+      },
+    },
+  },
+  {
     files: ["apps/**/*.{ts,tsx}", "packages/**/*.ts"],
     languageOptions: {
       parserOptions: {

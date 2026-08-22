@@ -147,6 +147,29 @@ The root now contains the initial TypeScript workspace for INSIGHT:
 
 The workspace is intentionally minimal while the production vertical slice is built. The root supports clean installation plus format, lint, typecheck, test, and build checks.
 
+## Continuous Integration
+
+GitHub Actions runs the complete root pipeline against a local PostgreSQL 16 service. Run the same pipeline locally with `DATABASE_URL` and `TEST_DATABASE_URL` pointing to a disposable PostgreSQL 16 database whose role can create databases:
+
+```bash
+npm ci
+npx playwright install --only-shell chromium
+npm run ci
+```
+
+`npm run ci` enforces formatting, lint, TypeScript, unit and PostgreSQL integration tests, forward migrations, OpenAPI drift, browser E2E smoke, production builds, and test-artifact privacy scanning. All test processes are restricted to loopback and Unix-socket services; hosted-model and medical-source traffic fails immediately. Browser E2E applies the same local-origin policy. Patient fixtures must use `makeSyntheticPatientIdentity()` from `test/support/synthetic-data.mjs`.
+
+Only npm's download cache is retained in CI. Build output, databases, browser state, traces, screenshots, and test reports are not cached or uploaded. The root workspace includes only `apps/*` and `packages/*`; CI never installs, builds, tests, or packages the standalone Electron application in `Bayesian-Engine/`.
+
+Representative failure contracts:
+
+- malformed formatting, lint violations, and TypeScript errors fail their dedicated static checks;
+- changed behavior fails unit tests, and changed migration SQL/checksums or rollback behavior fails PostgreSQL integration tests;
+- stale generated API files fail `api:check`;
+- missing browser headings, console errors, or external browser requests fail Playwright smoke;
+- compilation/bundling defects fail production builds;
+- credential patterns, non-synthetic identifiers, or non-test email addresses fail artifact scanning.
+
 ## Web UI Development
 
 `apps/web` provides the desktop-first React/Vite shell. It includes relative client-side routes, semantic application landmarks, a root error boundary, the approved light-theme design tokens, responsive behavior down to 320px, and shared accessible form, button, table, badge, banner, loading, empty, and error primitives. Dark mode is intentionally unavailable until approved tokens and accessibility review exist.

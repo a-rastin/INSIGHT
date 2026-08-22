@@ -15,18 +15,24 @@
   "scripts": {
     "api:generate": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node scripts/generate-api.mjs",
     "api:check": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node scripts/generate-api.mjs --check",
-    "format": "prettier --check apps packages scripts test docs/api README.md package.json tsconfig.base.json tsconfig.json eslint.config.mjs prettier.config.mjs",
-    "lint": "eslint apps packages",
+    "format": "prettier --check .github apps packages scripts test docs/api docs/operations README.md package.json playwright.config.mjs tsconfig.base.json tsconfig.json eslint.config.mjs prettier.config.mjs",
+    "lint": "eslint apps packages scripts test playwright.config.mjs",
     "typecheck": "tsc -b",
-    "test": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && npm run api:check && node --test test/*.test.mjs",
+    "test": "npm run test:unit",
+    "test:unit": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test test/*.test.mjs && npm test --workspace @insight/web",
+    "test:integration": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test test/database.integration.mjs",
+    "test:e2e": "playwright test",
+    "test:artifacts:scan": "node scripts/scan-test-artifacts.mjs",
     "db:migrate": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js migrate",
     "db:migration:head": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js status",
     "db:migrate:test": "npm run build --workspace @insight/server && node --test test/database.integration.mjs",
     "secret-log:scan": "npm run build --workspace @insight/server && node --test test/database.test.mjs",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "ci": "node scripts/run-local-only.mjs node scripts/run-ci.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.17.0",
+    "@playwright/test": "1.58.2",
     "@types/node": "22.10.2",
     "eslint": "9.17.0",
     "openapi-typescript": "7.13.0",

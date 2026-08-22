@@ -3,3 +3,4 @@ dist/
 .tsbuild/
 *.tsbuildinfo
 coverage/
+test-artifacts/
