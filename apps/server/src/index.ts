@@ -1,17 +1,20 @@
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import Fastify from "fastify";
-import type { HealthResponse } from "@insight/contracts";
-
+import { buildApp } from "./app.js";
 import { assertSchemaAtHead, createPostgresPool, databaseConfigFromEnv } from "./database/index.js";
 import { safeDatabaseDiagnostic } from "./database/diagnostic.js";
 
-export const app = Fastify({ logger: false });
-
-app.get("/health", async (): Promise<HealthResponse> => ({ status: "ok" }));
+export { buildApp } from "./app.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const pool = createPostgresPool(databaseConfigFromEnv(env));
+  const app = buildApp({
+    staticRoot:
+      env.NODE_ENV === "production"
+        ? resolve(env.INSIGHT_STATIC_ROOT ?? "apps/web/dist")
+        : undefined,
+  });
   try {
     await assertSchemaAtHead(pool);
     app.addHook("onClose", async () => pool.end());

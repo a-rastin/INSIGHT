@@ -3,7 +3,7 @@ import type { HealthResponse } from "@insight/contracts";
 
 import "./styles.css";
 
-const health: HealthResponse = { status: "ok" };
+const health: HealthResponse = { schemaVersion: "1", status: "ok" };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <main>

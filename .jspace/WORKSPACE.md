@@ -1,10 +1,11 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement and verify PostgreSQL access, forward migrations, schema startup checks, test isolation, server-only secrets, and recovery documentation for the current issue.
+Build and verify the versioned Fastify REST/OpenAPI browser boundary without domain changes.
 
 ## Core
-- migration safety — advisory lock plus per-migration transaction and checksum ledger
+- safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
+- contract lockstep — route schemas generate published OpenAPI and browser types checked in tests
 
 ## Verified
 - ✓01 Required context and skills read; repository indexed at 1,649 nodes and 2,820 edges; executable code concentrated in Bayesian-Engine; architecture.md and code-standards.md are empty; root is not a Git worktree. — verified by: Direct file reads, codebase-memory full index, architecture graph, filesystem inventory, and git status.
@@ -99,8 +100,9 @@ Implement and verify PostgreSQL access, forward migrations, schema startup check
 - ✓90 OpenAI-compatible transport and activation contract documented with implementation test matrix. — verified by: rg consistency search and local markdown-link checker, including MCP contract, ADRs, admin UI requirements, README, and Plan.
 - ✓91 PostgreSQL migration acceptance behavior passes. — verified by: PostgreSQL 16 integration suite, including empty migration, idempotent rerun, concurrent serialization, rollback and repair, divergent startup rejection, CLI migration, and head reporting
 - ✓92 Database implementation and security boundary pass repository verification. — verified by: format, lint, TypeScript build, root unit suite, explicit secret-log scan, git diff check, and PostgreSQL 16 integration tests, including all requested migration acceptance paths
+- ✓93 Fastify boundary, OpenAPI/client drift check, route injection suite, and production workspace build pass. — verified by: npm run format, lint, typecheck, test, build; 4 test files including focused API injection coverage
 
 ## Open
 
 ## Next
-Review staged scope, commit the completed database issue, then run final goal audit.
+Commit the completed Fastify REST/OpenAPI boundary packet.

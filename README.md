@@ -139,13 +139,21 @@ These are target boundaries, not claims that the modules are implemented.
 The root now contains the initial TypeScript workspace for INSIGHT:
 
 - `apps/web` is the minimal React/Vite browser entry point.
-- `apps/server` is the minimal Fastify backend entry point.
+- `apps/server` owns the versioned `/api/v1` Fastify boundary, safe error envelopes, server-generated request IDs, generated OpenAPI, health/readiness placeholders, and production delivery of the React build with SPA fallback.
 - `apps/server/src/database` owns PostgreSQL 16 pooled access, UTC sessions, transaction handling, forward-only migration locking and ledger checks, startup schema enforcement, safe diagnostics, and isolated integration-test databases.
 - `packages/contracts` owns browser-safe version 1 TypeBox runtime schemas and inferred types for UUIDs, RFC 3339 timestamps, fixed roles, API errors, pagination, and provenance. It also provides deterministic JSON serialization, Web Crypto SHA-256 helpers, and explicit unsupported-version errors; lint and contract tests prohibit server, database, secret, and Node-only imports at the browser boundary.
 - `packages/bayes` is the migration boundary for environment-independent Bayesian logic.
 - `Bayesian-Engine/` remains intact as the standalone Electron migration source and is not a root workspace.
 
 The workspace is intentionally minimal while the production vertical slice is built. The root supports clean installation plus format, lint, typecheck, test, and build checks.
+
+## API Development
+
+Runtime TypeBox schemas are authoritative at the Fastify boundary. The published contract is checked in at `docs/api/openapi.v1.json`; generated browser types and the relative-URL `openapi-fetch` client live under `apps/web/src/generated`. Run `npm run api:generate` after any route-schema change. `npm run api:check` regenerates in memory and fails when the OpenAPI document, browser types, or client are stale.
+
+Operational placeholders are available at `GET /api/v1/health` and `GET /api/v1/ready`. The current OpenAPI document is served at `GET /api/v1/openapi.json`. All API errors use the version 1 safe envelope and include the response `x-request-id`; unknown API routes and unsupported versions never fall through to browser assets.
+
+In production, server startup serves `apps/web/dist` by default and falls back to its `index.html` for client-side navigation. Set `INSIGHT_STATIC_ROOT` only when the built browser assets are stored elsewhere. Browser API URLs remain relative, so Fastify is the only production browser boundary.
 
 The repository also contains one implemented legacy tool:
 

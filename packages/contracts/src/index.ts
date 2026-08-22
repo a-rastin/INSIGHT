@@ -137,10 +137,20 @@ export const ProvenanceSchema = Type.Object(
 export type Provenance = Static<typeof ProvenanceSchema>;
 
 export const HealthResponseSchema = Type.Object(
-  { status: Type.Literal("ok") },
+  { schemaVersion: SchemaVersionSchema, status: Type.Literal("ok") },
   { $id: "insight.health-response.v1", additionalProperties: false },
 );
 export type HealthResponse = Static<typeof HealthResponseSchema>;
+
+export const ReadinessResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    status: Type.Literal("ready"),
+    checks: Type.Object({ application: Type.Literal("ready") }, { additionalProperties: false }),
+  },
+  { $id: "insight.readiness-response.v1", additionalProperties: false },
+);
+export type ReadinessResponse = Static<typeof ReadinessResponseSchema>;
 
 export interface ContractValidationIssue {
   readonly path: string;
