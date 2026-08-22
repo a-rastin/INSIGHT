@@ -22,6 +22,7 @@ test("CI exposes every required layer without Electron packaging", async () => {
     "api:check",
     "db:migrate",
     "build",
+    "test:container",
     "test:e2e",
     "test:artifacts:scan",
   ];

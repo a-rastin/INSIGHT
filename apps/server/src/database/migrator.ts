@@ -69,7 +69,7 @@ async function assertPostgresMajor(client: PoolClient): Promise<void> {
 
 async function ensureLedger(client: PoolClient): Promise<void> {
   await client.query(`
-    CREATE TABLE IF NOT EXISTS insight_schema_migrations (
+    CREATE TABLE IF NOT EXISTS public.insight_schema_migrations (
       version integer PRIMARY KEY CHECK (version > 0),
       name text NOT NULL UNIQUE,
       checksum character(64) NOT NULL CHECK (checksum ~ '^[0-9a-f]{64}$'),
@@ -81,7 +81,7 @@ async function ensureLedger(client: PoolClient): Promise<void> {
 async function readLedger(client: PoolClient): Promise<readonly MigrationRow[]> {
   try {
     const result = await client.query<MigrationRow>(
-      "SELECT version, name, checksum, applied_at FROM insight_schema_migrations ORDER BY version",
+      "SELECT version, name, checksum, applied_at FROM public.insight_schema_migrations ORDER BY version",
     );
     return result.rows;
   } catch (error) {
@@ -186,7 +186,7 @@ export async function migrateToHead(
         await client.query("SET LOCAL TIME ZONE 'UTC'");
         await client.query(migration.sql);
         await client.query(
-          "INSERT INTO insight_schema_migrations (version, name, checksum) VALUES ($1, $2, $3)",
+          "INSERT INTO public.insight_schema_migrations (version, name, checksum) VALUES ($1, $2, $3)",
           [migration.version, migration.name, migration.checksum],
         );
         await client.query("COMMIT");

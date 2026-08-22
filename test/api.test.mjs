@@ -76,7 +76,7 @@ test("versioned health and readiness responses carry server UUID request IDs", a
   assert.deepEqual(ready.json(), {
     schemaVersion: "1",
     status: "ready",
-    checks: { application: "ready" },
+    checks: { application: "ready", database: "ready", worker: "ready" },
   });
 });
 

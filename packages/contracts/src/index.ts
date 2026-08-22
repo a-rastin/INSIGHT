@@ -146,7 +146,14 @@ export const ReadinessResponseSchema = Type.Object(
   {
     schemaVersion: SchemaVersionSchema,
     status: Type.Literal("ready"),
-    checks: Type.Object({ application: Type.Literal("ready") }, { additionalProperties: false }),
+    checks: Type.Object(
+      {
+        application: Type.Literal("ready"),
+        database: Type.Literal("ready"),
+        worker: Type.Literal("ready"),
+      },
+      { additionalProperties: false },
+    ),
   },
   { $id: "insight.readiness-response.v1", additionalProperties: false },
 );

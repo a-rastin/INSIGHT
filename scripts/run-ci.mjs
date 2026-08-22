@@ -9,6 +9,7 @@ const checks = [
   "api:check",
   "db:migrate",
   "build",
+  "test:container",
   "test:e2e",
   "test:artifacts:scan",
 ];

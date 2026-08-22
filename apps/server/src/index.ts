@@ -1,3 +1,4 @@
+import { access } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -14,6 +15,11 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       env.NODE_ENV === "production"
         ? resolve(env.INSIGHT_STATIC_ROOT ?? "apps/web/dist")
         : undefined,
+    readinessChecks: async () => {
+      await pool.query("SELECT 1");
+      await access(env.INSIGHT_WORKER_READY_FILE ?? "/run/insight/worker-ready");
+      return { application: "ready", database: "ready", worker: "ready" };
+    },
   });
   try {
     await assertSchemaAtHead(pool);
@@ -22,6 +28,16 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       host: env.HOST ?? "127.0.0.1",
       port: Number(env.PORT ?? 3000),
     });
+    await new Promise<void>((resolveShutdown) => {
+      const shutdown = () => {
+        process.off("SIGINT", shutdown);
+        process.off("SIGTERM", shutdown);
+        resolveShutdown();
+      };
+      process.once("SIGINT", shutdown);
+      process.once("SIGTERM", shutdown);
+    });
+    await app.close();
   } catch (error) {
     await pool.end();
     throw error;

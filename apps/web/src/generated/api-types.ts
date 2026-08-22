@@ -132,6 +132,10 @@ export interface operations {
             checks: {
               /** @enum {string} */
               application: "ready";
+              /** @enum {string} */
+              database: "ready";
+              /** @enum {string} */
+              worker: "ready";
             };
           };
         };

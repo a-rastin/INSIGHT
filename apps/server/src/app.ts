@@ -40,6 +40,7 @@ interface ValidationDetail {
 export interface AppOptions {
   readonly staticRoot?: string;
   readonly registerApiRoutes?: FastifyPluginAsync;
+  readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
 }
 
 function errorBody(
@@ -72,38 +73,46 @@ function validationIssues(error: FastifyError): ApiError["error"]["issues"] {
     }));
 }
 
-const apiRoutes: FastifyPluginAsync = async (api) => {
-  api.get(
-    "/health",
-    {
-      schema: {
-        operationId: "getHealth",
-        tags: ["operations"],
-        response: { 200: HealthResponseSchema, default: ApiErrorSchema },
-      },
-    },
-    async (): Promise<HealthResponse> => ({
-      schemaVersion: CURRENT_SCHEMA_VERSION,
-      status: "ok",
-    }),
-  );
+const defaultReadinessChecks = async (): Promise<ReadinessResponse["checks"]> => ({
+  application: "ready",
+  database: "ready",
+  worker: "ready",
+});
 
-  api.get(
-    "/ready",
-    {
-      schema: {
-        operationId: "getReadiness",
-        tags: ["operations"],
-        response: { 200: ReadinessResponseSchema, default: ApiErrorSchema },
+const apiRoutes =
+  (readinessChecks: () => Promise<ReadinessResponse["checks"]>): FastifyPluginAsync =>
+  async (api) => {
+    api.get(
+      "/health",
+      {
+        schema: {
+          operationId: "getHealth",
+          tags: ["operations"],
+          response: { 200: HealthResponseSchema, default: ApiErrorSchema },
+        },
       },
-    },
-    async (): Promise<ReadinessResponse> => ({
-      schemaVersion: CURRENT_SCHEMA_VERSION,
-      status: "ready",
-      checks: { application: "ready" },
-    }),
-  );
-};
+      async (): Promise<HealthResponse> => ({
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        status: "ok",
+      }),
+    );
+
+    api.get(
+      "/ready",
+      {
+        schema: {
+          operationId: "getReadiness",
+          tags: ["operations"],
+          response: { 200: ReadinessResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (): Promise<ReadinessResponse> => ({
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        status: "ready",
+        checks: await readinessChecks(),
+      }),
+    );
+  };
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
   const app = Fastify({
@@ -132,7 +141,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     return payload;
   });
 
-  void app.register(apiRoutes, { prefix: API_PREFIX });
+  void app.register(apiRoutes(options.readinessChecks ?? defaultReadinessChecks), {
+    prefix: API_PREFIX,
+  });
   if (options.registerApiRoutes) {
     void app.register(options.registerApiRoutes, { prefix: API_PREFIX });
   }

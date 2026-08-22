@@ -1,0 +1,17 @@
+services:
+  insight:
+    build:
+      context: .
+    image: insight:0.1.0
+    init: false
+    ports:
+      - "3000:3000"
+    volumes:
+      - insight-data:/var/lib/insight
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+volumes:
+  insight-data:
+    external: true
+    name: insight-data

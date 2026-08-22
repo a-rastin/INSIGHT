@@ -139,7 +139,7 @@ These are target boundaries, not claims that the modules are implemented.
 The root now contains the initial TypeScript workspace for INSIGHT:
 
 - `apps/web` is the minimal React/Vite browser entry point.
-- `apps/server` owns the versioned `/api/v1` Fastify boundary, safe error envelopes, server-generated request IDs, generated OpenAPI, health/readiness placeholders, and production delivery of the React build with SPA fallback.
+- `apps/server` owns the versioned `/api/v1` Fastify boundary, safe error envelopes, server-generated request IDs, generated OpenAPI, database/worker-aware readiness, a supervised worker runtime, and production delivery of the React build with SPA fallback.
 - `apps/server/src/database` owns PostgreSQL 16 pooled access, UTC sessions, transaction handling, forward-only migration locking and ledger checks, startup schema enforcement, safe diagnostics, and isolated integration-test databases.
 - `packages/contracts` owns browser-safe version 1 TypeBox runtime schemas and inferred types for UUIDs, RFC 3339 timestamps, fixed roles, API errors, pagination, and provenance. It also provides deterministic JSON serialization, Web Crypto SHA-256 helpers, and explicit unsupported-version errors; lint and contract tests prohibit server, database, secret, and Node-only imports at the browser boundary.
 - `packages/bayes` is the migration boundary for environment-independent Bayesian logic.
@@ -157,7 +157,7 @@ npx playwright install --only-shell chromium
 npm run ci
 ```
 
-`npm run ci` enforces formatting, lint, TypeScript, unit and PostgreSQL integration tests, forward migrations, OpenAPI drift, browser E2E smoke, production builds, and test-artifact privacy scanning. All test processes are restricted to loopback and Unix-socket services; hosted-model and medical-source traffic fails immediately. Browser E2E applies the same local-origin policy. Patient fixtures must use `makeSyntheticPatientIdentity()` from `test/support/synthetic-data.mjs`.
+`npm run ci` enforces formatting, lint, TypeScript, unit and PostgreSQL integration tests, forward migrations, OpenAPI drift, production builds, container volume smoke tests, browser E2E smoke, and test-artifact privacy scanning. All test processes are restricted to loopback and Unix-socket services; hosted-model and medical-source traffic fails immediately. Browser E2E applies the same local-origin policy. Patient fixtures must use `makeSyntheticPatientIdentity()` from `test/support/synthetic-data.mjs`.
 
 Only npm's download cache is retained in CI. Build output, databases, browser state, traces, screenshots, and test reports are not cached or uploaded. The root workspace includes only `apps/*` and `packages/*`; CI never installs, builds, tests, or packages the standalone Electron application in `Bayesian-Engine/`.
 
@@ -191,13 +191,38 @@ The repository also contains one implemented legacy tool:
 - [`medical-documentation/`](medical-documentation/) contains source material collected for DDI and suicide-risk work.
 - [`CONTEXT/`](CONTEXT/) contains protected project context used by coding agents.
 
-No patient-domain tables, DDI engine, treatment-plan orchestrator, authentication service, or unified deployment exists yet.
+No patient-domain tables, DDI engine, treatment-plan orchestrator, or authentication service exists yet. The unified deployment is a production-image skeleton; its worker has no domain jobs until those modules are implemented.
 
 ## Database Development
 
 PostgreSQL major version 16 is pinned and enforced at runtime. Keep `DATABASE_URL` in the server environment only. Run `npm run db:migrate` to migrate forward, `npm run db:migration:head` to report database and code heads, and `npm run db:migrate:test` with a dedicated PostgreSQL 16 `TEST_DATABASE_URL` to run isolated integration tests. `npm run secret-log:scan` verifies safe database diagnostics and browser-source boundaries. Server startup fails before readiness when the database is empty, behind, divergent, or on another PostgreSQL major.
 
 Migration deployment, failure recovery, full-restore boundaries, and major-upgrade steps are documented in [Database Migrations and Recovery](docs/operations/database-migrations.md).
+
+## Production Container
+
+`Dockerfile` builds React assets and production TypeScript output in Node.js `22.14.0` stages, installs only the Fastify server's production dependency graph, and copies them into the PostgreSQL `16.10` Debian Bookworm image. The Electron source, development dependencies, repository documents, test data, and local credential files are excluded from the build context and final image.
+
+The container requires a separately mounted volume at `/var/lib/insight`; startup without that mount fails closed. First startup creates this versioned layout:
+
+```text
+/var/lib/insight/
+├── layout-version
+├── postgres/     # live PostgreSQL 16 cluster
+├── artifacts/    # file-backed application artifacts
+└── backups/      # exports, outside the live cluster
+```
+
+The root entrypoint validates and prepares the mount, then runs PostgreSQL as `postgres` and the migration, Fastify, and worker processes as the unprivileged `insight` user. PostgreSQL accepts local peer-authenticated Unix-socket connections and binds TCP only to container loopback; port `5432` is not exposed. Migrations complete under the existing advisory lock before worker or HTTP readiness. Shutdown drains Fastify and the worker before a fast PostgreSQL checkpoint and stop.
+
+Create the required external volume before using the production Compose file:
+
+```bash
+docker volume create insight-data
+docker compose -f compose.production.yml up --build
+```
+
+Do not add provider credentials to the image or Compose file. Provider configuration remains runtime/database state. Run `npm run test:container` for fresh-volume readiness, replacement persistence, missing/read-only/incompatible-volume failures, dependency exclusion, and credential-environment smoke checks.
 
 ## Known Blockers
 
