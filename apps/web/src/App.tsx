@@ -28,6 +28,7 @@ type Route = {
   label: string;
   title: string;
   description: string;
+  page: "workspace" | "patients" | "users" | "placeholder";
 };
 
 type Session = operations["getSession"]["responses"][200]["content"]["application/json"];
@@ -38,18 +39,42 @@ const clinicianRoutes: Route[] = [
     label: "Workspace",
     title: "Decision support workspace",
     description: "Review current work and continue research workflows.",
+    page: "workspace",
   },
   {
     path: "/patients",
-    label: "Patients",
-    title: "Patients",
+    label: "Patient Registry",
+    title: "Patient Registry",
     description: "Find or create a patient record.",
+    page: "patients",
   },
   {
-    path: "/plans",
-    label: "Treatment plans",
-    title: "Treatment plans",
-    description: "Review draft and finalized treatment plans.",
+    path: "/patients/new",
+    label: "Create Patient",
+    title: "Create Patient",
+    description: "Create a patient record and its single Research Case.",
+    page: "placeholder",
+  },
+  {
+    path: "/case",
+    label: "Research Case Workflow",
+    title: "Selected Patient Research Case",
+    description: "Continue the persisted workflow for the selected patient.",
+    page: "placeholder",
+  },
+  {
+    path: "/plans/final",
+    label: "Final Plan History",
+    title: "Final Plan Version History",
+    description: "Review immutable Final Treatment Plan versions for the selected patient.",
+    page: "placeholder",
+  },
+  {
+    path: "/clinical-audit",
+    label: "Clinical Audit History",
+    title: "Authorized Clinical Audit History",
+    description: "Review attributable clinical events for the selected patient.",
+    page: "placeholder",
   },
 ];
 
@@ -59,12 +84,63 @@ const administratorRoutes: Route[] = [
     label: "Workspace",
     title: "Administration workspace",
     description: "Manage accounts and research-system operations.",
+    page: "workspace",
   },
   {
     path: "/administration/users",
-    label: "User management",
-    title: "User management",
+    label: "Users",
+    title: "Users",
     description: "Create accounts, manage credentials, account access, and active sessions.",
+    page: "users",
+  },
+  {
+    path: "/administration/model-endpoint",
+    label: "Model Endpoint",
+    title: "Model Endpoint",
+    description: "Configure and verify the hosted model endpoint.",
+    page: "placeholder",
+  },
+  {
+    path: "/administration/medication-comorbidity-knowledge",
+    label: "Medication and Comorbidity Knowledge",
+    title: "Medication and Comorbidity Knowledge",
+    description: "Manage governed medication and comorbidity knowledge.",
+    page: "placeholder",
+  },
+  {
+    path: "/administration/ddi-sources",
+    label: "DDI Sources",
+    title: "DDI Sources",
+    description: "Manage versioned drug-interaction sources.",
+    page: "placeholder",
+  },
+  {
+    path: "/administration/adverse-effect-catalog",
+    label: "Adverse-Effect Catalog",
+    title: "Adverse-Effect Catalog",
+    description: "Manage the governed adverse-effect catalog.",
+    page: "placeholder",
+  },
+  {
+    path: "/administration/bn-manager",
+    label: "BN Manager",
+    title: "BN Manager",
+    description: "Validate, version, activate, and roll back Bayesian models.",
+    page: "placeholder",
+  },
+  {
+    path: "/administration/operational-audit",
+    label: "Operational Audit",
+    title: "Operational Audit",
+    description: "Review system and security operations without clinical payloads.",
+    page: "placeholder",
+  },
+  {
+    path: "/administration/backup-restore",
+    label: "Backup and Restore",
+    title: "Backup and Restore",
+    description: "Export or restore the deployment database.",
+    page: "placeholder",
   },
 ];
 
@@ -164,11 +240,53 @@ function PatientsPage() {
   );
 }
 
-function PlansPage() {
+function PlaceholderPage({ title }: { title: string }) {
   return (
     <div className="page-stack">
-      <LoadingState label="Loading treatment plans" />
+      <EmptyState
+        title={`${title} is not connected`}
+        description="Gateway navigation is ready. This module will be connected in its implementation packet."
+      />
     </div>
+  );
+}
+
+const researchNoticeKey = (userId: string) => `insight.research-use.${userId}.v1`;
+
+function hasAcknowledgedResearchUse(userId: string) {
+  try {
+    return window.localStorage.getItem(researchNoticeKey(userId)) === "acknowledged";
+  } catch {
+    return false;
+  }
+}
+
+function ResearchUseNotice({ userId, onAccepted }: { userId: string; onAccepted: () => void }) {
+  function accept() {
+    try {
+      window.localStorage.setItem(researchNoticeKey(userId), "acknowledged");
+    } catch {
+      // Keep acknowledgement for this session when browser storage is unavailable.
+    }
+    onAccepted();
+  }
+
+  return (
+    <main className="authentication-page">
+      <section className="authentication-card" aria-labelledby="research-use-title">
+        <p className="wordmark">INSIGHT</p>
+        <h1 id="research-use-title">Research use notice</h1>
+        <Banner title="Research use only" tone="warning">
+          INSIGHT is a research prototype. It does not replace professional judgment, provide
+          emergency support, or issue clinical orders.
+        </Banner>
+        <p>
+          Use only within an approved research environment and review every generated result before
+          acting on it.
+        </p>
+        <Button onClick={accept}>Acknowledge and enter workspace</Button>
+      </section>
+    </main>
   );
 }
 
@@ -241,14 +359,12 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
           <h1>{route?.title ?? "Page not found"}</h1>
           {route ? <p>{route.description}</p> : null}
         </header>
-        {pathname === "/" ? (
+        {route?.page === "workspace" ? (
           <WorkspacePage administrator={session.user.role === "ADMINISTRATOR"} />
         ) : null}
-        {pathname === "/patients" ? <PatientsPage /> : null}
-        {pathname === "/plans" ? <PlansPage /> : null}
-        {pathname === "/administration/users" && session.user.role === "ADMINISTRATOR" ? (
-          <AdminUsersPage csrfToken={session.csrfToken} />
-        ) : null}
+        {route?.page === "patients" ? <PatientsPage /> : null}
+        {route?.page === "users" ? <AdminUsersPage csrfToken={session.csrfToken} /> : null}
+        {route?.page === "placeholder" ? <PlaceholderPage title={route.title} /> : null}
         {!route ? <NotFoundPage /> : null}
       </main>
     </div>
@@ -264,15 +380,20 @@ function AuthenticationPage({ onAuthenticated }: { onAuthenticated: (session: Se
     setLoading(true);
     setError("");
     const data = new FormData(event.currentTarget);
-    const result = await apiClient.POST("/api/v1/login", {
-      body: {
-        username: String(data.get("username") ?? ""),
-        password: String(data.get("password") ?? ""),
-      },
-    });
-    if (result.data) onAuthenticated(result.data);
-    else setError("Sign-in failed. Check your credentials and try again.");
-    setLoading(false);
+    try {
+      const result = await apiClient.POST("/api/v1/login", {
+        body: {
+          username: String(data.get("username") ?? ""),
+          password: String(data.get("password") ?? ""),
+        },
+      });
+      if (result.data) onAuthenticated(result.data);
+      else setError("Sign-in failed. Check your credentials and try again.");
+    } catch {
+      setError("Sign-in failed. Check your credentials and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -404,12 +525,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
 export function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [researchUseAcceptedBy, setResearchUseAcceptedBy] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    void apiClient.GET("/api/v1/session").then((result) => {
-      if (active) setSession(result.data ?? null);
-    });
+    void apiClient
+      .GET("/api/v1/session")
+      .then((result) => {
+        if (active) setSession(result.data ?? null);
+      })
+      .catch(() => {
+        if (active) setSession(null);
+      });
     return () => {
       active = false;
     };
@@ -426,7 +553,19 @@ export function App() {
       {session?.user.status === "PASSWORD_CHANGE_REQUIRED" ? (
         <PasswordReplacementPage session={session} onReplaced={setSession} />
       ) : null}
-      {session?.user.status === "ENABLED" ? (
+      {session?.user.status === "ENABLED" &&
+      session.user.role === "PSYCHIATRIST" &&
+      researchUseAcceptedBy !== session.user.id &&
+      !hasAcknowledgedResearchUse(session.user.id) ? (
+        <ResearchUseNotice
+          userId={session.user.id}
+          onAccepted={() => setResearchUseAcceptedBy(session.user.id)}
+        />
+      ) : null}
+      {session?.user.status === "ENABLED" &&
+      (session.user.role === "ADMINISTRATOR" ||
+        researchUseAcceptedBy === session.user.id ||
+        hasAcknowledgedResearchUse(session.user.id)) ? (
         <Shell session={session} onSignedOut={() => setSession(null)} />
       ) : null}
     </ErrorBoundary>
