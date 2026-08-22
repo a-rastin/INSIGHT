@@ -32,6 +32,8 @@ import {
   sessionTokenFromCookie,
   type SessionContext,
 } from "./identity/sessions.js";
+import { patientRoutes } from "./patient/http.js";
+import type { OfficialIdentifierConfiguration } from "./patient/patients.js";
 
 const API_PREFIX = "/api/v1";
 
@@ -56,6 +58,7 @@ export interface AppOptions {
   readonly registerApiRoutes?: FastifyPluginAsync;
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
+  readonly patient?: { readonly officialIdentifier: OfficialIdentifierConfiguration };
 }
 
 function errorBody(
@@ -189,6 +192,15 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
         return;
       }
 
+      const patientScoped =
+        path === `${API_PREFIX}/patients` || path.startsWith(`${API_PREFIX}/patients/`);
+      if (patientScoped && context.user.role === "ADMINISTRATOR") {
+        await reply
+          .status(403)
+          .send(errorBody(request, 403, "FORBIDDEN", "Request is not permitted."));
+        return;
+      }
+
       if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return;
 
       const csrfHeader = request.headers["x-csrf-token"];
@@ -201,12 +213,6 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       }
 
       if (request.method === "POST" && path === `${API_PREFIX}/patients`) {
-        if (context.user.role === "ADMINISTRATOR") {
-          await reply
-            .status(403)
-            .send(errorBody(request, 403, "FORBIDDEN", "Request is not permitted."));
-          return;
-        }
         try {
           await assertIdentifiedPatientCreationAllowed(options.authentication!.pool);
         } catch (error) {
@@ -248,6 +254,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
       { prefix: API_PREFIX },
     );
+    if (options.patient) {
+      void app.register(
+        patientRoutes(
+          {
+            pool: options.authentication.pool,
+            officialIdentifier: options.patient.officialIdentifier,
+          },
+          (request) => requestSessions.get(request),
+        ),
+        { prefix: API_PREFIX },
+      );
+    }
   }
 
   app.get(

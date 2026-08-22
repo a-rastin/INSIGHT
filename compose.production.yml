@@ -6,6 +6,11 @@ services:
     init: false
     ports:
       - "3000:3000"
+    environment:
+      - INSIGHT_OFFICIAL_IDENTIFIER_TYPE
+      - INSIGHT_OFFICIAL_IDENTIFIER_ISSUER
+      - INSIGHT_OFFICIAL_IDENTIFIER_PATTERN
+      - INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION
     volumes:
       - insight-data:/var/lib/insight
     stop_grace_period: 30s

@@ -144,6 +144,7 @@ The root now contains the initial TypeScript workspace for INSIGHT:
 - `apps/web` is the minimal React/Vite browser entry point.
 - `apps/server` owns the versioned `/api/v1` Fastify boundary, safe error envelopes, server-generated request IDs, generated OpenAPI, database/worker-aware readiness, a supervised worker runtime, and production delivery of the React build with SPA fallback.
 - `apps/server/src/deployment` owns the EXT-01 evidence lifecycle and identified-data gate. Its Administrator API exposes deployment evidence only; operational audit rows retain actor, evidence version, environment status, request ID, and timestamp without Patient or approval content.
+- `apps/server/src/patient` owns configured official-identifier normalization, encrypted Patient demographics, transactional duplicate overwrite, one-to-one Research Case creation, calendar-age calculation, and encrypted before/after audit events. Patient services and routes reject Administrators.
 - `apps/server/src/database` owns PostgreSQL 16 pooled access, UTC sessions, transaction handling, forward-only migration locking and ledger checks, startup schema enforcement, safe diagnostics, and isolated integration-test databases.
 - `packages/contracts` owns browser-safe version 1 TypeBox runtime schemas and inferred types for UUIDs, RFC 3339 timestamps, fixed roles, API errors, pagination, and provenance. It also provides deterministic JSON serialization, Web Crypto SHA-256 helpers, and explicit unsupported-version errors; lint and contract tests prohibit server, database, secret, and Node-only imports at the browser boundary.
 - `packages/bayes` is the migration boundary for environment-independent Bayesian logic.
@@ -195,7 +196,7 @@ The repository also contains one implemented legacy tool:
 - [`medical-documentation/`](medical-documentation/) contains source material collected for DDI and suicide-risk work.
 - [`CONTEXT/`](CONTEXT/) contains protected project context used by coding agents.
 
-No patient-domain tables, DDI engine, or treatment-plan orchestrator exists yet. The unified deployment includes local password authentication and Administrator account management; its worker has no domain jobs until later modules are implemented.
+No Encounter or visit entity exists. The DDI engine and treatment-plan orchestrator are not implemented yet. The unified deployment includes local password authentication, Administrator account management, and Patient/Research Case persistence; its worker has no domain jobs until later modules are implemented.
 
 ## Database Development
 
@@ -206,6 +207,10 @@ Migration 2 creates the identity schema and exactly one enabled bootstrap Admini
 Migration 4 adds attributable, sanitized account-management audit events and treats `PASSWORD_CHANGE_REQUIRED` as enabled for last-Administrator protection. Administrator REST/UI supports listing, creating, renaming, enabling/disabling, direct password changes, temporary resets, and session revocation. Temporary reset hashes the supplied credential, revokes every target session, and restricts the next session to password replacement; successful replacement revokes old sessions and returns a rotated session. No signup, email recovery, reset link, recovery code, or retrievable password is provided.
 
 Migration 5 adds immutable EXT-01 evidence versions, explicit latest-version activation state, and metadata-only operational audit events. `GET` and `POST /api/v1/admin/deployment-evidence` inspect or record evidence; `POST /api/v1/admin/deployment-evidence/{version}/activate` enables identified mode only while the latest approval is effective and every security-control prerequisite is satisfied. Any new evidence version or approval expiry disables identified Patient creation. Administrator requests to the Patient-creation boundary remain forbidden.
+
+Migration 6 adds the database-held application encryption key, encrypted Patient identity and demographics, unique normalized-identifier lookup hash, exactly one Research Case per Patient, and immutable encrypted Patient audit events. `POST /api/v1/patients` creates a complete Patient and Research Case or atomically overwrites demographics on a normalized identifier match; `PUT /api/v1/patients/{patientId}` performs an attributable last-write-wins demographic save. Responses calculate profile age against today's deployment-local date and Research Case age against `startedAt`.
+
+Patient routes require one deployment identifier configuration. Set `INSIGHT_OFFICIAL_IDENTIFIER_TYPE`, `INSIGHT_OFFICIAL_IDENTIFIER_ISSUER`, `INSIGHT_OFFICIAL_IDENTIFIER_PATTERN`, and `INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION`; normalization must be `NFKC`, `NFKC_UPPERCASE`, or `NFKC_LOWERCASE`. The Compose file forwards these runtime values and contains no jurisdiction-specific default.
 
 Migration deployment, failure recovery, full-restore boundaries, and major-upgrade steps are documented in [Database Migrations and Recovery](docs/operations/database-migrations.md).
 

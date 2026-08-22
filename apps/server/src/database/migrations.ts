@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import type { PoolClient } from "pg";
 
@@ -264,6 +264,126 @@ export const migrations: readonly Migration[] = Object.freeze([
       CREATE INDEX operational_audit_events_occurred_idx
         ON insight.operational_audit_events (occurred_at DESC);
     `,
+  },
+  {
+    version: 6,
+    name: "patient_identity_and_research_case",
+    dataVersion: "application-encryption-key-v1",
+    sql: `
+      CREATE TYPE insight.patient_sex AS ENUM ('MALE', 'FEMALE');
+
+      CREATE TABLE insight.application_encryption_keys (
+        version integer PRIMARY KEY CHECK (version > 0),
+        key_material bytea NOT NULL CHECK (octet_length(key_material) = 32),
+        active boolean NOT NULL DEFAULT false,
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE UNIQUE INDEX application_encryption_keys_one_active
+        ON insight.application_encryption_keys (active)
+        WHERE active;
+
+      CREATE TABLE insight.patients (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        official_identifier_type text NOT NULL CHECK (
+          official_identifier_type = btrim(official_identifier_type)
+          AND official_identifier_type <> ''
+          AND char_length(official_identifier_type) <= 128
+        ),
+        official_identifier_issuer text NOT NULL CHECK (
+          official_identifier_issuer = btrim(official_identifier_issuer)
+          AND official_identifier_issuer <> ''
+          AND char_length(official_identifier_issuer) <= 256
+        ),
+        official_identifier_lookup_hash bytea NOT NULL
+          CHECK (octet_length(official_identifier_lookup_hash) = 32),
+        official_identifier_ciphertext bytea NOT NULL,
+        official_identifier_iv bytea NOT NULL CHECK (octet_length(official_identifier_iv) = 12),
+        official_identifier_tag bytea NOT NULL CHECK (octet_length(official_identifier_tag) = 16),
+        first_name_ciphertext bytea NOT NULL,
+        first_name_iv bytea NOT NULL CHECK (octet_length(first_name_iv) = 12),
+        first_name_tag bytea NOT NULL CHECK (octet_length(first_name_tag) = 16),
+        last_name_ciphertext bytea NOT NULL,
+        last_name_iv bytea NOT NULL CHECK (octet_length(last_name_iv) = 12),
+        last_name_tag bytea NOT NULL CHECK (octet_length(last_name_tag) = 16),
+        date_of_birth_ciphertext bytea NOT NULL,
+        date_of_birth_iv bytea NOT NULL CHECK (octet_length(date_of_birth_iv) = 12),
+        date_of_birth_tag bytea NOT NULL CHECK (octet_length(date_of_birth_tag) = 16),
+        encryption_key_version integer NOT NULL
+          REFERENCES insight.application_encryption_keys(version),
+        sex insight.patient_sex NOT NULL,
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CONSTRAINT patients_official_identifier_unique UNIQUE (
+          official_identifier_type,
+          official_identifier_issuer,
+          official_identifier_lookup_hash
+        )
+      );
+
+      CREATE TABLE insight.research_cases (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        patient_id uuid NOT NULL UNIQUE REFERENCES insight.patients(id) ON DELETE CASCADE,
+        started_at timestamptz NOT NULL,
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE TABLE insight.patient_audit_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_type text NOT NULL CHECK (event_type IN (
+          'PATIENT_CREATED', 'PATIENT_DEMOGRAPHICS_SAVED'
+        )),
+        patient_id uuid NOT NULL,
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        request_id uuid NOT NULL,
+        before_values_ciphertext bytea,
+        before_values_iv bytea CHECK (
+          before_values_iv IS NULL OR octet_length(before_values_iv) = 12
+        ),
+        before_values_tag bytea CHECK (
+          before_values_tag IS NULL OR octet_length(before_values_tag) = 16
+        ),
+        after_values_ciphertext bytea NOT NULL,
+        after_values_iv bytea NOT NULL CHECK (octet_length(after_values_iv) = 12),
+        after_values_tag bytea NOT NULL CHECK (octet_length(after_values_tag) = 16),
+        encryption_key_version integer NOT NULL
+          REFERENCES insight.application_encryption_keys(version),
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (
+          (before_values_ciphertext IS NULL AND before_values_iv IS NULL AND before_values_tag IS NULL)
+          OR
+          (before_values_ciphertext IS NOT NULL AND before_values_iv IS NOT NULL AND before_values_tag IS NOT NULL)
+        )
+      );
+
+      CREATE INDEX patient_audit_events_patient_occurred_idx
+        ON insight.patient_audit_events (patient_id, occurred_at, id);
+
+      CREATE FUNCTION insight.protect_patient_audit_event()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        RAISE EXCEPTION 'patient audit events are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+
+      CREATE TRIGGER patient_audit_events_immutable
+      BEFORE UPDATE OR DELETE ON insight.patient_audit_events
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_patient_audit_event();
+    `,
+    run: async (client) => {
+      await client.query(
+        `INSERT INTO insight.application_encryption_keys (version, key_material, active)
+         VALUES (1, $1, true)`,
+        [randomBytes(32)],
+      );
+    },
   },
 ]);
 

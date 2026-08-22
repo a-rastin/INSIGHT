@@ -11,7 +11,17 @@ const TYPES_PATH = new URL("../apps/web/src/generated/api-types.ts", import.meta
 const CLIENT_PATH = new URL("../apps/web/src/generated/api-client.ts", import.meta.url);
 const prettierOptions = (await resolveConfig("prettier.config.mjs")) ?? {};
 
-const app = buildApp({ authentication: { pool: {} } });
+const app = buildApp({
+  authentication: { pool: {} },
+  patient: {
+    officialIdentifier: {
+      type: "CONFIGURED_OFFICIAL_ID",
+      issuingAuthority: "CONFIGURED_ISSUER",
+      pattern: "^[A-Z0-9-]{1,64}$",
+      normalization: "NFKC_UPPERCASE",
+    },
+  },
+});
 await app.ready();
 const document = app.swagger();
 await app.close();

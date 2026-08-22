@@ -2010,6 +2010,438 @@
           }
         }
       }
+    },
+    "/api/v1/patients": {
+      "post": {
+        "operationId": "createOrOpenPatient",
+        "tags": ["patients"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "schemaVersion",
+                  "officialIdentifier",
+                  "firstName",
+                  "lastName",
+                  "dateOfBirth",
+                  "sex"
+                ],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "officialIdentifier": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["type", "issuingAuthority", "value"],
+                    "properties": {
+                      "type": { "type": "string", "enum": ["CONFIGURED_OFFICIAL_ID"] },
+                      "issuingAuthority": { "type": "string", "enum": ["CONFIGURED_ISSUER"] },
+                      "value": { "type": "string", "minLength": 1, "maxLength": 256 }
+                    }
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z]+(?:[ '-][A-Za-z]+)*$"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z]+(?:[ '-][A-Za-z]+)*$"
+                  },
+                  "dateOfBirth": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                  "sex": { "type": "string", "enum": ["MALE", "FEMALE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "patient"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "patient": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "officialIdentifier",
+                        "firstName",
+                        "lastName",
+                        "dateOfBirth",
+                        "sex",
+                        "profileAge",
+                        "researchCase",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                        },
+                        "officialIdentifier": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["type", "issuingAuthority", "value"],
+                          "properties": {
+                            "type": { "type": "string", "enum": ["CONFIGURED_OFFICIAL_ID"] },
+                            "issuingAuthority": { "type": "string", "enum": ["CONFIGURED_ISSUER"] },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 256,
+                              "pattern": "^[A-Z0-9-]{1,64}$"
+                            }
+                          }
+                        },
+                        "firstName": { "type": "string", "minLength": 1, "maxLength": 128 },
+                        "lastName": { "type": "string", "minLength": 1, "maxLength": 128 },
+                        "dateOfBirth": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                        "sex": { "type": "string", "enum": ["MALE", "FEMALE"] },
+                        "profileAge": { "type": "integer", "minimum": 0 },
+                        "researchCase": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["id", "startedAt", "ageAtStart"],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                            },
+                            "startedAt": { "type": "string", "format": "date-time" },
+                            "ageAtStart": { "type": "integer", "minimum": 0 }
+                          }
+                        },
+                        "createdAt": { "type": "string", "format": "date-time" },
+                        "updatedAt": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "patient"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "patient": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "officialIdentifier",
+                        "firstName",
+                        "lastName",
+                        "dateOfBirth",
+                        "sex",
+                        "profileAge",
+                        "researchCase",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                        },
+                        "officialIdentifier": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["type", "issuingAuthority", "value"],
+                          "properties": {
+                            "type": { "type": "string", "enum": ["CONFIGURED_OFFICIAL_ID"] },
+                            "issuingAuthority": { "type": "string", "enum": ["CONFIGURED_ISSUER"] },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 256,
+                              "pattern": "^[A-Z0-9-]{1,64}$"
+                            }
+                          }
+                        },
+                        "firstName": { "type": "string", "minLength": 1, "maxLength": 128 },
+                        "lastName": { "type": "string", "minLength": 1, "maxLength": 128 },
+                        "dateOfBirth": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                        "sex": { "type": "string", "enum": ["MALE", "FEMALE"] },
+                        "profileAge": { "type": "integer", "minimum": 0 },
+                        "researchCase": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["id", "startedAt", "ageAtStart"],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                            },
+                            "startedAt": { "type": "string", "format": "date-time" },
+                            "ageAtStart": { "type": "integer", "minimum": 0 }
+                          }
+                        },
+                        "createdAt": { "type": "string", "format": "date-time" },
+                        "updatedAt": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/patients/{patientId}": {
+      "put": {
+        "operationId": "savePatientDemographics",
+        "tags": ["patients"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["schemaVersion", "firstName", "lastName", "dateOfBirth", "sex"],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z]+(?:[ '-][A-Za-z]+)*$"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z]+(?:[ '-][A-Za-z]+)*$"
+                  },
+                  "dateOfBirth": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                  "sex": { "type": "string", "enum": ["MALE", "FEMALE"] }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "patient"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "patient": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "officialIdentifier",
+                        "firstName",
+                        "lastName",
+                        "dateOfBirth",
+                        "sex",
+                        "profileAge",
+                        "researchCase",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                        },
+                        "officialIdentifier": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["type", "issuingAuthority", "value"],
+                          "properties": {
+                            "type": { "type": "string", "enum": ["CONFIGURED_OFFICIAL_ID"] },
+                            "issuingAuthority": { "type": "string", "enum": ["CONFIGURED_ISSUER"] },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 256,
+                              "pattern": "^[A-Z0-9-]{1,64}$"
+                            }
+                          }
+                        },
+                        "firstName": { "type": "string", "minLength": 1, "maxLength": 128 },
+                        "lastName": { "type": "string", "minLength": 1, "maxLength": 128 },
+                        "dateOfBirth": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                        "sex": { "type": "string", "enum": ["MALE", "FEMALE"] },
+                        "profileAge": { "type": "integer", "minimum": 0 },
+                        "researchCase": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["id", "startedAt", "ageAtStart"],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                            },
+                            "startedAt": { "type": "string", "format": "date-time" },
+                            "ageAtStart": { "type": "integer", "minimum": 0 }
+                          }
+                        },
+                        "createdAt": { "type": "string", "format": "date-time" },
+                        "updatedAt": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

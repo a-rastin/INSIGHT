@@ -143,7 +143,17 @@ test("not-found and unsupported-version responses stay inside the API envelope",
 });
 
 test("published OpenAPI matches the checked-in contract", async (t) => {
-  const app = buildApp({ authentication: { pool: {} } });
+  const app = buildApp({
+    authentication: { pool: {} },
+    patient: {
+      officialIdentifier: {
+        type: "CONFIGURED_OFFICIAL_ID",
+        issuingAuthority: "CONFIGURED_ISSUER",
+        pattern: "^[A-Z0-9-]{1,64}$",
+        normalization: "NFKC_UPPERCASE",
+      },
+    },
+  });
   t.after(() => app.close());
 
   const response = await app.inject({ method: "GET", url: "/api/v1/openapi.json" });
@@ -154,6 +164,9 @@ test("published OpenAPI matches the checked-in contract", async (t) => {
   assert.ok(published.paths["/api/v1/admin/users/{userId}/reset-password"]);
   assert.ok(published.paths["/api/v1/admin/deployment-evidence"]);
   assert.ok(published.paths["/api/v1/admin/deployment-evidence/{version}/activate"]);
+  assert.ok(published.paths["/api/v1/patients"]);
+  assert.ok(published.paths["/api/v1/patients/{patientId}"]);
+  assert.doesNotMatch(JSON.stringify(published.paths), /encounter|visit/i);
   assert.equal(published.paths["/api/v1/signup"], undefined);
   assert.equal(published.paths["/api/v1/recover-password"], undefined);
 });

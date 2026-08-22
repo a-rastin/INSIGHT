@@ -5,10 +5,12 @@ import { pathToFileURL } from "node:url";
 import { buildApp } from "./app.js";
 import { assertSchemaAtHead, createPostgresPool, databaseConfigFromEnv } from "./database/index.js";
 import { safeDatabaseDiagnostic } from "./database/diagnostic.js";
+import { officialIdentifierConfigurationFromEnv } from "./patient/patients.js";
 
 export { buildApp } from "./app.js";
 export * from "./deployment/index.js";
 export * from "./identity/index.js";
+export * from "./patient/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const pool = createPostgresPool(databaseConfigFromEnv(env));
@@ -28,6 +30,7 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       allowInsecureLoopbackCookie:
         env.NODE_ENV === "development" && ["127.0.0.1", "::1", "localhost"].includes(host),
     },
+    patient: { officialIdentifier: officialIdentifierConfigurationFromEnv(env) },
   });
   try {
     await assertSchemaAtHead(pool);

@@ -62,6 +62,10 @@ docker run --rm --entrypoint sh "$image" -c 'test ! -e /opt/insight/Bayesian-Eng
 
 mkdir -p "$success_volume"
 docker run -d --name "$success_name" \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_TYPE=RESEARCH_ID \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_ISSUER=INSIGHT_TEST \
+  --env 'INSIGHT_OFFICIAL_IDENTIFIER_PATTERN=^SYNTHETIC-[0-9]{6}$' \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION=NFKC_UPPERCASE \
   --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" >/dev/null
 if ! wait_ready "$success_name"; then
   docker logs "$success_name" >&2 || true
@@ -77,6 +81,10 @@ docker exec -u postgres "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
 docker stop -t 20 "$success_name" >/dev/null
 docker rm "$success_name" >/dev/null
 docker run -d --name "$success_name" \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_TYPE=RESEARCH_ID \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_ISSUER=INSIGHT_TEST \
+  --env 'INSIGHT_OFFICIAL_IDENTIFIER_PATTERN=^SYNTHETIC-[0-9]{6}$' \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION=NFKC_UPPERCASE \
   --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" >/dev/null
 if ! wait_ready "$success_name"; then
   docker logs "$success_name" >&2 || true

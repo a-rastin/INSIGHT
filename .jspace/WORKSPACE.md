@@ -1,11 +1,12 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement administrator REST/UI user management with secure reset, password-replacement restriction and rotation, session revocation, RBAC, last-admin protection, sanitized attributable audits, tests, documentation, plan marking, and commit.
+Implement and verify transactional Patient identity plus one Research Case for the requested packet.
 
 ## Core
-- safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
+- canonical identity — configured normalized identifier serializes to one encrypted UUID Patient and one Research Case
 - contract lockstep — route schemas generate published OpenAPI and browser types checked in tests
+- safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
 
 ## Verified
 - ✓01 Required context and skills read; repository indexed at 1,649 nodes and 2,820 edges; executable code concentrated in Bayesian-Engine; architecture.md and code-standards.md are empty; root is not a Git worktree. — verified by: Direct file reads, codebase-memory full index, architecture graph, filesystem inventory, and git status.
@@ -103,8 +104,10 @@ Implement administrator REST/UI user management with secure reset, password-repl
 - ✓93 Fastify boundary, OpenAPI/client drift check, route injection suite, and production workspace build pass. — verified by: npm run format, lint, typecheck, test, build; 4 test files including focused API injection coverage
 - ✓94 Identity migration and services meet this issue's password, username uniqueness, bootstrap, role, policy-rehash, and last-enabled-Administrator criteria. — verified by: Verifier: Prettier, ESLint, TypeScript, Node/Vitest unit tests, Vite/server builds, OpenAPI drift check, secret-log scan, and temporary PostgreSQL 16 integration tests; coverage: all changed TypeScript, migration 1 checksum compatibility, migration 2 fresh/restart behavior, case collisions, 1-character create/change, Argon2id verification and policy-version persistence, fixed DB roles, bootstrap risk/status, sequential and concurrent last-admin disablement.
 - ✓95 Administrator REST/UI management, reset lifecycle, session rotation/revocation, authorization matrix, last-admin protection, sanitized audits, OpenAPI, and UI E2E implemented. — verified by: Verifier: PostgreSQL integration, focused authentication, web unit/accessibility, production browser E2E, static/build/contract checks; coverage: all new user-management endpoints and services, forced-password lifecycle, both roles, active sessions, audit rows, generated API, and browser flows.
+- ✓96 Focused Patient unit and PostgreSQL integration tests pass. — verified by: Node tests cover birthday/leap dates, configured normalization, concurrent duplicate creates, overwrite audits, rollback, route validation, Administrator denial, and Encounter/visit absence.
+- ✓97 Patient packet and repository regressions verified. — verified by: Prettier, ESLint, TypeScript, OpenAPI drift, artifact scan, production builds, 7 server unit files, 12 web tests, 25 PostgreSQL integration tests, shell syntax, Compose validation, and clean diff checks.
 
 ## Open
 
 ## Next
-Commit verified administrator user-management packet and clean disposable test infrastructure.
+Commit the verified Patient and Research Case packet.

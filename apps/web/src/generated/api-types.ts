@@ -244,6 +244,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["createOrOpenPatient"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/patients/{patientId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations["savePatientDemographics"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1464,6 +1496,235 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  createOrOpenPatient: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          officialIdentifier: {
+            /** @enum {string} */
+            type: "CONFIGURED_OFFICIAL_ID";
+            /** @enum {string} */
+            issuingAuthority: "CONFIGURED_ISSUER";
+            value: string;
+          };
+          firstName: string;
+          lastName: string;
+          dateOfBirth: string;
+          /** @enum {string} */
+          sex: "MALE" | "FEMALE";
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            patient: {
+              id: string;
+              officialIdentifier: {
+                /** @enum {string} */
+                type: "CONFIGURED_OFFICIAL_ID";
+                /** @enum {string} */
+                issuingAuthority: "CONFIGURED_ISSUER";
+                value: string;
+              };
+              firstName: string;
+              lastName: string;
+              dateOfBirth: string;
+              /** @enum {string} */
+              sex: "MALE" | "FEMALE";
+              profileAge: number;
+              researchCase: {
+                id: string;
+                /** Format: date-time */
+                startedAt: string;
+                ageAtStart: number;
+              };
+              /** Format: date-time */
+              createdAt: string;
+              /** Format: date-time */
+              updatedAt: string;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            patient: {
+              id: string;
+              officialIdentifier: {
+                /** @enum {string} */
+                type: "CONFIGURED_OFFICIAL_ID";
+                /** @enum {string} */
+                issuingAuthority: "CONFIGURED_ISSUER";
+                value: string;
+              };
+              firstName: string;
+              lastName: string;
+              dateOfBirth: string;
+              /** @enum {string} */
+              sex: "MALE" | "FEMALE";
+              profileAge: number;
+              researchCase: {
+                id: string;
+                /** Format: date-time */
+                startedAt: string;
+                ageAtStart: number;
+              };
+              /** Format: date-time */
+              createdAt: string;
+              /** Format: date-time */
+              updatedAt: string;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  savePatientDemographics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          firstName: string;
+          lastName: string;
+          dateOfBirth: string;
+          /** @enum {string} */
+          sex: "MALE" | "FEMALE";
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            patient: {
+              id: string;
+              officialIdentifier: {
+                /** @enum {string} */
+                type: "CONFIGURED_OFFICIAL_ID";
+                /** @enum {string} */
+                issuingAuthority: "CONFIGURED_ISSUER";
+                value: string;
+              };
+              firstName: string;
+              lastName: string;
+              dateOfBirth: string;
+              /** @enum {string} */
+              sex: "MALE" | "FEMALE";
+              profileAge: number;
+              researchCase: {
+                id: string;
+                /** Format: date-time */
+                startedAt: string;
+                ageAtStart: number;
+              };
+              /** Format: date-time */
+              createdAt: string;
+              /** Format: date-time */
+              updatedAt: string;
+            };
+          };
+        };
       };
       /** @description Default Response */
       default: {
