@@ -18,6 +18,15 @@ import Fastify, {
   type FastifyPluginAsync,
   type FastifyRequest,
 } from "fastify";
+import type { Pool } from "pg";
+
+import { authenticationRoutes, type AuthenticationHttpOptions } from "./identity/http.js";
+import {
+  isValidCsrf,
+  resolveSession,
+  sessionTokenFromCookie,
+  type SessionContext,
+} from "./identity/sessions.js";
 
 const API_PREFIX = "/api/v1";
 
@@ -41,6 +50,7 @@ export interface AppOptions {
   readonly staticRoot?: string;
   readonly registerApiRoutes?: FastifyPluginAsync;
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
+  readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
 }
 
 function errorBody(
@@ -136,6 +146,49 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     },
   });
 
+  const requestSessions = new WeakMap<FastifyRequest, SessionContext>();
+  if (options.authentication) {
+    app.addHook("preHandler", async (request, reply) => {
+      if (
+        !request.url.startsWith(`${API_PREFIX}/`) ||
+        !["POST", "PUT", "PATCH", "DELETE"].includes(request.method) ||
+        request.url.split("?", 1)[0] === `${API_PREFIX}/login`
+      ) {
+        return;
+      }
+
+      const token = sessionTokenFromCookie(request.headers.cookie);
+      const context = token ? await resolveSession(options.authentication!.pool, token) : null;
+      if (!context) {
+        await reply
+          .status(401)
+          .send(errorBody(request, 401, "UNAUTHORIZED", "Authentication is required."));
+        return;
+      }
+
+      const csrfHeader = request.headers["x-csrf-token"];
+      const csrfToken = Array.isArray(csrfHeader) ? csrfHeader[0] : csrfHeader;
+      if (!isValidCsrf(context, csrfToken)) {
+        await reply
+          .status(403)
+          .send(errorBody(request, 403, "INVALID_CSRF", "Request is not permitted."));
+        return;
+      }
+      if (
+        context.user.status === "PASSWORD_CHANGE_REQUIRED" &&
+        ![`${API_PREFIX}/session/password`, `${API_PREFIX}/logout`].includes(
+          request.url.split("?", 1)[0]!,
+        )
+      ) {
+        await reply
+          .status(403)
+          .send(errorBody(request, 403, "PASSWORD_CHANGE_REQUIRED", "Request is not permitted."));
+        return;
+      }
+      requestSessions.set(request, context);
+    });
+  }
+
   app.addHook("onSend", async (request, reply, payload) => {
     void reply.header("x-request-id", request.id);
     return payload;
@@ -146,6 +199,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
   if (options.registerApiRoutes) {
     void app.register(options.registerApiRoutes, { prefix: API_PREFIX });
+  }
+  if (options.authentication) {
+    void app.register(
+      authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
+      { prefix: API_PREFIX },
+    );
   }
 
   app.get(

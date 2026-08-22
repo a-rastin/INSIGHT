@@ -8,6 +8,7 @@ import {
   verifyPasswordHash,
   type PasswordPolicy,
 } from "./passwords.js";
+import { auditSecurityEvent, revokeUserSessions } from "./sessions.js";
 
 const LAST_ADMINISTRATOR_LOCK_ID = "805974421099826827";
 const BOOTSTRAP_USERNAME = "admin";
@@ -168,15 +169,13 @@ export async function authenticateUser(
     [usernameNormalized],
   );
   const row = result.rows[0];
-  if (!row) return { authenticated: false };
-
   const verification = await verifyPasswordHash(
     password,
-    row.password_hash,
-    row.password_policy_version,
+    row?.password_hash ?? DUMMY_PASSWORD_HASH,
+    row?.password_policy_version ?? policy.version,
     policy,
   );
-  if (!verification.valid || row.status === "DISABLED") return { authenticated: false };
+  if (!row || !verification.valid || row.status === "DISABLED") return { authenticated: false };
 
   if (verification.needsRehash) {
     const replacement = await hashPassword(password, policy);
@@ -204,24 +203,58 @@ export async function changePassword(
   policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
 ): Promise<User | null> {
   const passwordHash = await hashPassword(password, policy);
-  const result = await pool.query<UserRow>(
-    `UPDATE insight.users
-     SET password_hash = $1,
-         password_policy_version = $2,
-         bootstrap_credential_active = false,
-         status = CASE WHEN status = 'PASSWORD_CHANGE_REQUIRED' THEN 'ENABLED' ELSE status END,
-         updated_at = clock_timestamp()
-     WHERE id = $3
-     RETURNING *`,
-    [passwordHash, policy.version, userId],
-  );
-  return result.rows[0] ? publicUser(result.rows[0]) : null;
+  return withTransaction(pool, async (client) => {
+    const result = await client.query<UserRow>(
+      `UPDATE insight.users
+       SET password_hash = $1,
+           password_policy_version = $2,
+           bootstrap_credential_active = false,
+           status = CASE WHEN status = 'PASSWORD_CHANGE_REQUIRED' THEN 'ENABLED' ELSE status END,
+           updated_at = clock_timestamp()
+       WHERE id = $3
+       RETURNING *`,
+      [passwordHash, policy.version, userId],
+    );
+    if (!result.rows[0]) return null;
+    await revokeUserSessions(client, userId);
+    await auditSecurityEvent(client, "PASSWORD_CHANGED", userId, userId);
+    return publicUser(result.rows[0]);
+  });
+}
+
+export async function resetPassword(
+  pool: Pool,
+  actorUserId: string,
+  userId: string,
+  password: string,
+  policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
+): Promise<User | null> {
+  const passwordHash = await hashPassword(password, policy);
+  return withTransaction(pool, async (client) => {
+    const result = await client.query<UserRow>(
+      `UPDATE insight.users
+       SET password_hash = $1,
+           password_policy_version = $2,
+           bootstrap_credential_active = false,
+           status = 'PASSWORD_CHANGE_REQUIRED',
+           updated_at = clock_timestamp()
+       WHERE id = $3 AND role = 'PSYCHIATRIST'
+       RETURNING *`,
+      [passwordHash, policy.version, userId],
+    );
+    if (!result.rows[0]) return null;
+    await revokeUserSessions(client, userId);
+    await auditSecurityEvent(client, "PASSWORD_RESET", actorUserId, userId);
+    return publicUser(result.rows[0]);
+  });
 }
 
 export async function setUserEnabled(
   pool: Pool,
   userId: string,
   enabled: boolean,
+  actorUserId: string = userId,
+  expectedRole?: Role,
 ): Promise<User | null> {
   try {
     return await withTransaction(pool, async (client) => {
@@ -230,10 +263,16 @@ export async function setUserEnabled(
         `UPDATE insight.users
          SET status = $1, updated_at = clock_timestamp()
          WHERE id = $2
+           AND ($3::insight.user_role IS NULL OR role = $3)
          RETURNING *`,
-        [enabled ? "ENABLED" : "DISABLED", userId],
+        [enabled ? "ENABLED" : "DISABLED", userId, expectedRole ?? null],
       );
-      return result.rows[0] ? publicUser(result.rows[0]) : null;
+      if (!result.rows[0]) return null;
+      if (!enabled) {
+        await revokeUserSessions(client, userId);
+        await auditSecurityEvent(client, "ACCOUNT_DISABLED", actorUserId, userId);
+      }
+      return publicUser(result.rows[0]);
     });
   } catch (error) {
     if (isSqlState(error, "23514", "users_last_enabled_administrator")) {
@@ -242,3 +281,6 @@ export async function setUserEnabled(
     throw error;
   }
 }
+
+const DUMMY_PASSWORD_HASH =
+  "$argon2id$v=19$m=19456,t=2,p=1$Svb+bK1Y2m4BHEimY952eQ$UIQ9owiei9fMNpc0u972+N20zByGuDvlH0gwpS4SX5I";

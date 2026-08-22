@@ -13,8 +13,10 @@ export {
   changePassword,
   createUser,
   normalizeUsername,
+  resetPassword,
   setUserEnabled,
   type AuthenticationResult,
   type User,
   type UserStatus,
 } from "./users.js";
+export * from "./sessions.js";

@@ -11,6 +11,7 @@ export * from "./identity/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const pool = createPostgresPool(databaseConfigFromEnv(env));
+  const host = env.HOST ?? "127.0.0.1";
   const app = buildApp({
     staticRoot:
       env.NODE_ENV === "production"
@@ -21,12 +22,17 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       await access(env.INSIGHT_WORKER_READY_FILE ?? "/run/insight/worker-ready");
       return { application: "ready", database: "ready", worker: "ready" };
     },
+    authentication: {
+      pool,
+      allowInsecureLoopbackCookie:
+        env.NODE_ENV === "development" && ["127.0.0.1", "::1", "localhost"].includes(host),
+    },
   });
   try {
     await assertSchemaAtHead(pool);
     app.addHook("onClose", async () => pool.end());
     await app.listen({
-      host: env.HOST ?? "127.0.0.1",
+      host,
       port: Number(env.PORT ?? 3000),
     });
     await new Promise<void>((resolveShutdown) => {

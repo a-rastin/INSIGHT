@@ -21,7 +21,7 @@ INSIGHT is a research-only, clinician-facing decision-support prototype for schi
 - **Restore:** restore replaces the complete PostgreSQL database in maintenance mode after compatibility and integrity checks. It does not merge records or restore selected Patients.
 - **Roles:** Administrator and Psychiatrist only.
 - **Authentication:** local username and password only; every installation starts with `admin/admin`, and changing it is not mandatory.
-- **Sessions:** authentication uses opaque random session tokens, hashed server-side in PostgreSQL and carried only in hardened `HttpOnly` cookies; sessions can be revoked centrally.
+- **Sessions:** authentication uses opaque random session tokens, hashed server-side in PostgreSQL and carried only in `HttpOnly`, `SameSite=Strict`, normally `Secure` cookies. Unsafe API requests require a session-bound CSRF token; logout, password change/reset, and account disablement revoke sessions centrally. Failed sign-ins receive progressive delay and generic responses.
 - **Password recovery:** an Administrator assigns a temporary password to a user; every existing session is revoked and the user must replace the temporary password after sign-in.
 - **Audit storage:** audit events use ordinary PostgreSQL tables without hash chaining or an external audit service; database-level modification is not tamper-evident.
 - **Deletion audit:** permanent Patient deletion preserves the complete clinical audit history, including clinical payloads and Patient linkage. Deletion is therefore not erasure of all Patient information.

@@ -90,6 +90,52 @@ export const migrations: readonly Migration[] = Object.freeze([
     `,
     run: insertBootstrapAdministrator,
   },
+  {
+    version: 3,
+    name: "authentication_sessions",
+    sql: `
+      CREATE TABLE insight.sessions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        token_hash bytea NOT NULL UNIQUE CHECK (octet_length(token_hash) = 32),
+        csrf_hash bytea NOT NULL CHECK (octet_length(csrf_hash) = 32),
+        user_id uuid NOT NULL REFERENCES insight.users(id) ON DELETE CASCADE,
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        last_used_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        expires_at timestamptz NOT NULL,
+        revoked_at timestamptz,
+        source_address text,
+        user_agent text CHECK (user_agent IS NULL OR char_length(user_agent) <= 512),
+        CHECK (expires_at > created_at),
+        CHECK (revoked_at IS NULL OR revoked_at >= created_at)
+      );
+
+      CREATE INDEX sessions_active_user_idx
+        ON insight.sessions (user_id, expires_at)
+        WHERE revoked_at IS NULL;
+
+      CREATE TABLE insight.sign_in_throttles (
+        identifier_hash bytea PRIMARY KEY CHECK (octet_length(identifier_hash) = 32),
+        failure_count integer NOT NULL CHECK (failure_count > 0 AND failure_count <= 32),
+        last_failed_at timestamptz NOT NULL
+      );
+
+      CREATE TABLE insight.security_audit_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_type text NOT NULL CHECK (event_type IN (
+          'SIGN_IN', 'FAILED_SIGN_IN', 'SIGN_OUT', 'PASSWORD_CHANGED',
+          'PASSWORD_RESET', 'ACCOUNT_DISABLED'
+        )),
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        subject_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        request_id uuid,
+        source_address text,
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE INDEX security_audit_events_occurred_idx
+        ON insight.security_audit_events (occurred_at DESC);
+    `,
+  },
 ]);
 
 export function prepareMigrations(

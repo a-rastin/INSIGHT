@@ -28,14 +28,14 @@ test("PostgreSQL migration acceptance", async (suite) => {
         assert.deepEqual(await getMigrationStatus(pool), {
           state: "empty",
           databaseHead: 0,
-          codeHead: 2,
+          codeHead: 3,
           appliedCount: 0,
         });
         await assert.rejects(() => assertSchemaAtHead(pool), DatabaseCompatibilityError);
 
         const first = await migrateToHead(pool);
         const second = await migrateToHead(pool);
-        assert.deepEqual(first.applied, [1, 2]);
+        assert.deepEqual(first.applied, [1, 2, 3]);
         assert.deepEqual(second.applied, []);
         assert.equal((await assertSchemaAtHead(pool)).state, "current");
         assert.equal((await pool.query("SHOW TIME ZONE")).rows[0].TimeZone, "UTC");
@@ -62,7 +62,7 @@ test("PostgreSQL migration acceptance", async (suite) => {
   await suite.test("concurrent migration attempts serialize", async () => {
     await withIsolatedTestDatabase(adminConnectionString, async (connectionString) => {
       const lockMigration = {
-        version: 3,
+        version: 4,
         name: "migration_lock_probe",
         sql: "SELECT pg_sleep(0.2); CREATE TABLE insight.lock_probe (id integer);",
       };
@@ -74,14 +74,14 @@ test("PostgreSQL migration acceptance", async (suite) => {
           migrateToHead(firstPool, testMigrations),
           migrateToHead(secondPool, testMigrations),
         ]);
-        assert.equal(results.flatMap((result) => result.applied).length, 3);
+        assert.equal(results.flatMap((result) => result.applied).length, 4);
         assert.equal(
           (
             await firstPool.query(
               "SELECT count(*)::integer AS count FROM insight_schema_migrations",
             )
           ).rows[0].count,
-          3,
+          4,
         );
       } finally {
         await Promise.all([firstPool.end(), secondPool.end()]);
@@ -93,7 +93,7 @@ test("PostgreSQL migration acceptance", async (suite) => {
     await withIsolatedTestDatabase(adminConnectionString, async (connectionString) => {
       const pool = createPostgresPool({ connectionString });
       const failedMigration = {
-        version: 3,
+        version: 4,
         name: "failure_probe",
         sql: "CREATE TABLE insight.failure_probe (id integer); SELECT missing_function();",
       };
@@ -111,7 +111,7 @@ test("PostgreSQL migration acceptance", async (suite) => {
         assert.equal(
           (await pool.query("SELECT count(*)::integer AS count FROM insight_schema_migrations"))
             .rows[0].count,
-          2,
+          3,
         );
         assert.equal(
           (await pool.query("SELECT to_regclass('insight.failure_probe') AS table_name")).rows[0]
@@ -120,12 +120,12 @@ test("PostgreSQL migration acceptance", async (suite) => {
         );
 
         const repairedMigration = {
-          version: 3,
+          version: 4,
           name: "failure_probe",
           sql: "CREATE TABLE insight.failure_probe (id integer);",
         };
         assert.deepEqual((await migrateToHead(pool, [...migrations, repairedMigration])).applied, [
-          3,
+          4,
         ]);
       } finally {
         await pool.end();
