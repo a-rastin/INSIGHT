@@ -413,6 +413,133 @@ p {
   font-size: 0.9375rem;
 }
 
+.case-stepper {
+  padding: var(--space-4);
+  overflow-x: auto;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.case-stepper ol {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(110px, 1fr));
+  gap: var(--space-2);
+  min-width: 1120px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.case-stepper li {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-3);
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  border-top: 3px solid var(--border-strong);
+}
+
+.case-stepper li[aria-current="step"] {
+  color: var(--ink);
+  font-weight: 700;
+  background: var(--primary-light);
+  border-top-color: var(--primary);
+}
+
+.case-stepper li > span {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.assessment-card > .banner {
+  margin-bottom: var(--space-4);
+}
+
+.assessment-form,
+.criterion-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.assessment-form {
+  margin-top: var(--space-6);
+}
+
+.criterion-section {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.criterion-section h3,
+.criterion-section p,
+.calculation-panel h3,
+.calculation-panel p {
+  margin: 0;
+}
+
+.binary-question,
+.authority-fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-4);
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.binary-question legend,
+.authority-fieldset legend {
+  padding: 0 var(--space-2);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.binary-question label,
+.authority-fieldset label {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.binary-question input,
+.authority-fieldset input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.authority-fieldset .field-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.calculation-panel {
+  padding: var(--space-5);
+  background: var(--surface-1);
+  border-left: 4px solid var(--info);
+  border-radius: var(--radius-md);
+}
+
+.calculation-result {
+  margin: var(--space-2) 0;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.save-status {
+  min-height: 1.5rem;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+}
+
 .select-field {
   display: grid;
   gap: var(--space-2);

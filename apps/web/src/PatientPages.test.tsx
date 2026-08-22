@@ -132,17 +132,25 @@ describe("Patient Registry pages", () => {
     expect(await screen.findByRole("heading", { name: "Patient data is invalid" })).toBeTruthy();
 
     first.unmount();
-    render(<PatientProfilePage patientId={patient.id} onNavigate={vi.fn()} />);
+    render(<PatientProfilePage patientId={patient.id} csrfToken="csrf" onNavigate={vi.fn()} />);
     expect(await screen.findByRole("heading", { name: "Patient profile not found" })).toBeTruthy();
   });
 
   it("displays current profile age from the server response", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => json({ schemaVersion: "1", patient })),
+      vi.fn(async (request: Request) =>
+        request.url.includes("/research-case")
+          ? json({ schemaVersion: "1", error: {} }, 500)
+          : json({ schemaVersion: "1", patient }),
+      ),
     );
-    render(<PatientProfilePage patientId={patient.id} onNavigate={vi.fn()} />);
+    render(<PatientProfilePage patientId={patient.id} csrfToken="csrf" onNavigate={vi.fn()} />);
     expect(await screen.findByRole("heading", { name: "Ada Lovelace" })).toBeTruthy();
     expect(screen.getByText("Current age").nextElementSibling?.textContent).toBe("36");
+    expect(screen.getByRole("navigation", { name: "Research Case steps" })).toBeTruthy();
+    expect(screen.getByText("DSM-5-TR schizophrenia criteria").getAttribute("aria-current")).toBe(
+      "step",
+    );
   });
 });

@@ -3224,6 +3224,804 @@
           }
         }
       }
+    },
+    "/api/v1/patients/{patientId}/research-case/dsm5tr": {
+      "get": {
+        "operationId": "getDsm5trAssessment",
+        "tags": ["assessments"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "definition", "assessment"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "definition": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["title", "sections"],
+                      "properties": {
+                        "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "sections": {
+                          "minItems": 6,
+                          "maxItems": 6,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["criterion", "title", "instruction", "questions"],
+                            "properties": {
+                              "criterion": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["A"] },
+                                  { "type": "string", "enum": ["B"] },
+                                  { "type": "string", "enum": ["C"] },
+                                  { "type": "string", "enum": ["D"] },
+                                  { "type": "string", "enum": ["E"] },
+                                  { "type": "string", "enum": ["F"] }
+                                ]
+                              },
+                              "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                              "instruction": { "minLength": 1, "maxLength": 500, "type": "string" },
+                              "questions": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["id", "answerPath", "label"],
+                                  "properties": {
+                                    "id": { "minLength": 1, "maxLength": 100, "type": "string" },
+                                    "answerPath": {
+                                      "minLength": 1,
+                                      "maxLength": 100,
+                                      "type": "string"
+                                    },
+                                    "label": { "minLength": 1, "maxLength": 300, "type": "string" },
+                                    "dependsOn": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": ["answerPath", "value"],
+                                      "properties": {
+                                        "answerPath": {
+                                          "minLength": 1,
+                                          "maxLength": 100,
+                                          "type": "string"
+                                        },
+                                        "value": { "type": "boolean" }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "title": "insight.dsm5tr-definition.v1"
+                    },
+                    "assessment": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "researchCaseId",
+                        "status",
+                        "answers",
+                        "calculation",
+                        "psychiatristDecision",
+                        "instrumentPin",
+                        "createdByUserId",
+                        "updatedByUserId",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "researchCaseId": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["NOT_STARTED"] },
+                            { "type": "string", "enum": ["IN_PROGRESS"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["BYPASSED"] }
+                          ]
+                        },
+                        "answers": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["criterionA"],
+                              "properties": {
+                                "criterionA": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "delusions": { "type": "boolean" },
+                                    "hallucinations": { "type": "boolean" },
+                                    "disorganizedSpeech": { "type": "boolean" },
+                                    "disorganizedOrCatatonicBehavior": { "type": "boolean" },
+                                    "negativeSymptoms": { "type": "boolean" }
+                                  }
+                                },
+                                "criterionBFunctionalDecline": { "type": "boolean" },
+                                "criterionCDuration": { "type": "boolean" },
+                                "criterionDMoodDisorderExclusion": { "type": "boolean" },
+                                "criterionESubstanceOrMedicalExclusion": { "type": "boolean" },
+                                "criterionFDevelopmentalHistory": { "type": "boolean" },
+                                "criterionFProminentDelusionsOrHallucinations": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "title": "insight.dsm5tr-answers.v1"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "calculation": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "calculationVersion",
+                                "disposition",
+                                "criteria",
+                                "criterionASymptomCount",
+                                "criterionAHasCoreSymptom"
+                              ],
+                              "properties": {
+                                "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                "disposition": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["INCOMPLETE"] },
+                                    { "type": "string", "enum": ["CRITERIA_MET"] },
+                                    { "type": "string", "enum": ["CRITERIA_NOT_MET"] }
+                                  ]
+                                },
+                                "criteria": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["A", "B", "C", "D", "E", "F"],
+                                  "properties": {
+                                    "A": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "B": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "C": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "D": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "E": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "F": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "criterionASymptomCount": {
+                                  "anyOf": [
+                                    { "minimum": 0, "maximum": 5, "type": "integer" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "criterionAHasCoreSymptom": {
+                                  "anyOf": [{ "type": "boolean" }, { "type": "null" }]
+                                }
+                              },
+                              "title": "insight.dsm5tr-calculation.v1"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "psychiatristDecision": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                { "type": "string", "enum": ["UNDECIDED"] },
+                                { "type": "string", "enum": ["SCHIZOPHRENIA_CONFIRMED"] },
+                                { "type": "string", "enum": ["SCHIZOPHRENIA_NOT_CONFIRMED"] }
+                              ]
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "instrumentPin": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "instrumentId",
+                            "instrumentVersion",
+                            "schemaVersion",
+                            "calculationVersion",
+                            "sourceReference",
+                            "reviewReference"
+                          ],
+                          "properties": {
+                            "instrumentId": { "type": "string", "enum": ["DSM5TR_SCHIZOPHRENIA"] },
+                            "instrumentVersion": { "type": "string", "enum": ["DSM-5-TR-2022"] },
+                            "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "sourceReference": {
+                              "type": "string",
+                              "enum": [
+                                "https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum"
+                              ]
+                            },
+                            "reviewReference": {
+                              "type": "string",
+                              "enum": ["ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW"]
+                            }
+                          }
+                        },
+                        "createdByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "updatedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "saveDsm5trAssessment",
+        "tags": ["assessments"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "schemaVersion",
+                      "mode",
+                      "expectedRevision",
+                      "answers",
+                      "psychiatristDecision"
+                    ],
+                    "properties": {
+                      "schemaVersion": { "type": "string", "enum": ["1"] },
+                      "mode": {
+                        "anyOf": [
+                          { "type": "string", "enum": ["SAVE"] },
+                          { "type": "string", "enum": ["COMPLETE"] }
+                        ]
+                      },
+                      "expectedRevision": { "minimum": 1, "type": "integer" },
+                      "answers": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": ["criterionA"],
+                        "properties": {
+                          "criterionA": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "properties": {
+                              "delusions": { "type": "boolean" },
+                              "hallucinations": { "type": "boolean" },
+                              "disorganizedSpeech": { "type": "boolean" },
+                              "disorganizedOrCatatonicBehavior": { "type": "boolean" },
+                              "negativeSymptoms": { "type": "boolean" }
+                            }
+                          },
+                          "criterionBFunctionalDecline": { "type": "boolean" },
+                          "criterionCDuration": { "type": "boolean" },
+                          "criterionDMoodDisorderExclusion": { "type": "boolean" },
+                          "criterionESubstanceOrMedicalExclusion": { "type": "boolean" },
+                          "criterionFDevelopmentalHistory": { "type": "boolean" },
+                          "criterionFProminentDelusionsOrHallucinations": { "type": "boolean" }
+                        }
+                      },
+                      "psychiatristDecision": {
+                        "anyOf": [
+                          { "type": "string", "enum": ["UNDECIDED"] },
+                          { "type": "string", "enum": ["SCHIZOPHRENIA_CONFIRMED"] },
+                          { "type": "string", "enum": ["SCHIZOPHRENIA_NOT_CONFIRMED"] }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": ["schemaVersion", "mode", "expectedRevision"],
+                    "properties": {
+                      "schemaVersion": { "type": "string", "enum": ["1"] },
+                      "mode": { "type": "string", "enum": ["BYPASS"] },
+                      "expectedRevision": { "minimum": 1, "type": "integer" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "definition", "assessment"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "definition": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["title", "sections"],
+                      "properties": {
+                        "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "sections": {
+                          "minItems": 6,
+                          "maxItems": 6,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["criterion", "title", "instruction", "questions"],
+                            "properties": {
+                              "criterion": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["A"] },
+                                  { "type": "string", "enum": ["B"] },
+                                  { "type": "string", "enum": ["C"] },
+                                  { "type": "string", "enum": ["D"] },
+                                  { "type": "string", "enum": ["E"] },
+                                  { "type": "string", "enum": ["F"] }
+                                ]
+                              },
+                              "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                              "instruction": { "minLength": 1, "maxLength": 500, "type": "string" },
+                              "questions": {
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["id", "answerPath", "label"],
+                                  "properties": {
+                                    "id": { "minLength": 1, "maxLength": 100, "type": "string" },
+                                    "answerPath": {
+                                      "minLength": 1,
+                                      "maxLength": 100,
+                                      "type": "string"
+                                    },
+                                    "label": { "minLength": 1, "maxLength": 300, "type": "string" },
+                                    "dependsOn": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": ["answerPath", "value"],
+                                      "properties": {
+                                        "answerPath": {
+                                          "minLength": 1,
+                                          "maxLength": 100,
+                                          "type": "string"
+                                        },
+                                        "value": { "type": "boolean" }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "assessment": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "researchCaseId",
+                        "status",
+                        "answers",
+                        "calculation",
+                        "psychiatristDecision",
+                        "instrumentPin",
+                        "createdByUserId",
+                        "updatedByUserId",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "researchCaseId": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["NOT_STARTED"] },
+                            { "type": "string", "enum": ["IN_PROGRESS"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["BYPASSED"] }
+                          ]
+                        },
+                        "answers": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["criterionA"],
+                              "properties": {
+                                "criterionA": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "properties": {
+                                    "delusions": { "type": "boolean" },
+                                    "hallucinations": { "type": "boolean" },
+                                    "disorganizedSpeech": { "type": "boolean" },
+                                    "disorganizedOrCatatonicBehavior": { "type": "boolean" },
+                                    "negativeSymptoms": { "type": "boolean" }
+                                  }
+                                },
+                                "criterionBFunctionalDecline": { "type": "boolean" },
+                                "criterionCDuration": { "type": "boolean" },
+                                "criterionDMoodDisorderExclusion": { "type": "boolean" },
+                                "criterionESubstanceOrMedicalExclusion": { "type": "boolean" },
+                                "criterionFDevelopmentalHistory": { "type": "boolean" },
+                                "criterionFProminentDelusionsOrHallucinations": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "calculation": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "calculationVersion",
+                                "disposition",
+                                "criteria",
+                                "criterionASymptomCount",
+                                "criterionAHasCoreSymptom"
+                              ],
+                              "properties": {
+                                "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                "disposition": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["INCOMPLETE"] },
+                                    { "type": "string", "enum": ["CRITERIA_MET"] },
+                                    { "type": "string", "enum": ["CRITERIA_NOT_MET"] }
+                                  ]
+                                },
+                                "criteria": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["A", "B", "C", "D", "E", "F"],
+                                  "properties": {
+                                    "A": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "B": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "C": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "D": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "E": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    },
+                                    "F": {
+                                      "anyOf": [
+                                        { "type": "string", "enum": ["INCOMPLETE"] },
+                                        { "type": "string", "enum": ["MET"] },
+                                        { "type": "string", "enum": ["NOT_MET"] }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "criterionASymptomCount": {
+                                  "anyOf": [
+                                    { "minimum": 0, "maximum": 5, "type": "integer" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "criterionAHasCoreSymptom": {
+                                  "anyOf": [{ "type": "boolean" }, { "type": "null" }]
+                                }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "psychiatristDecision": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                { "type": "string", "enum": ["UNDECIDED"] },
+                                { "type": "string", "enum": ["SCHIZOPHRENIA_CONFIRMED"] },
+                                { "type": "string", "enum": ["SCHIZOPHRENIA_NOT_CONFIRMED"] }
+                              ]
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "instrumentPin": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "instrumentId",
+                            "instrumentVersion",
+                            "schemaVersion",
+                            "calculationVersion",
+                            "sourceReference",
+                            "reviewReference"
+                          ],
+                          "properties": {
+                            "instrumentId": { "type": "string", "enum": ["DSM5TR_SCHIZOPHRENIA"] },
+                            "instrumentVersion": { "type": "string", "enum": ["DSM-5-TR-2022"] },
+                            "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "sourceReference": {
+                              "type": "string",
+                              "enum": [
+                                "https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum"
+                              ]
+                            },
+                            "reviewReference": {
+                              "type": "string",
+                              "enum": ["ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW"]
+                            }
+                          }
+                        },
+                        "createdByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "updatedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -418,6 +418,9 @@ export async function recordAssessmentState(
   now = new Date(),
 ): Promise<void> {
   requirePsychiatrist(actor);
+  if (assessmentType === "DSM5TR") {
+    throw new WorkflowTransitionError("DSM-5-TR state is owned by its assessment service.");
+  }
   await withTransaction(pool, async (client) => {
     const row = await caseByPatient(client, patientId, true);
     if (!row) throw new ResearchCaseNotFoundError();

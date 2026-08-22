@@ -308,6 +308,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/dsm5tr": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getDsm5trAssessment"];
+    put: operations["saveDsm5trAssessment"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2203,6 +2219,297 @@ export interface operations {
                 at: string;
                 reason: string;
               };
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getDsm5trAssessment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            /** insight.dsm5tr-definition.v1 */
+            definition: {
+              title: string;
+              sections: {
+                criterion: "A" | "B" | "C" | "D" | "E" | "F";
+                title: string;
+                instruction: string;
+                questions: {
+                  id: string;
+                  answerPath: string;
+                  label: string;
+                  dependsOn?: {
+                    answerPath: string;
+                    value: boolean;
+                  };
+                }[];
+              }[];
+            };
+            assessment: {
+              researchCaseId: string;
+              status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+              answers: {
+                criterionA: {
+                  delusions?: boolean;
+                  hallucinations?: boolean;
+                  disorganizedSpeech?: boolean;
+                  disorganizedOrCatatonicBehavior?: boolean;
+                  negativeSymptoms?: boolean;
+                };
+                criterionBFunctionalDecline?: boolean;
+                criterionCDuration?: boolean;
+                criterionDMoodDisorderExclusion?: boolean;
+                criterionESubstanceOrMedicalExclusion?: boolean;
+                criterionFDevelopmentalHistory?: boolean;
+                criterionFProminentDelusionsOrHallucinations?: boolean;
+              } | null;
+              calculation: {
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                disposition: "INCOMPLETE" | "CRITERIA_MET" | "CRITERIA_NOT_MET";
+                criteria: {
+                  A: "INCOMPLETE" | "MET" | "NOT_MET";
+                  B: "INCOMPLETE" | "MET" | "NOT_MET";
+                  C: "INCOMPLETE" | "MET" | "NOT_MET";
+                  D: "INCOMPLETE" | "MET" | "NOT_MET";
+                  E: "INCOMPLETE" | "MET" | "NOT_MET";
+                  F: "INCOMPLETE" | "MET" | "NOT_MET";
+                };
+                criterionASymptomCount: number | null;
+                criterionAHasCoreSymptom: boolean | null;
+              } | null;
+              psychiatristDecision:
+                | ("UNDECIDED" | "SCHIZOPHRENIA_CONFIRMED" | "SCHIZOPHRENIA_NOT_CONFIRMED")
+                | null;
+              instrumentPin: {
+                /** @enum {string} */
+                instrumentId: "DSM5TR_SCHIZOPHRENIA";
+                /** @enum {string} */
+                instrumentVersion: "DSM-5-TR-2022";
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                /** @enum {string} */
+                sourceReference: "https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum";
+                /** @enum {string} */
+                reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW";
+              };
+              createdByUserId: string | null;
+              updatedByUserId: string | null;
+              createdAt: string | null;
+              updatedAt: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  saveDsm5trAssessment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json":
+          | {
+              /** @enum {string} */
+              schemaVersion: "1";
+              mode: "SAVE" | "COMPLETE";
+              expectedRevision: number;
+              answers: {
+                criterionA: {
+                  delusions?: boolean;
+                  hallucinations?: boolean;
+                  disorganizedSpeech?: boolean;
+                  disorganizedOrCatatonicBehavior?: boolean;
+                  negativeSymptoms?: boolean;
+                };
+                criterionBFunctionalDecline?: boolean;
+                criterionCDuration?: boolean;
+                criterionDMoodDisorderExclusion?: boolean;
+                criterionESubstanceOrMedicalExclusion?: boolean;
+                criterionFDevelopmentalHistory?: boolean;
+                criterionFProminentDelusionsOrHallucinations?: boolean;
+              };
+              psychiatristDecision:
+                | "UNDECIDED"
+                | "SCHIZOPHRENIA_CONFIRMED"
+                | "SCHIZOPHRENIA_NOT_CONFIRMED";
+            }
+          | {
+              /** @enum {string} */
+              schemaVersion: "1";
+              /** @enum {string} */
+              mode: "BYPASS";
+              expectedRevision: number;
+            };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            definition: {
+              title: string;
+              sections: {
+                criterion: "A" | "B" | "C" | "D" | "E" | "F";
+                title: string;
+                instruction: string;
+                questions: {
+                  id: string;
+                  answerPath: string;
+                  label: string;
+                  dependsOn?: {
+                    answerPath: string;
+                    value: boolean;
+                  };
+                }[];
+              }[];
+            };
+            assessment: {
+              researchCaseId: string;
+              status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+              answers: {
+                criterionA: {
+                  delusions?: boolean;
+                  hallucinations?: boolean;
+                  disorganizedSpeech?: boolean;
+                  disorganizedOrCatatonicBehavior?: boolean;
+                  negativeSymptoms?: boolean;
+                };
+                criterionBFunctionalDecline?: boolean;
+                criterionCDuration?: boolean;
+                criterionDMoodDisorderExclusion?: boolean;
+                criterionESubstanceOrMedicalExclusion?: boolean;
+                criterionFDevelopmentalHistory?: boolean;
+                criterionFProminentDelusionsOrHallucinations?: boolean;
+              } | null;
+              calculation: {
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                disposition: "INCOMPLETE" | "CRITERIA_MET" | "CRITERIA_NOT_MET";
+                criteria: {
+                  A: "INCOMPLETE" | "MET" | "NOT_MET";
+                  B: "INCOMPLETE" | "MET" | "NOT_MET";
+                  C: "INCOMPLETE" | "MET" | "NOT_MET";
+                  D: "INCOMPLETE" | "MET" | "NOT_MET";
+                  E: "INCOMPLETE" | "MET" | "NOT_MET";
+                  F: "INCOMPLETE" | "MET" | "NOT_MET";
+                };
+                criterionASymptomCount: number | null;
+                criterionAHasCoreSymptom: boolean | null;
+              } | null;
+              psychiatristDecision:
+                | ("UNDECIDED" | "SCHIZOPHRENIA_CONFIRMED" | "SCHIZOPHRENIA_NOT_CONFIRMED")
+                | null;
+              instrumentPin: {
+                /** @enum {string} */
+                instrumentId: "DSM5TR_SCHIZOPHRENIA";
+                /** @enum {string} */
+                instrumentVersion: "DSM-5-TR-2022";
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                /** @enum {string} */
+                sourceReference: "https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum";
+                /** @enum {string} */
+                reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW";
+              };
+              createdByUserId: string | null;
+              updatedByUserId: string | null;
+              createdAt: string | null;
+              updatedAt: string | null;
             };
           };
         };

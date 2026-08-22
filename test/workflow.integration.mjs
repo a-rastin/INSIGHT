@@ -12,6 +12,7 @@ import {
   invalidateResearchCaseInputs,
   recordAssessmentState,
   recordDomainResult,
+  saveDsm5trAssessment,
   transitionResearchCase,
 } from "../.tsbuild/server/index.js";
 import {
@@ -49,7 +50,12 @@ test("Research Case workflow persistence and trust boundary", async (suite) => {
           assert.equal(workflow.revision, 1);
           assert.deepEqual(workflow.allowedCommands, []);
 
-          await recordAssessmentState(pool, actor, patientId, "DSM5TR", "COMPLETED", 1);
+          await saveDsm5trAssessment(pool, actor, patientId, {
+            mode: "COMPLETE",
+            expectedRevision: 1,
+            answers: completeDsmAnswers,
+            psychiatristDecision: "SCHIZOPHRENIA_CONFIRMED",
+          });
           await recordAssessmentState(pool, actor, patientId, "PANSS", "BYPASSED", 1);
           await recordAssessmentState(pool, actor, patientId, "CSSRS_RECENT", "COMPLETED", 1);
           await recordSuccess(pool, actor, patientId, "DATA_COLLECTION_VALIDATED", 1, 1);
@@ -219,7 +225,10 @@ test("Research Case workflow persistence and trust boundary", async (suite) => {
         /service-owned/,
       );
 
-      await recordAssessmentState(pool, actor, patientId, "DSM5TR", "BYPASSED", 1);
+      await saveDsm5trAssessment(pool, actor, patientId, {
+        mode: "BYPASS",
+        expectedRevision: 1,
+      });
       await recordAssessmentState(pool, actor, patientId, "PANSS", "COMPLETED", 1);
       await recordAssessmentState(pool, actor, patientId, "CSSRS_RECENT", "COMPLETED", 1);
       await recordSuccess(pool, actor, patientId, "DATA_COLLECTION_VALIDATED", 1, 1);
@@ -378,6 +387,21 @@ async function createCase(pool, sequence) {
 function requestId(sequence) {
   return `00000000-0000-4000-8000-${String(sequence).padStart(12, "0")}`;
 }
+
+const completeDsmAnswers = {
+  criterionA: {
+    delusions: true,
+    hallucinations: true,
+    disorganizedSpeech: false,
+    disorganizedOrCatatonicBehavior: false,
+    negativeSymptoms: false,
+  },
+  criterionBFunctionalDecline: true,
+  criterionCDuration: true,
+  criterionDMoodDisorderExclusion: true,
+  criterionESubstanceOrMedicalExclusion: true,
+  criterionFDevelopmentalHistory: false,
+};
 
 async function login(app, username, password) {
   const response = await app.inject({

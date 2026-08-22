@@ -19,6 +19,7 @@ import {
   listResearchCaseTransitionAuditEvents,
   recordAssessmentState,
   recordDomainResult,
+  saveDsm5trAssessment,
   transitionResearchCase,
 } from "../.tsbuild/server/index.js";
 import {
@@ -38,6 +39,21 @@ const identifierConfiguration = {
   normalization: "NFKC_UPPERCASE",
 };
 
+const completeDsmAnswers = {
+  criterionA: {
+    delusions: true,
+    hallucinations: true,
+    disorganizedSpeech: false,
+    disorganizedOrCatatonicBehavior: false,
+    negativeSymptoms: false,
+  },
+  criterionBFunctionalDecline: true,
+  criterionCDuration: true,
+  criterionDMoodDisorderExclusion: true,
+  criterionESubstanceOrMedicalExclusion: true,
+  criterionFDevelopmentalHistory: false,
+};
+
 test("immediate Patient hard deletion with surviving audit", async (suite) => {
   assert.ok(
     adminConnectionString,
@@ -50,7 +66,13 @@ test("immediate Patient hard deletion with surviving audit", async (suite) => {
       const patientId = patient.id;
       const researchCaseId = patient.researchCase.id;
 
-      for (const assessment of ["DSM5TR", "PANSS", "CSSRS_RECENT"]) {
+      await saveDsm5trAssessment(pool, actor, patientId, {
+        mode: "COMPLETE",
+        expectedRevision: 1,
+        answers: completeDsmAnswers,
+        psychiatristDecision: "SCHIZOPHRENIA_CONFIRMED",
+      });
+      for (const assessment of ["PANSS", "CSSRS_RECENT"]) {
         await recordAssessmentState(pool, actor, patientId, assessment, "COMPLETED", 1);
       }
       const resultId = await recordDomainResult(pool, actor, patientId, {

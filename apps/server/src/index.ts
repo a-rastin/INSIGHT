@@ -8,6 +8,7 @@ import { safeDatabaseDiagnostic } from "./database/diagnostic.js";
 import { officialIdentifierConfigurationFromEnv } from "./patient/patients.js";
 
 export { buildApp } from "./app.js";
+export * from "./assessment/index.js";
 export * from "./audit/index.js";
 export * from "./deployment/index.js";
 export * from "./identity/index.js";

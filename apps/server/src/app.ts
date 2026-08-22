@@ -20,6 +20,7 @@ import Fastify, {
 } from "fastify";
 import type { Pool } from "pg";
 
+import { assessmentRoutes } from "./assessment/http.js";
 import {
   IdentifiedResearchModeDisabledError,
   assertIdentifiedPatientCreationAllowed,
@@ -274,6 +275,10 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           },
           (request) => requestSessions.get(request),
         ),
+        { prefix: API_PREFIX },
+      );
+      void app.register(
+        assessmentRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
         { prefix: API_PREFIX },
       );
     }

@@ -362,7 +362,11 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
           <CreatePatientPage csrfToken={session.csrfToken} onNavigate={navigateTo} />
         ) : null}
         {route?.page === "patient-profile" && patientId ? (
-          <PatientProfilePage patientId={patientId} onNavigate={navigateTo} />
+          <PatientProfilePage
+            patientId={patientId}
+            csrfToken={session.csrfToken}
+            onNavigate={navigateTo}
+          />
         ) : null}
         {route?.page === "users" ? <AdminUsersPage csrfToken={session.csrfToken} /> : null}
         {route?.page === "placeholder" ? <PlaceholderPage title={route.title} /> : null}

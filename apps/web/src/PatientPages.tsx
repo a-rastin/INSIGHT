@@ -17,6 +17,7 @@ import {
   LoadingState,
   TextInput,
 } from "./components/primitives";
+import { Dsm5trAssessment } from "./Dsm5trAssessment";
 import { apiClient } from "./generated/api-client";
 import type { operations } from "./generated/api-types";
 
@@ -342,9 +343,11 @@ export function CreatePatientPage({
 
 export function PatientProfilePage({
   patientId,
+  csrfToken,
   onNavigate,
 }: {
   patientId: string;
+  csrfToken: string;
   onNavigate: (path: string) => void;
 }) {
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -433,6 +436,28 @@ export function PatientProfilePage({
           </div>
         </dl>
       </section>
+      <nav className="case-stepper" aria-label="Research Case steps">
+        <ol>
+          {[
+            "Patient demographics",
+            "DSM-5-TR schizophrenia criteria",
+            "PANSS",
+            "C-SSRS suicide-risk screen",
+            "Medical history",
+            "Medication normalization",
+            "AI and Bayesian processing",
+            "DDI and Primary Treatment Plan",
+            "Psychiatrist review",
+            "Final Treatment Plan",
+          ].map((label, index) => (
+            <li key={label} aria-current={index === 1 ? "step" : undefined}>
+              <span>{index + 1}</span>
+              {label}
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <Dsm5trAssessment patientId={patientId} csrfToken={csrfToken} />
     </div>
   );
 }

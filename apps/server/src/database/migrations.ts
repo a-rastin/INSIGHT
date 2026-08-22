@@ -709,6 +709,103 @@ export const migrations: readonly Migration[] = Object.freeze([
         AND research_case.workflow_state = 'DELETED';
     `,
   },
+  {
+    version: 10,
+    name: "dsm5tr_assessment",
+    sql: `
+      CREATE TABLE insight.dsm5tr_assessments (
+        research_case_id uuid PRIMARY KEY
+          REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        status insight.assessment_status NOT NULL CHECK (
+          status IN ('IN_PROGRESS', 'COMPLETED', 'BYPASSED')
+        ),
+        answers jsonb,
+        calculation_result jsonb,
+        psychiatrist_decision text CHECK (
+          psychiatrist_decision IN (
+            'UNDECIDED', 'SCHIZOPHRENIA_CONFIRMED', 'SCHIZOPHRENIA_NOT_CONFIRMED'
+          )
+        ),
+        instrument_id text NOT NULL CHECK (instrument_id = 'DSM5TR_SCHIZOPHRENIA'),
+        instrument_version text NOT NULL CHECK (instrument_version = 'DSM-5-TR-2022'),
+        schema_version text NOT NULL CHECK (schema_version = '1.0.0'),
+        calculation_version text CHECK (calculation_version = '1.0.0'),
+        source_reference text NOT NULL,
+        review_reference text NOT NULL,
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (answers IS NULL OR jsonb_typeof(answers) = 'object'),
+        CHECK (calculation_result IS NULL OR jsonb_typeof(calculation_result) = 'object'),
+        CHECK (
+          (status = 'BYPASSED'
+            AND answers IS NULL
+            AND calculation_result IS NULL
+            AND calculation_version IS NULL
+            AND psychiatrist_decision IS NULL)
+          OR
+          (status = 'IN_PROGRESS'
+            AND answers IS NOT NULL
+            AND calculation_result IS NOT NULL
+            AND calculation_version IS NOT NULL
+            AND psychiatrist_decision IS NOT NULL)
+          OR
+          (status = 'COMPLETED'
+            AND answers IS NOT NULL
+            AND calculation_result IS NOT NULL
+            AND calculation_version IS NOT NULL
+            AND psychiatrist_decision IN (
+              'SCHIZOPHRENIA_CONFIRMED', 'SCHIZOPHRENIA_NOT_CONFIRMED'
+            ))
+        )
+      );
+
+      COMMENT ON COLUMN insight.dsm5tr_assessments.psychiatrist_decision IS
+        'Independent clinical authority; never derived from calculation_result';
+
+      INSERT INTO insight.dsm5tr_assessments (
+        research_case_id, status, instrument_id, instrument_version, schema_version,
+        source_reference, review_reference, created_by_user_id, updated_by_user_id,
+        created_at, updated_at
+      )
+      SELECT research_case_id, 'BYPASSED', 'DSM5TR_SCHIZOPHRENIA', 'DSM-5-TR-2022',
+             '1.0.0',
+             'https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum',
+             'ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW',
+             updated_by_user_id, updated_by_user_id, updated_at, updated_at
+      FROM insight.research_case_assessments
+      WHERE assessment_type = 'DSM5TR' AND status = 'BYPASSED';
+
+      UPDATE insight.research_case_assessments
+      SET status = 'NOT_STARTED'
+      WHERE assessment_type = 'DSM5TR' AND status <> 'BYPASSED';
+
+      CREATE FUNCTION insight.protect_dsm5tr_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.dsm5tr_write', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'DSM-5-TR assessment data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+
+      CREATE TRIGGER dsm5tr_assessments_service_owned
+      BEFORE INSERT OR UPDATE ON insight.dsm5tr_assessments
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_dsm5tr_write();
+
+      CREATE TRIGGER dsm5tr_summary_service_owned
+      BEFORE UPDATE ON insight.research_case_assessments
+      FOR EACH ROW
+      WHEN (OLD.assessment_type = 'DSM5TR' AND OLD.status IS DISTINCT FROM NEW.status)
+      EXECUTE FUNCTION insight.protect_dsm5tr_write();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

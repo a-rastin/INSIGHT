@@ -236,6 +236,280 @@ export function parseVersionedContract<T extends TSchema>(schema: T, value: unkn
 export type JsonPrimitive = null | boolean | number | string;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
+export const DSM5TR_INSTRUMENT_PIN = Object.freeze({
+  instrumentId: "DSM5TR_SCHIZOPHRENIA",
+  instrumentVersion: "DSM-5-TR-2022",
+  schemaVersion: "1.0.0",
+  calculationVersion: "1.0.0",
+  sourceReference: "https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum",
+  reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW",
+} as const);
+
+export const DSM5TR_CRITERION_A_KEYS = [
+  "delusions",
+  "hallucinations",
+  "disorganizedSpeech",
+  "disorganizedOrCatatonicBehavior",
+  "negativeSymptoms",
+] as const;
+
+export const DSM5TR_DEFINITION = Object.freeze({
+  title: "DSM-5-TR schizophrenia criteria assessment",
+  sections: [
+    {
+      criterion: "A",
+      title: "Core symptoms",
+      instruction:
+        "Record whether each symptom was present for a significant part of the active-phase period.",
+      questions: [
+        { id: "a-delusions", answerPath: "criterionA.delusions", label: "Delusions" },
+        {
+          id: "a-hallucinations",
+          answerPath: "criterionA.hallucinations",
+          label: "Hallucinations",
+        },
+        {
+          id: "a-disorganized-speech",
+          answerPath: "criterionA.disorganizedSpeech",
+          label: "Disorganized speech",
+        },
+        {
+          id: "a-disorganized-behavior",
+          answerPath: "criterionA.disorganizedOrCatatonicBehavior",
+          label: "Grossly disorganized or catatonic behavior",
+        },
+        {
+          id: "a-negative-symptoms",
+          answerPath: "criterionA.negativeSymptoms",
+          label: "Negative symptoms",
+        },
+      ],
+    },
+    {
+      criterion: "B",
+      title: "Functional decline",
+      instruction: "Record whether the functional-decline requirement is met.",
+      questions: [
+        {
+          id: "b-functional-decline",
+          answerPath: "criterionBFunctionalDecline",
+          label: "Functional-decline requirement met",
+        },
+      ],
+    },
+    {
+      criterion: "C",
+      title: "Duration",
+      instruction: "Record whether the duration requirement is met.",
+      questions: [
+        {
+          id: "c-duration",
+          answerPath: "criterionCDuration",
+          label: "Duration requirement met",
+        },
+      ],
+    },
+    {
+      criterion: "D",
+      title: "Mood-disorder exclusion",
+      instruction: "Record whether the mood-disorder exclusion requirement is met.",
+      questions: [
+        {
+          id: "d-mood-exclusion",
+          answerPath: "criterionDMoodDisorderExclusion",
+          label: "Mood-disorder exclusion requirement met",
+        },
+      ],
+    },
+    {
+      criterion: "E",
+      title: "Substance or medical-condition exclusion",
+      instruction: "Record whether the substance or medical-condition exclusion is met.",
+      questions: [
+        {
+          id: "e-substance-medical-exclusion",
+          answerPath: "criterionESubstanceOrMedicalExclusion",
+          label: "Substance or medical-condition exclusion requirement met",
+        },
+      ],
+    },
+    {
+      criterion: "F",
+      title: "Developmental-disorder relationship",
+      instruction: "Record developmental history and the conditional psychosis requirement.",
+      questions: [
+        {
+          id: "f-developmental-history",
+          answerPath: "criterionFDevelopmentalHistory",
+          label: "History of autism spectrum disorder or childhood communication disorder",
+        },
+        {
+          id: "f-prominent-psychosis",
+          answerPath: "criterionFProminentDelusionsOrHallucinations",
+          label: "Prominent delusions or hallucinations meet the required duration",
+          dependsOn: { answerPath: "criterionFDevelopmentalHistory", value: true },
+        },
+      ],
+    },
+  ],
+} as const);
+
+export const Dsm5trDefinitionSchema = Type.Object(
+  {
+    title: Type.String({ minLength: 1, maxLength: 200 }),
+    sections: Type.Array(
+      Type.Object(
+        {
+          criterion: Type.Union([
+            Type.Literal("A"),
+            Type.Literal("B"),
+            Type.Literal("C"),
+            Type.Literal("D"),
+            Type.Literal("E"),
+            Type.Literal("F"),
+          ]),
+          title: Type.String({ minLength: 1, maxLength: 200 }),
+          instruction: Type.String({ minLength: 1, maxLength: 500 }),
+          questions: Type.Array(
+            Type.Object(
+              {
+                id: Type.String({ minLength: 1, maxLength: 100 }),
+                answerPath: Type.String({ minLength: 1, maxLength: 100 }),
+                label: Type.String({ minLength: 1, maxLength: 300 }),
+                dependsOn: Type.Optional(
+                  Type.Object(
+                    {
+                      answerPath: Type.String({ minLength: 1, maxLength: 100 }),
+                      value: Type.Boolean(),
+                    },
+                    { additionalProperties: false },
+                  ),
+                ),
+              },
+              { additionalProperties: false },
+            ),
+          ),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 6, maxItems: 6 },
+    ),
+  },
+  { $id: "insight.dsm5tr-definition.v1", additionalProperties: false },
+);
+
+export const Dsm5trAnswersSchema = Type.Object(
+  {
+    criterionA: Type.Object(
+      {
+        delusions: Type.Optional(Type.Boolean()),
+        hallucinations: Type.Optional(Type.Boolean()),
+        disorganizedSpeech: Type.Optional(Type.Boolean()),
+        disorganizedOrCatatonicBehavior: Type.Optional(Type.Boolean()),
+        negativeSymptoms: Type.Optional(Type.Boolean()),
+      },
+      { additionalProperties: false },
+    ),
+    criterionBFunctionalDecline: Type.Optional(Type.Boolean()),
+    criterionCDuration: Type.Optional(Type.Boolean()),
+    criterionDMoodDisorderExclusion: Type.Optional(Type.Boolean()),
+    criterionESubstanceOrMedicalExclusion: Type.Optional(Type.Boolean()),
+    criterionFDevelopmentalHistory: Type.Optional(Type.Boolean()),
+    criterionFProminentDelusionsOrHallucinations: Type.Optional(Type.Boolean()),
+  },
+  { $id: "insight.dsm5tr-answers.v1", additionalProperties: false },
+);
+export type Dsm5trAnswers = Static<typeof Dsm5trAnswersSchema>;
+
+export const Dsm5trPsychiatristDecisionSchema = Type.Union([
+  Type.Literal("UNDECIDED"),
+  Type.Literal("SCHIZOPHRENIA_CONFIRMED"),
+  Type.Literal("SCHIZOPHRENIA_NOT_CONFIRMED"),
+]);
+export type Dsm5trPsychiatristDecision = Static<typeof Dsm5trPsychiatristDecisionSchema>;
+
+export const Dsm5trCriterionResultSchema = Type.Union([
+  Type.Literal("INCOMPLETE"),
+  Type.Literal("MET"),
+  Type.Literal("NOT_MET"),
+]);
+export type Dsm5trCriterionResult = Static<typeof Dsm5trCriterionResultSchema>;
+
+export const Dsm5trCalculationSchema = Type.Object(
+  {
+    calculationVersion: Type.Literal(DSM5TR_INSTRUMENT_PIN.calculationVersion),
+    disposition: Type.Union([
+      Type.Literal("INCOMPLETE"),
+      Type.Literal("CRITERIA_MET"),
+      Type.Literal("CRITERIA_NOT_MET"),
+    ]),
+    criteria: Type.Object(
+      {
+        A: Dsm5trCriterionResultSchema,
+        B: Dsm5trCriterionResultSchema,
+        C: Dsm5trCriterionResultSchema,
+        D: Dsm5trCriterionResultSchema,
+        E: Dsm5trCriterionResultSchema,
+        F: Dsm5trCriterionResultSchema,
+      },
+      { additionalProperties: false },
+    ),
+    criterionASymptomCount: Type.Union([Type.Integer({ minimum: 0, maximum: 5 }), Type.Null()]),
+    criterionAHasCoreSymptom: Type.Union([Type.Boolean(), Type.Null()]),
+  },
+  { $id: "insight.dsm5tr-calculation.v1", additionalProperties: false },
+);
+export type Dsm5trCalculation = Static<typeof Dsm5trCalculationSchema>;
+
+function booleanCriterion(value: boolean | undefined): Dsm5trCriterionResult {
+  return value === undefined ? "INCOMPLETE" : value ? "MET" : "NOT_MET";
+}
+
+export function calculateDsm5tr(answers: Dsm5trAnswers): Dsm5trCalculation {
+  const symptomValues = DSM5TR_CRITERION_A_KEYS.map((key) => answers.criterionA[key]);
+  const criterionAComplete = symptomValues.every((value) => value !== undefined);
+  const symptomCount = criterionAComplete
+    ? symptomValues.filter((value) => value === true).length
+    : null;
+  const hasCoreSymptom = criterionAComplete
+    ? answers.criterionA.delusions === true ||
+      answers.criterionA.hallucinations === true ||
+      answers.criterionA.disorganizedSpeech === true
+    : null;
+  const criterionA: Dsm5trCriterionResult = !criterionAComplete
+    ? "INCOMPLETE"
+    : symptomCount! >= 2 && hasCoreSymptom
+      ? "MET"
+      : "NOT_MET";
+  const criterionF: Dsm5trCriterionResult =
+    answers.criterionFDevelopmentalHistory === undefined
+      ? "INCOMPLETE"
+      : answers.criterionFDevelopmentalHistory === false
+        ? "MET"
+        : booleanCriterion(answers.criterionFProminentDelusionsOrHallucinations);
+  const criteria = {
+    A: criterionA,
+    B: booleanCriterion(answers.criterionBFunctionalDecline),
+    C: booleanCriterion(answers.criterionCDuration),
+    D: booleanCriterion(answers.criterionDMoodDisorderExclusion),
+    E: booleanCriterion(answers.criterionESubstanceOrMedicalExclusion),
+    F: criterionF,
+  } as const;
+  const values = Object.values(criteria);
+  const disposition = values.includes("INCOMPLETE")
+    ? "INCOMPLETE"
+    : values.every((value) => value === "MET")
+      ? "CRITERIA_MET"
+      : "CRITERIA_NOT_MET";
+  return {
+    calculationVersion: DSM5TR_INSTRUMENT_PIN.calculationVersion,
+    disposition,
+    criteria,
+    criterionASymptomCount: symptomCount,
+    criterionAHasCoreSymptom: hasCoreSymptom,
+  };
+}
+
 function serializeJson(value: unknown, ancestors: Set<object>): string {
   if (value === null || typeof value === "boolean" || typeof value === "string") {
     return JSON.stringify(value);
