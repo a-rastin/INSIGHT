@@ -1259,6 +1259,67 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
     `,
   },
+  {
+    version: 16,
+    name: "adverse_effect_catalog",
+    sql: `
+      CREATE TABLE insight.adverse_effect_catalog_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        version integer NOT NULL UNIQUE CHECK (version > 0),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE TABLE insight.adverse_effect_catalog_terms (
+        catalog_version_id uuid NOT NULL
+          REFERENCES insight.adverse_effect_catalog_versions(id),
+        term_id text NOT NULL CHECK (
+          term_id = btrim(term_id) AND term_id <> '' AND char_length(term_id) <= 200
+        ),
+        label text NOT NULL CHECK (
+          label = btrim(label) AND label <> '' AND char_length(label) <= 500
+        ),
+        position integer NOT NULL CHECK (position >= 0),
+        PRIMARY KEY (catalog_version_id, term_id),
+        UNIQUE (catalog_version_id, position)
+      );
+
+      CREATE TABLE insight.adverse_effect_catalog_state (
+        singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+        active_version_id uuid REFERENCES insight.adverse_effect_catalog_versions(id),
+        activated_by_user_id uuid REFERENCES insight.users(id),
+        activated_at timestamptz,
+        CHECK (
+          (active_version_id IS NULL AND activated_by_user_id IS NULL AND activated_at IS NULL)
+          OR
+          (active_version_id IS NOT NULL AND activated_by_user_id IS NOT NULL AND activated_at IS NOT NULL)
+        )
+      );
+      INSERT INTO insight.adverse_effect_catalog_state (singleton) VALUES (true);
+
+      CREATE FUNCTION insight.reject_adverse_effect_catalog_mutation()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF TG_OP = 'INSERT'
+           AND current_setting('insight.adverse_effect_catalog_write', true) = 'allowed'
+        THEN
+          RETURN NEW;
+        END IF;
+        RAISE EXCEPTION 'adverse-effect catalog versions are immutable'
+          USING ERRCODE = '55000';
+      END;
+      $function$;
+
+      CREATE TRIGGER adverse_effect_catalog_versions_immutable
+      BEFORE UPDATE OR DELETE ON insight.adverse_effect_catalog_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_adverse_effect_catalog_mutation();
+      CREATE TRIGGER adverse_effect_catalog_terms_immutable
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.adverse_effect_catalog_terms
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_adverse_effect_catalog_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

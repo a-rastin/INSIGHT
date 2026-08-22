@@ -20,6 +20,7 @@ import Fastify, {
 } from "fastify";
 import type { Pool } from "pg";
 
+import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
 import { assessmentRoutes } from "./assessment/http.js";
 import {
   IdentifiedResearchModeDisabledError,
@@ -262,6 +263,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     );
     void app.register(
       authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      adverseEffectCatalogRoutes(options.authentication.pool, (request) =>
+        requestSessions.get(request),
+      ),
       { prefix: API_PREFIX },
     );
     if (options.patient) {

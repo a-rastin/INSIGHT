@@ -69,6 +69,14 @@ interface ContraindicationRow extends QueryResultRow {
   explanation: string | null;
 }
 
+interface AdverseEffectTermRow extends QueryResultRow {
+  catalog_version_id: string;
+  term_id: string;
+  label: string;
+}
+
+type TrialRecord = NonNullable<MedicalHistoryRecord["priorTrials"]>[number];
+
 export class MedicalHistoryInputError extends Error {
   constructor(message: string) {
     super(message);
@@ -179,6 +187,7 @@ export async function saveMedicalHistory(
       [researchCase.id],
     );
     const revision = Number(existing.rows[0]?.revision ?? 0) + 1;
+    await validateAdverseEffectPins(client, researchCase.id, history.priorTrials ?? []);
     await client.query("SELECT set_config('insight.medical_history_write', 'allowed', true)");
     await client.query(
       `INSERT INTO insight.medical_histories (
@@ -284,7 +293,7 @@ function validateTrial(input: AntipsychoticTrialInput): AntipsychoticTrialInput 
     approximatePeriod: optionalText(input.approximatePeriod, "Approximate period"),
     response: input.response,
     adverseEffects,
-    otherAdverseEffectDetail: optionalText(input.otherAdverseEffectDetail, "Other adverse effect"),
+    otherAdverseEffectDetail: optionalEmptyText(input.otherAdverseEffectDetail),
     discontinuationReason: optionalText(input.discontinuationReason, "Discontinuation reason"),
     notes: optionalText(input.notes, "Trial notes"),
   });
@@ -337,6 +346,10 @@ function optionalText(value: string | undefined, label: string): string | undefi
   return value === undefined ? undefined : requiredText(value, label);
 }
 
+function optionalEmptyText(value: string | undefined): string | undefined {
+  return value === undefined ? undefined : value.trim();
+}
+
 function compact<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
 }
@@ -363,6 +376,54 @@ async function caseByPatient(
     [patientId],
   );
   return result.rows[0];
+}
+
+async function validateAdverseEffectPins(
+  client: PoolClient,
+  researchCaseId: string,
+  trials: readonly AntipsychoticTrialInput[],
+): Promise<void> {
+  const selected = trials.flatMap((trial, position) =>
+    (trial.adverseEffects ?? []).map((effect) => ({ ...effect, position })),
+  );
+  if (selected.length === 0) return;
+
+  const existing = await client.query<{
+    position: number;
+    adverse_effects: AntipsychoticTrialInput["adverseEffects"] | null;
+  }>(
+    `SELECT position, adverse_effects
+     FROM insight.prior_antipsychotic_trials
+     WHERE research_case_id = $1`,
+    [researchCaseId],
+  );
+  const existingPins = new Set(
+    existing.rows.flatMap((trial) =>
+      (trial.adverse_effects ?? []).map(
+        (effect) => `${trial.position}\0${effect.catalogVersionId}\0${effect.termId}`,
+      ),
+    ),
+  );
+  const active = await client.query<{ id: string; term_id: string }>(
+    `SELECT version.id::text AS id, term.term_id
+     FROM insight.adverse_effect_catalog_state state
+     JOIN insight.adverse_effect_catalog_versions version
+       ON version.id = state.active_version_id
+     JOIN insight.adverse_effect_catalog_terms term
+       ON term.catalog_version_id = version.id
+     WHERE state.singleton = true`,
+  );
+  const activeTerms = new Set(active.rows.map(({ id, term_id }) => `${id}\0${term_id}`));
+
+  for (const effect of selected) {
+    const pin = `${effect.position}\0${effect.catalogVersionId}\0${effect.termId}`;
+    const activeTerm = `${effect.catalogVersionId}\0${effect.termId}`;
+    if (!existingPins.has(pin) && !activeTerms.has(activeTerm)) {
+      throw new MedicalHistoryInputError(
+        "New adverse-effect selections must use a term from the active catalog version.",
+      );
+    }
+  }
 }
 
 async function insertTrials(
@@ -477,31 +538,52 @@ async function loadHistory(
   );
   const row = historyResult.rows[0];
   if (!row) return null;
-  const [trials, medications, comorbidities, contraindications] = await Promise.all([
-    database.query<TrialRow>(
-      "SELECT * FROM insight.prior_antipsychotic_trials WHERE research_case_id = $1 ORDER BY position",
-      [researchCaseId],
-    ),
-    database.query<CurrentMedicationRow>(
-      "SELECT * FROM insight.current_medication_entries WHERE research_case_id = $1 ORDER BY position",
-      [researchCaseId],
-    ),
-    database.query<ComorbidityRow>(
-      "SELECT * FROM insight.comorbidity_selections WHERE research_case_id = $1 ORDER BY position",
-      [researchCaseId],
-    ),
-    database.query<ContraindicationRow>(
-      "SELECT * FROM insight.contraindication_outputs WHERE research_case_id = $1 ORDER BY position",
-      [researchCaseId],
-    ),
-  ]);
+  const [trials, medications, comorbidities, contraindications, adverseEffectTerms] =
+    await Promise.all([
+      database.query<TrialRow>(
+        "SELECT * FROM insight.prior_antipsychotic_trials WHERE research_case_id = $1 ORDER BY position",
+        [researchCaseId],
+      ),
+      database.query<CurrentMedicationRow>(
+        "SELECT * FROM insight.current_medication_entries WHERE research_case_id = $1 ORDER BY position",
+        [researchCaseId],
+      ),
+      database.query<ComorbidityRow>(
+        "SELECT * FROM insight.comorbidity_selections WHERE research_case_id = $1 ORDER BY position",
+        [researchCaseId],
+      ),
+      database.query<ContraindicationRow>(
+        "SELECT * FROM insight.contraindication_outputs WHERE research_case_id = $1 ORDER BY position",
+        [researchCaseId],
+      ),
+      database.query<AdverseEffectTermRow>(
+        `SELECT DISTINCT version.id::text AS catalog_version_id, term.term_id, term.label
+         FROM insight.prior_antipsychotic_trials trial
+         CROSS JOIN LATERAL jsonb_array_elements(
+           coalesce(trial.adverse_effects, '[]'::jsonb)
+         ) effect
+         JOIN insight.adverse_effect_catalog_versions version
+           ON version.id::text = effect->>'catalogVersionId'
+         JOIN insight.adverse_effect_catalog_terms term
+           ON term.catalog_version_id = version.id
+          AND term.term_id = effect->>'termId'
+         WHERE trial.research_case_id = $1`,
+        [researchCaseId],
+      ),
+    ]);
+  const adverseEffectLabels = new Map(
+    adverseEffectTerms.rows.map((term) => [
+      `${term.catalog_version_id}\0${term.term_id}`,
+      term.label,
+    ]),
+  );
 
   return {
     researchCaseId,
     presentationStatus: row.presentation_status,
     ...(row.previously_treated === null ? {} : { previouslyTreated: row.previously_treated }),
     ...(row.presentation_status === "KNOWN_SCHIZOPHRENIA"
-      ? { priorTrials: trials.rows.map(materializeTrial) }
+      ? { priorTrials: trials.rows.map((trial) => materializeTrial(trial, adverseEffectLabels)) }
       : {}),
     currentMedications: medications.rows.map((entry) =>
       compact({
@@ -538,7 +620,10 @@ async function loadHistory(
   };
 }
 
-function materializeTrial(row: TrialRow): AntipsychoticTrialInput {
+function materializeTrial(
+  row: TrialRow,
+  adverseEffectLabels: ReadonlyMap<string, string>,
+): TrialRecord {
   return compact({
     medication: row.medication,
     normalizationState: row.normalization_state ?? undefined,
@@ -549,7 +634,11 @@ function materializeTrial(row: TrialRow): AntipsychoticTrialInput {
     treatmentEnd: row.treatment_end ?? undefined,
     approximatePeriod: row.approximate_period ?? undefined,
     response: row.response ?? undefined,
-    adverseEffects: row.adverse_effects ?? undefined,
+    adverseEffects: row.adverse_effects?.map((effect) => ({
+      ...effect,
+      label:
+        adverseEffectLabels.get(`${effect.catalogVersionId}\0${effect.termId}`) ?? effect.termId,
+    })),
     otherAdverseEffectDetail: row.other_adverse_effect_detail ?? undefined,
     discontinuationReason: row.discontinuation_reason ?? undefined,
     notes: row.notes ?? undefined,

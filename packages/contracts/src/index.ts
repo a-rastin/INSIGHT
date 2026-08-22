@@ -1028,6 +1028,54 @@ export const CONTRAINDICATION_OUTCOMES = [
 
 const optionalClinicalText = (maxLength: number) =>
   Type.Optional(Type.String({ minLength: 1, maxLength }));
+
+export const AdverseEffectTermInputSchema = Type.Object(
+  {
+    termId: Type.String({
+      pattern: "^(?:OTHER|[A-Za-z0-9][A-Za-z0-9._-]{0,199})$",
+      maxLength: 200,
+    }),
+    label: Type.String({ minLength: 1, maxLength: 500 }),
+  },
+  { $id: "insight.adverse-effect-term-input.v1", additionalProperties: false },
+);
+export type AdverseEffectTermInput = Static<typeof AdverseEffectTermInputSchema>;
+
+export const AdverseEffectCatalogInputSchema = Type.Object(
+  { terms: Type.Array(AdverseEffectTermInputSchema, { minItems: 1, maxItems: 500 }) },
+  { $id: "insight.adverse-effect-catalog-input.v1", additionalProperties: false },
+);
+export type AdverseEffectCatalogInput = Static<typeof AdverseEffectCatalogInputSchema>;
+
+export const AdverseEffectCatalogVersionSchema = Type.Object(
+  {
+    id: UuidSchema,
+    version: Type.Integer({ minimum: 1 }),
+    terms: Type.Array(AdverseEffectTermInputSchema, { minItems: 1, maxItems: 500 }),
+    createdByUserId: UuidSchema,
+    createdAt: TimestampSchema,
+    active: Type.Boolean(),
+  },
+  { $id: "insight.adverse-effect-catalog-version.v1", additionalProperties: false },
+);
+export type AdverseEffectCatalogVersion = Static<typeof AdverseEffectCatalogVersionSchema>;
+
+export const AdverseEffectCatalogResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    catalog: Type.Union([AdverseEffectCatalogVersionSchema, Type.Null()]),
+  },
+  { $id: "insight.adverse-effect-catalog-response.v1", additionalProperties: false },
+);
+
+export const AdverseEffectCatalogHistoryResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    versions: Type.Array(AdverseEffectCatalogVersionSchema),
+  },
+  { $id: "insight.adverse-effect-catalog-history-response.v1", additionalProperties: false },
+);
+
 const catalogReferenceSchema = Type.Object(
   {
     catalogVersionId: Type.String({ minLength: 1, maxLength: 200 }),
@@ -1066,7 +1114,7 @@ export const AntipsychoticTrialInputSchema = Type.Object(
     approximatePeriod: optionalClinicalText(500),
     response: Type.Optional(Type.Union(TRIAL_RESPONSES.map((value) => Type.Literal(value)))),
     adverseEffects: Type.Optional(Type.Array(catalogReferenceSchema, { maxItems: 100 })),
-    otherAdverseEffectDetail: optionalClinicalText(2000),
+    otherAdverseEffectDetail: Type.Optional(Type.String({ maxLength: 2000 })),
     discontinuationReason: optionalClinicalText(2000),
     notes: optionalClinicalText(5000),
   },
@@ -1108,9 +1156,29 @@ export const MedicalHistoryInputSchema = Type.Object(
 );
 export type MedicalHistoryInput = Static<typeof MedicalHistoryInputSchema>;
 
+const AntipsychoticTrialRecordSchema = Type.Object(
+  {
+    ...AntipsychoticTrialInputSchema.properties,
+    adverseEffects: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            ...catalogReferenceSchema.properties,
+            label: Type.String({ minLength: 1, maxLength: 500 }),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 100 },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const MedicalHistoryRecordSchema = Type.Object(
   {
     ...MedicalHistoryInputSchema.properties,
+    priorTrials: Type.Optional(Type.Array(AntipsychoticTrialRecordSchema, { maxItems: 100 })),
     researchCaseId: UuidSchema,
     revision: Type.Integer({ minimum: 1 }),
     createdByUserId: UuidSchema,

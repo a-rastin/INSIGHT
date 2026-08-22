@@ -1,7 +1,7 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Deliver version-pinned, locally scored C-SSRS Screen Version - Recent with exact branch/answer persistence and all specified verification evidence.
+Deliver adverse-effect catalog where admin saves immutable active versions, case selections pin stable terms including optional-detail OTHER, and role boundaries prevent psychiatrist mutation and admin selection access.
 
 ## Core
 - clinical source integrity — use only repository-approved DSM schema, vectors, wording, and reviewer reference; missing material stays explicit
@@ -124,4 +124,4 @@ Deliver version-pinned, locally scored C-SSRS Screen Version - Recent with exact
 - ?04 Governed DSM-5-TR criterion wording, deterministic calculation rules, reviewer-approved golden vectors, and reviewer sign-off reference are absent from allowed repository paths. — settled by: User supplies approved artifact paths/content and sign-off reference.
 
 ## Next
-Audit diff, run final build/format/artifact checks, then commit only packet files.
+Review final diff, commit implementation, and report PostgreSQL verification limitation.
