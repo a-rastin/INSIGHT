@@ -106,8 +106,9 @@ Implement and verify transactional Patient identity plus one Research Case for t
 - ✓95 Administrator REST/UI management, reset lifecycle, session rotation/revocation, authorization matrix, last-admin protection, sanitized audits, OpenAPI, and UI E2E implemented. — verified by: Verifier: PostgreSQL integration, focused authentication, web unit/accessibility, production browser E2E, static/build/contract checks; coverage: all new user-management endpoints and services, forced-password lifecycle, both roles, active sessions, audit rows, generated API, and browser flows.
 - ✓96 Focused Patient unit and PostgreSQL integration tests pass. — verified by: Node tests cover birthday/leap dates, configured normalization, concurrent duplicate creates, overwrite audits, rollback, route validation, Administrator denial, and Encounter/visit absence.
 - ✓97 Patient packet and repository regressions verified. — verified by: Prettier, ESLint, TypeScript, OpenAPI drift, artifact scan, production builds, 7 server unit files, 12 web tests, 25 PostgreSQL integration tests, shell syntax, Compose validation, and clean diff checks.
+- ✓98 Patient and Research Case packet committed as b17de14. — verified by: git log and status; coverage: all 16 staged packet files committed and no uncommitted product changes remain.
 
 ## Open
 
 ## Next
-Commit the verified Patient and Research Case packet.
+Await the next implementation issue.
