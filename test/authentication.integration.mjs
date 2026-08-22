@@ -90,15 +90,18 @@ test("opaque session HTTP security", async (suite) => {
             },
             payload: { password: "replacement-password" },
           });
-          assert.equal(passwordChange.statusCode, 204);
+          assert.equal(passwordChange.statusCode, 200);
+          const rotated = authenticatedResponse(passwordChange);
+          assert.notEqual(rotated.token, second.token);
           assert.equal((await readSession(app, second.cookie)).statusCode, 401);
+          assert.equal((await readSession(app, rotated.cookie)).statusCode, 200);
           assert.equal(
             (
               await pool.query(
                 "SELECT count(*)::integer AS count FROM insight.sessions WHERE revoked_at IS NULL",
               )
             ).rows[0].count,
-            0,
+            1,
           );
 
           const loopback = buildAuthenticationApp(pool, undefined, true);
@@ -132,14 +135,15 @@ test("opaque session HTTP security", async (suite) => {
 
         const reset = await app.inject({
           method: "POST",
-          url: `/api/v1/admin/psychiatrists/${psychiatrist.id}/reset-password`,
+          url: `/api/v1/admin/users/${psychiatrist.id}/reset-password`,
           headers: {
             cookie: administrator.cookie,
             "x-csrf-token": administrator.csrfToken,
           },
           payload: { password: "temporary-password" },
         });
-        assert.equal(reset.statusCode, 204);
+        assert.equal(reset.statusCode, 200);
+        assert.doesNotMatch(reset.body, /temporary-password/);
         assert.equal((await readSession(app, targetOne.cookie)).statusCode, 401);
         assert.equal((await readSession(app, targetTwo.cookie)).statusCode, 401);
 
@@ -153,29 +157,225 @@ test("opaque session HTTP security", async (suite) => {
         assert.equal(blocked.statusCode, 403);
         assert.equal(blocked.json().error.code, "PASSWORD_CHANGE_REQUIRED");
 
+        const blockedRead = await app.inject({
+          method: "GET",
+          url: "/api/v1/admin/users",
+          headers: { cookie: temporary.cookie },
+        });
+        assert.equal(blockedRead.statusCode, 403);
+        assert.equal(blockedRead.json().error.code, "PASSWORD_CHANGE_REQUIRED");
+
+        const replacement = await app.inject({
+          method: "POST",
+          url: "/api/v1/session/password",
+          headers: { cookie: temporary.cookie, "x-csrf-token": temporary.csrfToken },
+          payload: { password: "permanent-password" },
+        });
+        assert.equal(replacement.statusCode, 200);
+        const rotated = authenticatedResponse(replacement);
+        assert.equal(rotated.response.json().user.status, "ENABLED");
+        assert.equal((await readSession(app, temporary.cookie)).statusCode, 401);
+        assert.equal((await readSession(app, rotated.cookie)).statusCode, 200);
+
         const disable = await app.inject({
           method: "POST",
-          url: `/api/v1/admin/psychiatrists/${psychiatrist.id}/disable`,
+          url: `/api/v1/admin/users/${psychiatrist.id}/disable`,
           headers: {
             cookie: administrator.cookie,
             "x-csrf-token": administrator.csrfToken,
           },
         });
-        assert.equal(disable.statusCode, 204);
-        assert.equal((await readSession(app, temporary.cookie)).statusCode, 401);
+        assert.equal(disable.statusCode, 200);
+        assert.equal((await readSession(app, rotated.cookie)).statusCode, 401);
+
+        const stored = await pool.query("SELECT password_hash FROM insight.users WHERE id = $1", [
+          psychiatrist.id,
+        ]);
+        assert.match(stored.rows[0].password_hash, /^\$argon2id\$/);
+        assert.doesNotMatch(stored.rows[0].password_hash, /temporary-password|permanent-password/);
 
         assert.deepEqual(
           (
             await pool.query(
-              `SELECT event_type FROM insight.security_audit_events
+              `SELECT event_type, actor_user_id, request_id FROM insight.security_audit_events
                WHERE subject_user_id = $1
-                 AND event_type IN ('PASSWORD_RESET', 'ACCOUNT_DISABLED')
+                 AND event_type IN ('PASSWORD_RESET', 'PASSWORD_CHANGED', 'ACCOUNT_DISABLED')
                ORDER BY occurred_at`,
               [psychiatrist.id],
             )
           ).rows.map(({ event_type }) => event_type),
-          ["PASSWORD_RESET", "ACCOUNT_DISABLED"],
+          ["PASSWORD_RESET", "PASSWORD_CHANGED", "ACCOUNT_DISABLED"],
         );
+        const managementAudit = await pool.query(
+          `SELECT actor_user_id, request_id FROM insight.security_audit_events
+           WHERE subject_user_id = $1 AND event_type IN ('PASSWORD_RESET', 'ACCOUNT_DISABLED')`,
+          [psychiatrist.id],
+        );
+        assert.ok(
+          managementAudit.rows.every(
+            ({ actor_user_id }) => actor_user_id === administrator.response.json().user.id,
+          ),
+        );
+        assert.ok(managementAudit.rows.every(({ request_id }) => typeof request_id === "string"));
+      } finally {
+        await app.close();
+      }
+    });
+  });
+
+  await suite.test("Administrator user-management REST is complete and auditable", async () => {
+    await withAuthenticationDatabase(async (pool) => {
+      const app = buildAuthenticationApp(pool);
+      try {
+        const administrator = await login(app, "admin", "admin");
+        const adminId = administrator.response.json().user.id;
+        const headers = {
+          cookie: administrator.cookie,
+          "x-csrf-token": administrator.csrfToken,
+        };
+
+        const initial = await app.inject({ method: "GET", url: "/api/v1/admin/users", headers });
+        assert.equal(initial.statusCode, 200);
+        assert.equal(initial.json().users.length, 1);
+
+        const create = await app.inject({
+          method: "POST",
+          url: "/api/v1/admin/users",
+          headers,
+          payload: { username: "Managed", password: "managed-password", role: "PSYCHIATRIST" },
+        });
+        assert.equal(create.statusCode, 201);
+        const userId = create.json().user.id;
+
+        const rename = await app.inject({
+          method: "PATCH",
+          url: `/api/v1/admin/users/${userId}/username`,
+          headers,
+          payload: { username: "Renamed" },
+        });
+        assert.equal(rename.statusCode, 200);
+        assert.equal(rename.json().user.username, "Renamed");
+
+        const setPasswordResponse = await app.inject({
+          method: "PUT",
+          url: `/api/v1/admin/users/${userId}/password`,
+          headers,
+          payload: { password: "changed-password" },
+        });
+        assert.equal(setPasswordResponse.statusCode, 200);
+        assert.equal((await login(app, "Renamed", "changed-password")).response.statusCode, 200);
+
+        const disable = await app.inject({
+          method: "POST",
+          url: `/api/v1/admin/users/${userId}/disable`,
+          headers,
+        });
+        assert.equal(disable.statusCode, 200);
+        assert.equal(disable.json().user.status, "DISABLED");
+        const enable = await app.inject({
+          method: "POST",
+          url: `/api/v1/admin/users/${userId}/enable`,
+          headers,
+        });
+        assert.equal(enable.statusCode, 200);
+        assert.equal(enable.json().user.status, "ENABLED");
+        const revoke = await app.inject({
+          method: "POST",
+          url: `/api/v1/admin/users/${userId}/revoke-sessions`,
+          headers,
+        });
+        assert.equal(revoke.statusCode, 204);
+
+        const lastAdministrator = await app.inject({
+          method: "POST",
+          url: `/api/v1/admin/users/${adminId}/disable`,
+          headers,
+        });
+        assert.equal(lastAdministrator.statusCode, 409);
+        assert.equal(lastAdministrator.json().error.code, "LAST_ADMINISTRATOR");
+
+        const events = await pool.query(
+          `SELECT event_type, actor_user_id, subject_user_id, request_id
+           FROM insight.security_audit_events
+           WHERE subject_user_id = $1 AND event_type IN (
+             'USER_CREATED', 'USER_RENAMED', 'PASSWORD_CHANGED', 'ACCOUNT_DISABLED',
+             'ACCOUNT_ENABLED', 'SESSIONS_REVOKED'
+           )`,
+          [userId],
+        );
+        assert.deepEqual(
+          new Set(events.rows.map(({ event_type }) => event_type)),
+          new Set([
+            "USER_CREATED",
+            "USER_RENAMED",
+            "PASSWORD_CHANGED",
+            "ACCOUNT_DISABLED",
+            "ACCOUNT_ENABLED",
+            "SESSIONS_REVOKED",
+          ]),
+        );
+        assert.ok(
+          events.rows.every(
+            ({ actor_user_id, subject_user_id, request_id }) =>
+              actor_user_id === adminId &&
+              subject_user_id === userId &&
+              typeof request_id === "string",
+          ),
+        );
+        const sensitiveColumns = await pool.query(
+          `SELECT column_name FROM information_schema.columns
+           WHERE table_schema = 'insight' AND table_name = 'security_audit_events'
+             AND column_name ~ '(password|username|user_agent)'`,
+        );
+        assert.equal(sensitiveColumns.rowCount, 0);
+      } finally {
+        await app.close();
+      }
+    });
+  });
+
+  await suite.test("Psychiatrist receives 403 from every Administrator endpoint", async () => {
+    await withAuthenticationDatabase(async (pool) => {
+      const psychiatrist = await createUser(pool, {
+        username: "Denied",
+        password: "denied-password",
+        role: "PSYCHIATRIST",
+      });
+      const app = buildAuthenticationApp(pool);
+      try {
+        const denied = await login(app, "Denied", "denied-password");
+        const headers = { cookie: denied.cookie, "x-csrf-token": denied.csrfToken };
+        const routes = [
+          { method: "GET", url: "/api/v1/admin/users" },
+          {
+            method: "POST",
+            url: "/api/v1/admin/users",
+            payload: { username: "Nope", password: "nope-password", role: "PSYCHIATRIST" },
+          },
+          {
+            method: "PATCH",
+            url: `/api/v1/admin/users/${psychiatrist.id}/username`,
+            payload: { username: "Nope" },
+          },
+          { method: "POST", url: `/api/v1/admin/users/${psychiatrist.id}/enable` },
+          { method: "POST", url: `/api/v1/admin/users/${psychiatrist.id}/disable` },
+          {
+            method: "PUT",
+            url: `/api/v1/admin/users/${psychiatrist.id}/password`,
+            payload: { password: "nope-password" },
+          },
+          {
+            method: "POST",
+            url: `/api/v1/admin/users/${psychiatrist.id}/reset-password`,
+            payload: { password: "nope-password" },
+          },
+          { method: "POST", url: `/api/v1/admin/users/${psychiatrist.id}/revoke-sessions` },
+        ];
+        for (const route of routes) {
+          const response = await app.inject({ ...route, headers });
+          assert.equal(response.statusCode, 403, `${route.method} ${route.url}`);
+          assert.equal(response.json().error.code, "FORBIDDEN");
+        }
       } finally {
         await app.close();
       }
@@ -254,6 +454,10 @@ async function login(app, username, password) {
     payload: { username, password },
   });
   assert.equal(response.statusCode, 200);
+  return authenticatedResponse(response);
+}
+
+function authenticatedResponse(response) {
   const setCookie = response.headers["set-cookie"];
   assert.equal(typeof setCookie, "string");
   const cookie = setCookie.split(";", 1)[0];

@@ -68,13 +68,15 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
 button,
 a,
 input,
+select,
 [tabindex="0"] {
   outline-offset: 3px;
 }
@@ -363,6 +365,88 @@ p {
   gap: var(--space-3);
 }
 
+.management-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr)) auto;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.select-field {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.select-field select {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 520px;
+}
+
+.row-actions .button {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.8125rem;
+}
+
+.notice {
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+  background: var(--normal-bg);
+  border: 1px solid var(--normal);
+  border-radius: var(--radius-md);
+}
+
+.authentication-page {
+  display: grid;
+  min-height: 100vh;
+  padding: var(--space-6);
+  place-items: center;
+}
+
+.authentication-page > * {
+  width: min(100%, 480px);
+}
+
+.authentication-card {
+  padding: var(--space-8);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
+}
+
+.authentication-card > .wordmark {
+  margin-bottom: var(--space-8);
+}
+
+.authentication-card > p:not(.wordmark, .field-error, .authentication-note) {
+  color: var(--ink-muted);
+}
+
+.authentication-note {
+  margin: var(--space-5) 0 0;
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+}
+
+.authentication-card .banner {
+  margin-bottom: var(--space-5);
+}
+
 .table-region {
   width: 100%;
   min-width: 0;
@@ -632,13 +716,18 @@ tbody tr:last-child td {
   }
 
   .section-heading,
-  .inline-form {
+  .inline-form,
+  .management-form {
     align-items: stretch;
     flex-direction: column;
   }
 
   .form-field {
     min-width: 100%;
+  }
+
+  .management-form {
+    display: flex;
   }
 
   .card,

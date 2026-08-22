@@ -136,6 +136,48 @@ export const migrations: readonly Migration[] = Object.freeze([
         ON insight.security_audit_events (occurred_at DESC);
     `,
   },
+  {
+    version: 4,
+    name: "administrator_user_management",
+    sql: `
+      ALTER TABLE insight.security_audit_events
+        DROP CONSTRAINT security_audit_events_event_type_check;
+
+      ALTER TABLE insight.security_audit_events
+        ADD CONSTRAINT security_audit_events_event_type_check CHECK (event_type IN (
+          'SIGN_IN', 'FAILED_SIGN_IN', 'SIGN_OUT', 'USER_CREATED', 'USER_RENAMED',
+          'PASSWORD_CHANGED', 'PASSWORD_RESET', 'ACCOUNT_ENABLED', 'ACCOUNT_DISABLED',
+          'SESSIONS_REVOKED'
+        ));
+
+      CREATE OR REPLACE FUNCTION insight.protect_last_enabled_administrator()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF OLD.role = 'ADMINISTRATOR'
+           AND OLD.status <> 'DISABLED'
+           AND (
+             TG_OP = 'DELETE'
+             OR NEW.role <> 'ADMINISTRATOR'
+             OR NEW.status = 'DISABLED'
+           )
+           AND NOT EXISTS (
+             SELECT 1
+             FROM insight.users
+             WHERE id <> OLD.id
+               AND role = 'ADMINISTRATOR'
+               AND status <> 'DISABLED'
+           )
+        THEN
+          RAISE EXCEPTION 'cannot remove the last enabled Administrator'
+            USING ERRCODE = '23514', CONSTRAINT = 'users_last_enabled_administrator';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+    `,
+  },
 ]);
 
 export function prepareMigrations(

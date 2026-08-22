@@ -1,12 +1,14 @@
 import {
   Component,
   type ErrorInfo,
+  type FormEvent,
   type MouseEvent,
   type ReactNode,
   useEffect,
   useState,
 } from "react";
 
+import { AdminUsersPage } from "./AdminUsersPage";
 import {
   Badge,
   Banner,
@@ -18,6 +20,8 @@ import {
   LoadingState,
   TextInput,
 } from "./components/primitives";
+import { apiClient } from "./generated/api-client";
+import type { operations } from "./generated/api-types";
 
 type Route = {
   path: string;
@@ -26,7 +30,9 @@ type Route = {
   description: string;
 };
 
-const routes: Route[] = [
+type Session = operations["getSession"]["responses"][200]["content"]["application/json"];
+
+const clinicianRoutes: Route[] = [
   {
     path: "/",
     label: "Workspace",
@@ -44,6 +50,21 @@ const routes: Route[] = [
     label: "Treatment plans",
     title: "Treatment plans",
     description: "Review draft and finalized treatment plans.",
+  },
+];
+
+const administratorRoutes: Route[] = [
+  {
+    path: "/",
+    label: "Workspace",
+    title: "Administration workspace",
+    description: "Manage accounts and research-system operations.",
+  },
+  {
+    path: "/administration/users",
+    label: "User management",
+    title: "User management",
+    description: "Create accounts, manage credentials, account access, and active sessions.",
   },
 ];
 
@@ -71,7 +92,7 @@ function navigate(event: MouseEvent<HTMLAnchorElement>, path: string) {
   }
 }
 
-function WorkspacePage() {
+function WorkspacePage({ administrator = false }: { administrator?: boolean }) {
   const columns = [
     { key: "area", header: "Area" },
     { key: "status", header: "Status" },
@@ -91,8 +112,10 @@ function WorkspacePage() {
 
   return (
     <div className="page-stack">
-      <Banner title="Research use only" tone="info">
-        INSIGHT supports clinician review and does not replace professional judgment.
+      <Banner title={administrator ? "Administrator workspace" : "Research use only"} tone="info">
+        {administrator
+          ? "Patient and clinical content is not available to Administrators."
+          : "INSIGHT supports clinician review and does not replace professional judgment."}
       </Banner>
 
       <section className="card" aria-labelledby="system-status-title">
@@ -101,7 +124,7 @@ function WorkspacePage() {
             <p className="kicker">System overview</p>
             <h2 id="system-status-title">Workspace status</h2>
           </div>
-          <Button>Start new work</Button>
+          {administrator ? null : <Button>Start new work</Button>}
         </div>
         <DataTable
           ariaLabel="Workspace services"
@@ -163,9 +186,17 @@ function NotFoundPage() {
   );
 }
 
-function Shell() {
+function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => void }) {
   const pathname = usePathname();
+  const routes = session.user.role === "ADMINISTRATOR" ? administratorRoutes : clinicianRoutes;
   const route = routes.find((candidate) => candidate.path === pathname);
+
+  async function signOut() {
+    await apiClient.POST("/api/v1/logout", {
+      headers: { "x-csrf-token": session.csrfToken },
+    });
+    onSignedOut();
+  }
 
   return (
     <div className="app-shell">
@@ -177,8 +208,13 @@ function Shell() {
           INSIGHT
         </a>
         <div className="app-context">
-          <span>Research workspace</span>
-          <Badge tone="info">Light theme</Badge>
+          <span>{session.user.username}</span>
+          <Badge tone="info">
+            {session.user.role === "ADMINISTRATOR" ? "Administrator" : "Psychiatrist"}
+          </Badge>
+          <Button variant="secondary" onClick={() => void signOut()}>
+            Sign out
+          </Button>
         </div>
       </header>
       <aside className="app-sidebar">
@@ -205,12 +241,133 @@ function Shell() {
           <h1>{route?.title ?? "Page not found"}</h1>
           {route ? <p>{route.description}</p> : null}
         </header>
-        {pathname === "/" ? <WorkspacePage /> : null}
+        {pathname === "/" ? (
+          <WorkspacePage administrator={session.user.role === "ADMINISTRATOR"} />
+        ) : null}
         {pathname === "/patients" ? <PatientsPage /> : null}
         {pathname === "/plans" ? <PlansPage /> : null}
+        {pathname === "/administration/users" && session.user.role === "ADMINISTRATOR" ? (
+          <AdminUsersPage csrfToken={session.csrfToken} />
+        ) : null}
         {!route ? <NotFoundPage /> : null}
       </main>
     </div>
+  );
+}
+
+function AuthenticationPage({ onAuthenticated }: { onAuthenticated: (session: Session) => void }) {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    const data = new FormData(event.currentTarget);
+    const result = await apiClient.POST("/api/v1/login", {
+      body: {
+        username: String(data.get("username") ?? ""),
+        password: String(data.get("password") ?? ""),
+      },
+    });
+    if (result.data) onAuthenticated(result.data);
+    else setError("Sign-in failed. Check your credentials and try again.");
+    setLoading(false);
+  }
+
+  return (
+    <main className="authentication-page">
+      <section className="authentication-card" aria-labelledby="sign-in-title">
+        <p className="wordmark">INSIGHT</p>
+        <h1 id="sign-in-title">Sign in</h1>
+        <p>Use your locally managed INSIGHT account.</p>
+        {error ? (
+          <p className="field-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <form className="page-stack" onSubmit={submit}>
+          <FormField label="Username" required>
+            {(props) => <TextInput {...props} name="username" required autoComplete="username" />}
+          </FormField>
+          <FormField label="Password" required>
+            {(props) => (
+              <TextInput
+                {...props}
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+              />
+            )}
+          </FormField>
+          <Button type="submit" loading={loading}>
+            Sign in
+          </Button>
+        </form>
+        <p className="authentication-note">No public signup or email recovery is available.</p>
+      </section>
+    </main>
+  );
+}
+
+function PasswordReplacementPage({
+  session,
+  onReplaced,
+}: {
+  session: Session;
+  onReplaced: (session: Session) => void;
+}) {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    const password = String(new FormData(event.currentTarget).get("password") ?? "");
+    const result = await apiClient.POST("/api/v1/session/password", {
+      headers: { "x-csrf-token": session.csrfToken },
+      body: { password },
+    });
+    if (result.data) onReplaced(result.data);
+    else setError("Password replacement failed. Try again.");
+    setLoading(false);
+  }
+
+  return (
+    <main className="authentication-page">
+      <section className="authentication-card" aria-labelledby="replace-password-title">
+        <p className="wordmark">INSIGHT</p>
+        <h1 id="replace-password-title">Replace temporary password</h1>
+        <Banner title="Password change required" tone="warning">
+          Replace the temporary password before accessing any other INSIGHT function.
+        </Banner>
+        {error ? (
+          <p className="field-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <form className="page-stack" onSubmit={submit}>
+          <FormField label="New password" hint="Use at least 12 characters." required>
+            {(props) => (
+              <TextInput
+                {...props}
+                name="password"
+                type="password"
+                required
+                minLength={12}
+                maxLength={1024}
+                autoComplete="new-password"
+              />
+            )}
+          </FormField>
+          <Button type="submit" loading={loading}>
+            Replace password
+          </Button>
+        </form>
+      </section>
+    </main>
   );
 }
 
@@ -246,9 +403,32 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 export function App() {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  useEffect(() => {
+    let active = true;
+    void apiClient.GET("/api/v1/session").then((result) => {
+      if (active) setSession(result.data ?? null);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
-      <Shell />
+      {session === undefined ? (
+        <main className="authentication-page">
+          <LoadingState label="Loading INSIGHT" />
+        </main>
+      ) : null}
+      {session === null ? <AuthenticationPage onAuthenticated={setSession} /> : null}
+      {session?.user.status === "PASSWORD_CHANGE_REQUIRED" ? (
+        <PasswordReplacementPage session={session} onReplaced={setSession} />
+      ) : null}
+      {session?.user.status === "ENABLED" ? (
+        <Shell session={session} onSignedOut={() => setSession(null)} />
+      ) : null}
     </ErrorBoundary>
   );
 }

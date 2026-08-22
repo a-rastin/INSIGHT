@@ -149,13 +149,16 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const requestSessions = new WeakMap<FastifyRequest, SessionContext>();
   if (options.authentication) {
     app.addHook("preHandler", async (request, reply) => {
-      if (
-        !request.url.startsWith(`${API_PREFIX}/`) ||
-        !["POST", "PUT", "PATCH", "DELETE"].includes(request.method) ||
-        request.url.split("?", 1)[0] === `${API_PREFIX}/login`
-      ) {
-        return;
-      }
+      if (!request.url.startsWith(`${API_PREFIX}/`)) return;
+
+      const path = request.url.split("?", 1)[0]!;
+      const publicPaths = new Set([
+        `${API_PREFIX}/health`,
+        `${API_PREFIX}/ready`,
+        `${API_PREFIX}/openapi.json`,
+        `${API_PREFIX}/login`,
+      ]);
+      if (publicPaths.has(path)) return;
 
       const token = sessionTokenFromCookie(request.headers.cookie);
       const context = token ? await resolveSession(options.authentication!.pool, token) : null;
@@ -166,6 +169,23 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
         return;
       }
 
+      requestSessions.set(request, context);
+      if (
+        context.user.status === "PASSWORD_CHANGE_REQUIRED" &&
+        ![
+          `${API_PREFIX}/session`,
+          `${API_PREFIX}/session/password`,
+          `${API_PREFIX}/logout`,
+        ].includes(path)
+      ) {
+        await reply
+          .status(403)
+          .send(errorBody(request, 403, "PASSWORD_CHANGE_REQUIRED", "Request is not permitted."));
+        return;
+      }
+
+      if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return;
+
       const csrfHeader = request.headers["x-csrf-token"];
       const csrfToken = Array.isArray(csrfHeader) ? csrfHeader[0] : csrfHeader;
       if (!isValidCsrf(context, csrfToken)) {
@@ -174,18 +194,6 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           .send(errorBody(request, 403, "INVALID_CSRF", "Request is not permitted."));
         return;
       }
-      if (
-        context.user.status === "PASSWORD_CHANGE_REQUIRED" &&
-        ![`${API_PREFIX}/session/password`, `${API_PREFIX}/logout`].includes(
-          request.url.split("?", 1)[0]!,
-        )
-      ) {
-        await reply
-          .status(403)
-          .send(errorBody(request, 403, "PASSWORD_CHANGE_REQUIRED", "Request is not permitted."));
-        return;
-      }
-      requestSessions.set(request, context);
     });
   }
 

@@ -14,9 +14,13 @@ export type SecurityEventType =
   | "SIGN_IN"
   | "FAILED_SIGN_IN"
   | "SIGN_OUT"
+  | "USER_CREATED"
+  | "USER_RENAMED"
   | "PASSWORD_CHANGED"
   | "PASSWORD_RESET"
-  | "ACCOUNT_DISABLED";
+  | "ACCOUNT_ENABLED"
+  | "ACCOUNT_DISABLED"
+  | "SESSIONS_REVOKED";
 
 interface Queryable {
   query<T extends Record<string, unknown>>(

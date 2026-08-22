@@ -1,7 +1,7 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement and verify user identity, Argon2id policy, idempotent admin/admin bootstrap, and last-admin protection for the current Plan.md issue.
+Implement administrator REST/UI user management with secure reset, password-replacement restriction and rotation, session revocation, RBAC, last-admin protection, sanitized attributable audits, tests, documentation, plan marking, and commit.
 
 ## Core
 - safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
@@ -102,8 +102,9 @@ Implement and verify user identity, Argon2id policy, idempotent admin/admin boot
 - ✓92 Database implementation and security boundary pass repository verification. — verified by: format, lint, TypeScript build, root unit suite, explicit secret-log scan, git diff check, and PostgreSQL 16 integration tests, including all requested migration acceptance paths
 - ✓93 Fastify boundary, OpenAPI/client drift check, route injection suite, and production workspace build pass. — verified by: npm run format, lint, typecheck, test, build; 4 test files including focused API injection coverage
 - ✓94 Identity migration and services meet this issue's password, username uniqueness, bootstrap, role, policy-rehash, and last-enabled-Administrator criteria. — verified by: Verifier: Prettier, ESLint, TypeScript, Node/Vitest unit tests, Vite/server builds, OpenAPI drift check, secret-log scan, and temporary PostgreSQL 16 integration tests; coverage: all changed TypeScript, migration 1 checksum compatibility, migration 2 fresh/restart behavior, case collisions, 1-character create/change, Argon2id verification and policy-version persistence, fixed DB roles, bootstrap risk/status, sequential and concurrent last-admin disablement.
+- ✓95 Administrator REST/UI management, reset lifecycle, session rotation/revocation, authorization matrix, last-admin protection, sanitized audits, OpenAPI, and UI E2E implemented. — verified by: Verifier: PostgreSQL integration, focused authentication, web unit/accessibility, production browser E2E, static/build/contract checks; coverage: all new user-management endpoints and services, forced-password lifecycle, both roles, active sessions, audit rows, generated API, and browser flows.
 
 ## Open
 
 ## Next
-Commit the verified identity implementation and report the missing root Plan.md limitation.
+Commit verified administrator user-management packet and clean disposable test infrastructure.

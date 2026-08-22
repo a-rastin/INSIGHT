@@ -143,14 +143,17 @@ test("not-found and unsupported-version responses stay inside the API envelope",
 });
 
 test("published OpenAPI matches the checked-in contract", async (t) => {
-  const app = buildApp();
+  const app = buildApp({ authentication: { pool: {} } });
   t.after(() => app.close());
 
   const response = await app.inject({ method: "GET", url: "/api/v1/openapi.json" });
   const published = JSON.parse(await readFile("docs/api/openapi.v1.json", "utf8"));
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), published);
-  assert.deepEqual(Object.keys(published.paths).sort(), ["/api/v1/health", "/api/v1/ready"]);
+  assert.ok(published.paths["/api/v1/admin/users"]);
+  assert.ok(published.paths["/api/v1/admin/users/{userId}/reset-password"]);
+  assert.equal(published.paths["/api/v1/signup"], undefined);
+  assert.equal(published.paths["/api/v1/recover-password"], undefined);
 });
 
 test("production static assets and SPA fallback do not intercept API routes", async (t) => {

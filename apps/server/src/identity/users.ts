@@ -9,6 +9,7 @@ import {
   type PasswordPolicy,
 } from "./passwords.js";
 import { auditSecurityEvent, revokeUserSessions } from "./sessions.js";
+import type { SecurityMetadata } from "./sessions.js";
 
 const LAST_ADMINISTRATOR_LOCK_ID = "805974421099826827";
 const BOOTSTRAP_USERNAME = "admin";
@@ -151,6 +152,56 @@ export async function createUser(
   );
 }
 
+export async function createManagedUser(
+  pool: Pool,
+  actorUserId: string,
+  input: { readonly username: string; readonly password: string; readonly role: Role },
+  metadata: SecurityMetadata = {},
+  policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
+): Promise<User> {
+  const passwordHash = await hashPassword(input.password, policy);
+  return withTransaction(pool, async (client) => {
+    const user = await insertUser(client, input.username, passwordHash, policy.version, input.role);
+    await auditSecurityEvent(client, "USER_CREATED", actorUserId, user.id, metadata);
+    return user;
+  });
+}
+
+export async function listUsers(pool: Pool): Promise<readonly User[]> {
+  const result = await pool.query<UserRow>(
+    "SELECT * FROM insight.users ORDER BY lower(username), id",
+  );
+  return result.rows.map(publicUser);
+}
+
+export async function renameUser(
+  pool: Pool,
+  actorUserId: string,
+  userId: string,
+  username: string,
+  metadata: SecurityMetadata = {},
+): Promise<User | null> {
+  try {
+    return await withTransaction(pool, async (client) => {
+      const result = await client.query<UserRow>(
+        `UPDATE insight.users
+         SET username = $1, updated_at = clock_timestamp()
+         WHERE id = $2
+         RETURNING *`,
+        [canonicalUsername(username), userId],
+      );
+      if (!result.rows[0]) return null;
+      await auditSecurityEvent(client, "USER_RENAMED", actorUserId, userId, metadata);
+      return publicUser(result.rows[0]);
+    });
+  } catch (error) {
+    if (isSqlState(error, "23505", "users_username_normalized_unique")) {
+      throw new UsernameUnavailableError();
+    }
+    throw error;
+  }
+}
+
 export async function authenticateUser(
   pool: Pool,
   username: string,
@@ -201,6 +252,7 @@ export async function changePassword(
   userId: string,
   password: string,
   policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
+  metadata: SecurityMetadata = {},
 ): Promise<User | null> {
   const passwordHash = await hashPassword(password, policy);
   return withTransaction(pool, async (client) => {
@@ -217,7 +269,7 @@ export async function changePassword(
     );
     if (!result.rows[0]) return null;
     await revokeUserSessions(client, userId);
-    await auditSecurityEvent(client, "PASSWORD_CHANGED", userId, userId);
+    await auditSecurityEvent(client, "PASSWORD_CHANGED", userId, userId, metadata);
     return publicUser(result.rows[0]);
   });
 }
@@ -227,6 +279,7 @@ export async function resetPassword(
   actorUserId: string,
   userId: string,
   password: string,
+  metadata: SecurityMetadata = {},
   policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
 ): Promise<User | null> {
   const passwordHash = await hashPassword(password, policy);
@@ -238,13 +291,41 @@ export async function resetPassword(
            bootstrap_credential_active = false,
            status = 'PASSWORD_CHANGE_REQUIRED',
            updated_at = clock_timestamp()
-       WHERE id = $3 AND role = 'PSYCHIATRIST'
+       WHERE id = $3
        RETURNING *`,
       [passwordHash, policy.version, userId],
     );
     if (!result.rows[0]) return null;
     await revokeUserSessions(client, userId);
-    await auditSecurityEvent(client, "PASSWORD_RESET", actorUserId, userId);
+    await auditSecurityEvent(client, "PASSWORD_RESET", actorUserId, userId, metadata);
+    return publicUser(result.rows[0]);
+  });
+}
+
+export async function setPassword(
+  pool: Pool,
+  actorUserId: string,
+  userId: string,
+  password: string,
+  metadata: SecurityMetadata = {},
+  policy: PasswordPolicy = CURRENT_PASSWORD_POLICY,
+): Promise<User | null> {
+  const passwordHash = await hashPassword(password, policy);
+  return withTransaction(pool, async (client) => {
+    const result = await client.query<UserRow>(
+      `UPDATE insight.users
+       SET password_hash = $1,
+           password_policy_version = $2,
+           bootstrap_credential_active = false,
+           status = CASE WHEN status = 'PASSWORD_CHANGE_REQUIRED' THEN 'ENABLED' ELSE status END,
+           updated_at = clock_timestamp()
+       WHERE id = $3
+       RETURNING *`,
+      [passwordHash, policy.version, userId],
+    );
+    if (!result.rows[0]) return null;
+    await revokeUserSessions(client, userId);
+    await auditSecurityEvent(client, "PASSWORD_CHANGED", actorUserId, userId, metadata);
     return publicUser(result.rows[0]);
   });
 }
@@ -255,6 +336,7 @@ export async function setUserEnabled(
   enabled: boolean,
   actorUserId: string = userId,
   expectedRole?: Role,
+  metadata: SecurityMetadata = {},
 ): Promise<User | null> {
   try {
     return await withTransaction(pool, async (client) => {
@@ -270,7 +352,9 @@ export async function setUserEnabled(
       if (!result.rows[0]) return null;
       if (!enabled) {
         await revokeUserSessions(client, userId);
-        await auditSecurityEvent(client, "ACCOUNT_DISABLED", actorUserId, userId);
+        await auditSecurityEvent(client, "ACCOUNT_DISABLED", actorUserId, userId, metadata);
+      } else {
+        await auditSecurityEvent(client, "ACCOUNT_ENABLED", actorUserId, userId, metadata);
       }
       return publicUser(result.rows[0]);
     });
@@ -280,6 +364,21 @@ export async function setUserEnabled(
     }
     throw error;
   }
+}
+
+export async function revokeManagedUserSessions(
+  pool: Pool,
+  actorUserId: string,
+  userId: string,
+  metadata: SecurityMetadata = {},
+): Promise<boolean> {
+  return withTransaction(pool, async (client) => {
+    const subject = await client.query("SELECT id FROM insight.users WHERE id = $1", [userId]);
+    if (!subject.rows[0]) return false;
+    await revokeUserSessions(client, userId);
+    await auditSecurityEvent(client, "SESSIONS_REVOKED", actorUserId, userId, metadata);
+    return true;
+  });
 }
 
 const DUMMY_PASSWORD_HASH =

@@ -172,7 +172,7 @@ Representative failure contracts:
 
 ## Web UI Development
 
-`apps/web` provides the desktop-first React/Vite shell. It includes relative client-side routes, semantic application landmarks, a root error boundary, the approved light-theme design tokens, responsive behavior down to 320px, and shared accessible form, button, table, badge, banner, loading, empty, and error primitives. Dark mode is intentionally unavailable until approved tokens and accessibility review exist.
+`apps/web` provides the desktop-first React/Vite shell. It includes local sign-in, forced temporary-password replacement, role-specific navigation, Administrator user management, relative client-side routes, semantic application landmarks, a root error boundary, the approved light-theme design tokens, responsive behavior down to 320px, and shared accessible form, button, table, badge, banner, loading, empty, and error primitives. Dark mode is intentionally unavailable until approved tokens and accessibility review exist.
 
 Run `npm test --workspace @insight/web` for focused component and WCAG A/AA smoke tests. Run `npm run typecheck --workspace @insight/web` and `npm run build --workspace @insight/web` for package checks.
 
@@ -191,13 +191,15 @@ The repository also contains one implemented legacy tool:
 - [`medical-documentation/`](medical-documentation/) contains source material collected for DDI and suicide-risk work.
 - [`CONTEXT/`](CONTEXT/) contains protected project context used by coding agents.
 
-No patient-domain tables, DDI engine, treatment-plan orchestrator, or authentication service exists yet. The unified deployment is a production-image skeleton; its worker has no domain jobs until those modules are implemented.
+No patient-domain tables, DDI engine, or treatment-plan orchestrator exists yet. The unified deployment includes local password authentication and Administrator account management; its worker has no domain jobs until later modules are implemented.
 
 ## Database Development
 
 PostgreSQL major version 16 is pinned and enforced at runtime. Keep `DATABASE_URL` in the server environment only. Run `npm run db:migrate` to migrate forward, `npm run db:migration:head` to report database and code heads, and `npm run db:migrate:test` with a dedicated PostgreSQL 16 `TEST_DATABASE_URL` to run isolated integration tests. `npm run secret-log:scan` verifies safe database diagnostics and browser-source boundaries. Server startup fails before readiness when the database is empty, behind, divergent, or on another PostgreSQL major.
 
 Migration 2 creates the identity schema and exactly one enabled bootstrap Administrator. Its publicly predictable `admin/admin` credential is hashed with the current versioned Argon2id policy, does not require a first-sign-in change, and is never recreated or overwritten after the migration is recorded. User services enforce Unicode-normalized case-insensitive usernames, one-character minimum passwords, transparent rehash after policy changes, fixed Administrator/Psychiatrist roles, visible bootstrap-risk metadata, and protection for the last enabled Administrator.
+
+Migration 4 adds attributable, sanitized account-management audit events and treats `PASSWORD_CHANGE_REQUIRED` as enabled for last-Administrator protection. Administrator REST/UI supports listing, creating, renaming, enabling/disabling, direct password changes, temporary resets, and session revocation. Temporary reset hashes the supplied credential, revokes every target session, and restricts the next session to password replacement; successful replacement revokes old sessions and returns a rotated session. No signup, email recovery, reset link, recovery code, or retrievable password is provided.
 
 Migration deployment, failure recovery, full-restore boundaries, and major-upgrade steps are documented in [Database Migrations and Recovery](docs/operations/database-migrations.md).
 

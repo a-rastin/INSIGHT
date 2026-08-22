@@ -3,4 +3,7 @@ import createClient from "openapi-fetch";
 
 import type { paths } from "./api-types";
 
-export const apiClient = createClient<paths>({ baseUrl: "" });
+export const apiClient = createClient<paths>({
+  baseUrl: window.location.origin,
+  fetch: (request) => fetch(request),
+});
