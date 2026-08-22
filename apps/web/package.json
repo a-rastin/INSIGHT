@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -14,9 +15,13 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@testing-library/react": "16.1.0",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "4.3.4",
-    "vite": "5.4.11"
+    "axe-core": "4.10.2",
+    "jsdom": "25.0.1",
+    "vite": "5.4.21",
+    "vitest": "3.2.6"
   }
 }

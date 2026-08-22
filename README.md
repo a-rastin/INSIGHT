@@ -147,6 +147,12 @@ The root now contains the initial TypeScript workspace for INSIGHT:
 
 The workspace is intentionally minimal while the production vertical slice is built. The root supports clean installation plus format, lint, typecheck, test, and build checks.
 
+## Web UI Development
+
+`apps/web` provides the desktop-first React/Vite shell. It includes relative client-side routes, semantic application landmarks, a root error boundary, the approved light-theme design tokens, responsive behavior down to 320px, and shared accessible form, button, table, badge, banner, loading, empty, and error primitives. Dark mode is intentionally unavailable until approved tokens and accessibility review exist.
+
+Run `npm test --workspace @insight/web` for focused component and WCAG A/AA smoke tests. Run `npm run typecheck --workspace @insight/web` and `npm run build --workspace @insight/web` for package checks.
+
 ## API Development
 
 Runtime TypeBox schemas are authoritative at the Fastify boundary. The published contract is checked in at `docs/api/openapi.v1.json`; generated browser types and the relative-URL `openapi-fetch` client live under `apps/web/src/generated`. Run `npm run api:generate` after any route-schema change. `npm run api:check` regenerates in memory and fails when the OpenAPI document, browser types, or client are stale.
