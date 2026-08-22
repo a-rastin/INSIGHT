@@ -4022,6 +4022,743 @@
           }
         }
       }
+    },
+    "/api/v1/patients/{patientId}/research-case/panss": {
+      "get": {
+        "operationId": "getPanssAssessment",
+        "tags": ["assessments"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "definition", "assessment"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "definition": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["title", "instruction", "anchors", "items"],
+                      "properties": {
+                        "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "instruction": { "minLength": 1, "maxLength": 300, "type": "string" },
+                        "anchors": {
+                          "minItems": 7,
+                          "maxItems": 7,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["score", "label"],
+                            "properties": {
+                              "score": { "minimum": 1, "maximum": 7, "type": "integer" },
+                              "label": { "minLength": 1, "maxLength": 50, "type": "string" }
+                            }
+                          }
+                        },
+                        "items": {
+                          "minItems": 30,
+                          "maxItems": 30,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["id", "subscale", "text"],
+                            "properties": {
+                              "id": {
+                                "pattern": "^(P[1-7]|N[1-7]|G(?:[1-9]|1[0-6]))$",
+                                "type": "string"
+                              },
+                              "subscale": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["POSITIVE"] },
+                                  { "type": "string", "enum": ["NEGATIVE"] },
+                                  { "type": "string", "enum": ["GENERAL"] }
+                                ]
+                              },
+                              "text": { "minLength": 1, "maxLength": 200, "type": "string" }
+                            }
+                          }
+                        }
+                      },
+                      "title": "insight.panss-definition.v1"
+                    },
+                    "assessment": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "researchCaseId",
+                        "status",
+                        "answers",
+                        "calculation",
+                        "instrumentPin",
+                        "createdByUserId",
+                        "updatedByUserId",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "researchCaseId": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["NOT_STARTED"] },
+                            { "type": "string", "enum": ["IN_PROGRESS"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["BYPASSED"] }
+                          ]
+                        },
+                        "answers": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "P1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G8": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G9": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G10": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G11": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G12": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G13": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G14": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G15": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G16": { "minimum": 1, "maximum": 7, "type": "integer" }
+                              },
+                              "title": "insight.panss-answers.v1"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "calculation": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "calculationVersion",
+                                    "status",
+                                    "answeredCount",
+                                    "scores"
+                                  ],
+                                  "properties": {
+                                    "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                    "status": { "type": "string", "enum": ["INCOMPLETE"] },
+                                    "answeredCount": {
+                                      "minimum": 0,
+                                      "maximum": 29,
+                                      "type": "integer"
+                                    },
+                                    "scores": { "type": "null" }
+                                  }
+                                },
+                                {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "calculationVersion",
+                                    "status",
+                                    "answeredCount",
+                                    "scores"
+                                  ],
+                                  "properties": {
+                                    "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                    "status": { "type": "string", "enum": ["COMPLETE"] },
+                                    "answeredCount": { "type": "number", "enum": [30] },
+                                    "scores": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": ["positive", "negative", "general", "total"],
+                                      "properties": {
+                                        "positive": {
+                                          "minimum": 7,
+                                          "maximum": 49,
+                                          "type": "integer"
+                                        },
+                                        "negative": {
+                                          "minimum": 7,
+                                          "maximum": 49,
+                                          "type": "integer"
+                                        },
+                                        "general": {
+                                          "minimum": 16,
+                                          "maximum": 112,
+                                          "type": "integer"
+                                        },
+                                        "total": {
+                                          "minimum": 30,
+                                          "maximum": 210,
+                                          "type": "integer"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ],
+                              "title": "insight.panss-calculation.v1"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "instrumentPin": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "instrumentId",
+                            "instrumentVersion",
+                            "schemaVersion",
+                            "calculationVersion",
+                            "sourceReference",
+                            "reviewReference"
+                          ],
+                          "properties": {
+                            "instrumentId": { "type": "string", "enum": ["PANSS_30"] },
+                            "instrumentVersion": {
+                              "type": "string",
+                              "enum": ["KAY-OPLER-FISZBEIN-1987"]
+                            },
+                            "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "sourceReference": {
+                              "type": "string",
+                              "enum": ["https://doi.org/10.1093/schbul/13.2.261"]
+                            },
+                            "reviewReference": {
+                              "type": "string",
+                              "enum": ["ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW"]
+                            }
+                          }
+                        },
+                        "createdByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "updatedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "savePanssAssessment",
+        "tags": ["assessments"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": ["schemaVersion", "mode", "expectedRevision", "answers"],
+                    "properties": {
+                      "schemaVersion": { "type": "string", "enum": ["1"] },
+                      "mode": {
+                        "anyOf": [
+                          { "type": "string", "enum": ["SAVE"] },
+                          { "type": "string", "enum": ["COMPLETE"] }
+                        ]
+                      },
+                      "expectedRevision": { "minimum": 1, "type": "integer" },
+                      "answers": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "properties": {
+                          "P1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "P2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "P3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "P4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "P5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "P6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "P7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "N7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G8": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G9": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G10": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G11": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G12": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G13": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G14": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G15": { "minimum": 1, "maximum": 7, "type": "integer" },
+                          "G16": { "minimum": 1, "maximum": 7, "type": "integer" }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": ["schemaVersion", "mode", "expectedRevision"],
+                    "properties": {
+                      "schemaVersion": { "type": "string", "enum": ["1"] },
+                      "mode": { "type": "string", "enum": ["BYPASS"] },
+                      "expectedRevision": { "minimum": 1, "type": "integer" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "definition", "assessment"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "definition": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["title", "instruction", "anchors", "items"],
+                      "properties": {
+                        "title": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "instruction": { "minLength": 1, "maxLength": 300, "type": "string" },
+                        "anchors": {
+                          "minItems": 7,
+                          "maxItems": 7,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["score", "label"],
+                            "properties": {
+                              "score": { "minimum": 1, "maximum": 7, "type": "integer" },
+                              "label": { "minLength": 1, "maxLength": 50, "type": "string" }
+                            }
+                          }
+                        },
+                        "items": {
+                          "minItems": 30,
+                          "maxItems": 30,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["id", "subscale", "text"],
+                            "properties": {
+                              "id": {
+                                "pattern": "^(P[1-7]|N[1-7]|G(?:[1-9]|1[0-6]))$",
+                                "type": "string"
+                              },
+                              "subscale": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["POSITIVE"] },
+                                  { "type": "string", "enum": ["NEGATIVE"] },
+                                  { "type": "string", "enum": ["GENERAL"] }
+                                ]
+                              },
+                              "text": { "minLength": 1, "maxLength": 200, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "assessment": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "researchCaseId",
+                        "status",
+                        "answers",
+                        "calculation",
+                        "instrumentPin",
+                        "createdByUserId",
+                        "updatedByUserId",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "researchCaseId": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["NOT_STARTED"] },
+                            { "type": "string", "enum": ["IN_PROGRESS"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["BYPASSED"] }
+                          ]
+                        },
+                        "answers": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "properties": {
+                                "P1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "P7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "N7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G1": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G2": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G3": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G4": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G5": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G6": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G7": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G8": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G9": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G10": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G11": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G12": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G13": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G14": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G15": { "minimum": 1, "maximum": 7, "type": "integer" },
+                                "G16": { "minimum": 1, "maximum": 7, "type": "integer" }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "calculation": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "calculationVersion",
+                                    "status",
+                                    "answeredCount",
+                                    "scores"
+                                  ],
+                                  "properties": {
+                                    "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                    "status": { "type": "string", "enum": ["INCOMPLETE"] },
+                                    "answeredCount": {
+                                      "minimum": 0,
+                                      "maximum": 29,
+                                      "type": "integer"
+                                    },
+                                    "scores": { "type": "null" }
+                                  }
+                                },
+                                {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "calculationVersion",
+                                    "status",
+                                    "answeredCount",
+                                    "scores"
+                                  ],
+                                  "properties": {
+                                    "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                                    "status": { "type": "string", "enum": ["COMPLETE"] },
+                                    "answeredCount": { "type": "number", "enum": [30] },
+                                    "scores": {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": ["positive", "negative", "general", "total"],
+                                      "properties": {
+                                        "positive": {
+                                          "minimum": 7,
+                                          "maximum": 49,
+                                          "type": "integer"
+                                        },
+                                        "negative": {
+                                          "minimum": 7,
+                                          "maximum": 49,
+                                          "type": "integer"
+                                        },
+                                        "general": {
+                                          "minimum": 16,
+                                          "maximum": 112,
+                                          "type": "integer"
+                                        },
+                                        "total": {
+                                          "minimum": 30,
+                                          "maximum": 210,
+                                          "type": "integer"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "instrumentPin": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "instrumentId",
+                            "instrumentVersion",
+                            "schemaVersion",
+                            "calculationVersion",
+                            "sourceReference",
+                            "reviewReference"
+                          ],
+                          "properties": {
+                            "instrumentId": { "type": "string", "enum": ["PANSS_30"] },
+                            "instrumentVersion": {
+                              "type": "string",
+                              "enum": ["KAY-OPLER-FISZBEIN-1987"]
+                            },
+                            "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "calculationVersion": { "type": "string", "enum": ["1.0.0"] },
+                            "sourceReference": {
+                              "type": "string",
+                              "enum": ["https://doi.org/10.1093/schbul/13.2.261"]
+                            },
+                            "reviewReference": {
+                              "type": "string",
+                              "enum": ["ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW"]
+                            }
+                          }
+                        },
+                        "createdByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedByUserId": {
+                          "anyOf": [
+                            {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "updatedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

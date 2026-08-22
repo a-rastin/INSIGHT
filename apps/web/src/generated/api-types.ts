@@ -324,6 +324,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/panss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getPanssAssessment"];
+    put: operations["savePanssAssessment"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2503,6 +2519,352 @@ export interface operations {
                 calculationVersion: "1.0.0";
                 /** @enum {string} */
                 sourceReference: "https://doi.org/10.1176/appi.books.9780890425787.x02_Schizophrenia_Spectrum";
+                /** @enum {string} */
+                reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW";
+              };
+              createdByUserId: string | null;
+              updatedByUserId: string | null;
+              createdAt: string | null;
+              updatedAt: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getPanssAssessment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            /** insight.panss-definition.v1 */
+            definition: {
+              title: string;
+              instruction: string;
+              anchors: {
+                score: number;
+                label: string;
+              }[];
+              items: {
+                id: string;
+                subscale: "POSITIVE" | "NEGATIVE" | "GENERAL";
+                text: string;
+              }[];
+            };
+            assessment: {
+              researchCaseId: string;
+              status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+              answers: {
+                P1?: number;
+                P2?: number;
+                P3?: number;
+                P4?: number;
+                P5?: number;
+                P6?: number;
+                P7?: number;
+                N1?: number;
+                N2?: number;
+                N3?: number;
+                N4?: number;
+                N5?: number;
+                N6?: number;
+                N7?: number;
+                G1?: number;
+                G2?: number;
+                G3?: number;
+                G4?: number;
+                G5?: number;
+                G6?: number;
+                G7?: number;
+                G8?: number;
+                G9?: number;
+                G10?: number;
+                G11?: number;
+                G12?: number;
+                G13?: number;
+                G14?: number;
+                G15?: number;
+                G16?: number;
+              } | null;
+              calculation:
+                | (
+                    | {
+                        /** @enum {string} */
+                        calculationVersion: "1.0.0";
+                        /** @enum {string} */
+                        status: "INCOMPLETE";
+                        answeredCount: number;
+                        scores: null;
+                      }
+                    | {
+                        /** @enum {string} */
+                        calculationVersion: "1.0.0";
+                        /** @enum {string} */
+                        status: "COMPLETE";
+                        /** @enum {number} */
+                        answeredCount: 30;
+                        scores: {
+                          positive: number;
+                          negative: number;
+                          general: number;
+                          total: number;
+                        };
+                      }
+                  )
+                | null;
+              instrumentPin: {
+                /** @enum {string} */
+                instrumentId: "PANSS_30";
+                /** @enum {string} */
+                instrumentVersion: "KAY-OPLER-FISZBEIN-1987";
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                /** @enum {string} */
+                sourceReference: "https://doi.org/10.1093/schbul/13.2.261";
+                /** @enum {string} */
+                reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW";
+              };
+              createdByUserId: string | null;
+              updatedByUserId: string | null;
+              createdAt: string | null;
+              updatedAt: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  savePanssAssessment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json":
+          | {
+              /** @enum {string} */
+              schemaVersion: "1";
+              mode: "SAVE" | "COMPLETE";
+              expectedRevision: number;
+              answers: {
+                P1?: number;
+                P2?: number;
+                P3?: number;
+                P4?: number;
+                P5?: number;
+                P6?: number;
+                P7?: number;
+                N1?: number;
+                N2?: number;
+                N3?: number;
+                N4?: number;
+                N5?: number;
+                N6?: number;
+                N7?: number;
+                G1?: number;
+                G2?: number;
+                G3?: number;
+                G4?: number;
+                G5?: number;
+                G6?: number;
+                G7?: number;
+                G8?: number;
+                G9?: number;
+                G10?: number;
+                G11?: number;
+                G12?: number;
+                G13?: number;
+                G14?: number;
+                G15?: number;
+                G16?: number;
+              };
+            }
+          | {
+              /** @enum {string} */
+              schemaVersion: "1";
+              /** @enum {string} */
+              mode: "BYPASS";
+              expectedRevision: number;
+            };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            definition: {
+              title: string;
+              instruction: string;
+              anchors: {
+                score: number;
+                label: string;
+              }[];
+              items: {
+                id: string;
+                subscale: "POSITIVE" | "NEGATIVE" | "GENERAL";
+                text: string;
+              }[];
+            };
+            assessment: {
+              researchCaseId: string;
+              status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+              answers: {
+                P1?: number;
+                P2?: number;
+                P3?: number;
+                P4?: number;
+                P5?: number;
+                P6?: number;
+                P7?: number;
+                N1?: number;
+                N2?: number;
+                N3?: number;
+                N4?: number;
+                N5?: number;
+                N6?: number;
+                N7?: number;
+                G1?: number;
+                G2?: number;
+                G3?: number;
+                G4?: number;
+                G5?: number;
+                G6?: number;
+                G7?: number;
+                G8?: number;
+                G9?: number;
+                G10?: number;
+                G11?: number;
+                G12?: number;
+                G13?: number;
+                G14?: number;
+                G15?: number;
+                G16?: number;
+              } | null;
+              calculation:
+                | (
+                    | {
+                        /** @enum {string} */
+                        calculationVersion: "1.0.0";
+                        /** @enum {string} */
+                        status: "INCOMPLETE";
+                        answeredCount: number;
+                        scores: null;
+                      }
+                    | {
+                        /** @enum {string} */
+                        calculationVersion: "1.0.0";
+                        /** @enum {string} */
+                        status: "COMPLETE";
+                        /** @enum {number} */
+                        answeredCount: 30;
+                        scores: {
+                          positive: number;
+                          negative: number;
+                          general: number;
+                          total: number;
+                        };
+                      }
+                  )
+                | null;
+              instrumentPin: {
+                /** @enum {string} */
+                instrumentId: "PANSS_30";
+                /** @enum {string} */
+                instrumentVersion: "KAY-OPLER-FISZBEIN-1987";
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                /** @enum {string} */
+                calculationVersion: "1.0.0";
+                /** @enum {string} */
+                sourceReference: "https://doi.org/10.1093/schbul/13.2.261";
                 /** @enum {string} */
                 reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW";
               };

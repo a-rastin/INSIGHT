@@ -806,6 +806,93 @@ export const migrations: readonly Migration[] = Object.freeze([
       EXECUTE FUNCTION insight.protect_dsm5tr_write();
     `,
   },
+  {
+    version: 11,
+    name: "panss_assessment",
+    sql: `
+      CREATE TABLE insight.panss_assessments (
+        research_case_id uuid PRIMARY KEY
+          REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        status insight.assessment_status NOT NULL CHECK (
+          status IN ('IN_PROGRESS', 'COMPLETED', 'BYPASSED')
+        ),
+        answers jsonb,
+        calculation_result jsonb,
+        instrument_id text NOT NULL CHECK (instrument_id = 'PANSS_30'),
+        instrument_version text NOT NULL CHECK (
+          instrument_version = 'KAY-OPLER-FISZBEIN-1987'
+        ),
+        schema_version text NOT NULL CHECK (schema_version = '1.0.0'),
+        calculation_version text CHECK (calculation_version = '1.0.0'),
+        source_reference text NOT NULL,
+        review_reference text NOT NULL,
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (answers IS NULL OR jsonb_typeof(answers) = 'object'),
+        CHECK (calculation_result IS NULL OR jsonb_typeof(calculation_result) = 'object'),
+        CHECK (
+          (status = 'BYPASSED'
+            AND answers IS NULL
+            AND calculation_result IS NULL
+            AND calculation_version IS NULL)
+          OR
+          (status = 'IN_PROGRESS'
+            AND answers IS NOT NULL
+            AND calculation_result->>'status' = 'INCOMPLETE'
+            AND calculation_result->'scores' = 'null'::jsonb
+            AND calculation_version IS NOT NULL)
+          OR
+          (status = 'COMPLETED'
+            AND answers IS NOT NULL
+            AND calculation_result->>'status' = 'COMPLETE'
+            AND jsonb_typeof(calculation_result->'scores') = 'object'
+            AND calculation_version IS NOT NULL)
+        )
+      );
+
+      INSERT INTO insight.panss_assessments (
+        research_case_id, status, instrument_id, instrument_version, schema_version,
+        source_reference, review_reference, created_by_user_id, updated_by_user_id,
+        created_at, updated_at
+      )
+      SELECT research_case_id, 'BYPASSED', 'PANSS_30', 'KAY-OPLER-FISZBEIN-1987',
+             '1.0.0', 'https://doi.org/10.1093/schbul/13.2.261',
+             'ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW',
+             updated_by_user_id, updated_by_user_id, updated_at, updated_at
+      FROM insight.research_case_assessments
+      WHERE assessment_type = 'PANSS' AND status = 'BYPASSED';
+
+      UPDATE insight.research_case_assessments
+      SET status = 'NOT_STARTED'
+      WHERE assessment_type = 'PANSS' AND status <> 'BYPASSED';
+
+      CREATE FUNCTION insight.protect_panss_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.panss_write', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'PANSS assessment data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+
+      CREATE TRIGGER panss_assessments_service_owned
+      BEFORE INSERT OR UPDATE ON insight.panss_assessments
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_panss_write();
+
+      CREATE TRIGGER panss_summary_service_owned
+      BEFORE UPDATE ON insight.research_case_assessments
+      FOR EACH ROW
+      WHEN (OLD.assessment_type = 'PANSS' AND OLD.status IS DISTINCT FROM NEW.status)
+      EXECUTE FUNCTION insight.protect_panss_write();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

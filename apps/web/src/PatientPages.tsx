@@ -18,6 +18,7 @@ import {
   TextInput,
 } from "./components/primitives";
 import { Dsm5trAssessment } from "./Dsm5trAssessment";
+import { PanssAssessment } from "./PanssAssessment";
 import { apiClient } from "./generated/api-client";
 import type { operations } from "./generated/api-types";
 
@@ -458,6 +459,7 @@ export function PatientProfilePage({
         </ol>
       </nav>
       <Dsm5trAssessment patientId={patientId} csrfToken={csrfToken} />
+      <PanssAssessment patientId={patientId} csrfToken={csrfToken} />
     </div>
   );
 }

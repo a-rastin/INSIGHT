@@ -510,6 +510,207 @@ export function calculateDsm5tr(answers: Dsm5trAnswers): Dsm5trCalculation {
   };
 }
 
+export const PANSS_INSTRUMENT_PIN = Object.freeze({
+  instrumentId: "PANSS_30",
+  instrumentVersion: "KAY-OPLER-FISZBEIN-1987",
+  schemaVersion: "1.0.0",
+  calculationVersion: "1.0.0",
+  sourceReference: "https://doi.org/10.1093/schbul/13.2.261",
+  reviewReference: "ENGINEERING-BASELINE-2026-08-22-PENDING-CLINICAL-REVIEW",
+} as const);
+
+export const PANSS_ANCHORS = Object.freeze([
+  { score: 1, label: "Absent" },
+  { score: 2, label: "Minimal" },
+  { score: 3, label: "Mild" },
+  { score: 4, label: "Moderate" },
+  { score: 5, label: "Moderate severe" },
+  { score: 6, label: "Severe" },
+  { score: 7, label: "Extreme" },
+] as const);
+
+export const PANSS_ITEMS = Object.freeze([
+  { id: "P1", subscale: "POSITIVE", text: "Delusions" },
+  { id: "P2", subscale: "POSITIVE", text: "Conceptual disorganization" },
+  { id: "P3", subscale: "POSITIVE", text: "Hallucinatory behavior" },
+  { id: "P4", subscale: "POSITIVE", text: "Excitement" },
+  { id: "P5", subscale: "POSITIVE", text: "Grandiosity" },
+  { id: "P6", subscale: "POSITIVE", text: "Suspiciousness/persecution" },
+  { id: "P7", subscale: "POSITIVE", text: "Hostility" },
+  { id: "N1", subscale: "NEGATIVE", text: "Blunted affect" },
+  { id: "N2", subscale: "NEGATIVE", text: "Emotional withdrawal" },
+  { id: "N3", subscale: "NEGATIVE", text: "Poor rapport" },
+  { id: "N4", subscale: "NEGATIVE", text: "Passive/apathetic social withdrawal" },
+  { id: "N5", subscale: "NEGATIVE", text: "Difficulty in abstract thinking" },
+  { id: "N6", subscale: "NEGATIVE", text: "Lack of spontaneity and flow of conversation" },
+  { id: "N7", subscale: "NEGATIVE", text: "Stereotyped thinking" },
+  { id: "G1", subscale: "GENERAL", text: "Somatic concern" },
+  { id: "G2", subscale: "GENERAL", text: "Anxiety" },
+  { id: "G3", subscale: "GENERAL", text: "Guilt feelings" },
+  { id: "G4", subscale: "GENERAL", text: "Tension" },
+  { id: "G5", subscale: "GENERAL", text: "Mannerisms and posturing" },
+  { id: "G6", subscale: "GENERAL", text: "Depression" },
+  { id: "G7", subscale: "GENERAL", text: "Motor retardation" },
+  { id: "G8", subscale: "GENERAL", text: "Uncooperativeness" },
+  { id: "G9", subscale: "GENERAL", text: "Unusual thought content" },
+  { id: "G10", subscale: "GENERAL", text: "Disorientation" },
+  { id: "G11", subscale: "GENERAL", text: "Poor attention" },
+  { id: "G12", subscale: "GENERAL", text: "Lack of judgment and insight" },
+  { id: "G13", subscale: "GENERAL", text: "Disturbance of volition" },
+  { id: "G14", subscale: "GENERAL", text: "Poor impulse control" },
+  { id: "G15", subscale: "GENERAL", text: "Preoccupation" },
+  { id: "G16", subscale: "GENERAL", text: "Active social avoidance" },
+] as const);
+
+export type PanssItemId = (typeof PANSS_ITEMS)[number]["id"];
+export type PanssSubscale = (typeof PANSS_ITEMS)[number]["subscale"];
+
+export const PANSS_DEFINITION = Object.freeze({
+  title: "Positive and Negative Syndrome Scale (PANSS)",
+  instruction: "Rate every item from 1 (Absent) to 7 (Extreme).",
+  anchors: PANSS_ANCHORS,
+  items: PANSS_ITEMS,
+} as const);
+
+export const PanssDefinitionSchema = Type.Object(
+  {
+    title: Type.String({ minLength: 1, maxLength: 200 }),
+    instruction: Type.String({ minLength: 1, maxLength: 300 }),
+    anchors: Type.Array(
+      Type.Object(
+        {
+          score: Type.Integer({ minimum: 1, maximum: 7 }),
+          label: Type.String({ minLength: 1, maxLength: 50 }),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 7, maxItems: 7 },
+    ),
+    items: Type.Array(
+      Type.Object(
+        {
+          id: Type.String({ pattern: "^(P[1-7]|N[1-7]|G(?:[1-9]|1[0-6]))$" }),
+          subscale: Type.Union([
+            Type.Literal("POSITIVE"),
+            Type.Literal("NEGATIVE"),
+            Type.Literal("GENERAL"),
+          ]),
+          text: Type.String({ minLength: 1, maxLength: 200 }),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 30, maxItems: 30 },
+    ),
+  },
+  { $id: "insight.panss-definition.v1", additionalProperties: false },
+);
+
+const panssScore = () => Type.Optional(Type.Integer({ minimum: 1, maximum: 7 }));
+export const PanssAnswersSchema = Type.Object(
+  {
+    P1: panssScore(),
+    P2: panssScore(),
+    P3: panssScore(),
+    P4: panssScore(),
+    P5: panssScore(),
+    P6: panssScore(),
+    P7: panssScore(),
+    N1: panssScore(),
+    N2: panssScore(),
+    N3: panssScore(),
+    N4: panssScore(),
+    N5: panssScore(),
+    N6: panssScore(),
+    N7: panssScore(),
+    G1: panssScore(),
+    G2: panssScore(),
+    G3: panssScore(),
+    G4: panssScore(),
+    G5: panssScore(),
+    G6: panssScore(),
+    G7: panssScore(),
+    G8: panssScore(),
+    G9: panssScore(),
+    G10: panssScore(),
+    G11: panssScore(),
+    G12: panssScore(),
+    G13: panssScore(),
+    G14: panssScore(),
+    G15: panssScore(),
+    G16: panssScore(),
+  },
+  { $id: "insight.panss-answers.v1", additionalProperties: false },
+);
+export type PanssAnswers = Static<typeof PanssAnswersSchema>;
+
+const completePanssScoresSchema = Type.Object(
+  {
+    positive: Type.Integer({ minimum: 7, maximum: 49 }),
+    negative: Type.Integer({ minimum: 7, maximum: 49 }),
+    general: Type.Integer({ minimum: 16, maximum: 112 }),
+    total: Type.Integer({ minimum: 30, maximum: 210 }),
+  },
+  { additionalProperties: false },
+);
+
+export const PanssCalculationSchema = Type.Union(
+  [
+    Type.Object(
+      {
+        calculationVersion: Type.Literal(PANSS_INSTRUMENT_PIN.calculationVersion),
+        status: Type.Literal("INCOMPLETE"),
+        answeredCount: Type.Integer({ minimum: 0, maximum: 29 }),
+        scores: Type.Null(),
+      },
+      { additionalProperties: false },
+    ),
+    Type.Object(
+      {
+        calculationVersion: Type.Literal(PANSS_INSTRUMENT_PIN.calculationVersion),
+        status: Type.Literal("COMPLETE"),
+        answeredCount: Type.Literal(30),
+        scores: completePanssScoresSchema,
+      },
+      { additionalProperties: false },
+    ),
+  ],
+  { $id: "insight.panss-calculation.v1" },
+);
+export type PanssCalculation = Static<typeof PanssCalculationSchema>;
+
+export function calculatePanss(answers: PanssAnswers): PanssCalculation {
+  const answered = PANSS_ITEMS.filter(({ id }) => answers[id] !== undefined);
+  for (const { id } of answered) {
+    const value = answers[id]!;
+    if (!Number.isInteger(value) || value < 1 || value > 7) {
+      throw new RangeError(`${id} must be an integer from 1 to 7.`);
+    }
+  }
+  if (answered.length !== PANSS_ITEMS.length) {
+    return {
+      calculationVersion: PANSS_INSTRUMENT_PIN.calculationVersion,
+      status: "INCOMPLETE",
+      answeredCount: answered.length,
+      scores: null,
+    };
+  }
+
+  const sum = (subscale: PanssSubscale) =>
+    PANSS_ITEMS.filter((item) => item.subscale === subscale).reduce(
+      (total, { id }) => total + answers[id]!,
+      0,
+    );
+  const positive = sum("POSITIVE");
+  const negative = sum("NEGATIVE");
+  const general = sum("GENERAL");
+  return {
+    calculationVersion: PANSS_INSTRUMENT_PIN.calculationVersion,
+    status: "COMPLETE",
+    answeredCount: PANSS_ITEMS.length,
+    scores: { positive, negative, general, total: positive + negative + general },
+  };
+}
+
 function serializeJson(value: unknown, ancestors: Set<object>): string {
   if (value === null || typeof value === "boolean" || typeof value === "string") {
     return JSON.stringify(value);

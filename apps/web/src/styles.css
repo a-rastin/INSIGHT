@@ -557,6 +557,61 @@ p {
   border-radius: var(--radius-md);
 }
 
+.panss-subscale {
+  margin: 0;
+}
+
+.panss-subscale > legend {
+  padding: 0 var(--space-2);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.panss-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 280px);
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 44px;
+}
+
+.panss-item select {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.panss-scores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.panss-scores > div {
+  padding: var(--space-3);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.panss-scores dt {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.panss-scores dd {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -899,7 +954,12 @@ tbody tr:last-child td {
   }
 
   .patient-form,
-  .profile-grid {
+  .profile-grid,
+  .panss-scores {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panss-item {
     grid-template-columns: minmax(0, 1fr);
   }
 
