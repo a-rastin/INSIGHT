@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:
 import type { Pool, PoolClient, QueryResult, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
+import { invalidateResearchCaseInputsInTransaction } from "./workflow.js";
 
 export type PatientSex = "MALE" | "FEMALE";
 export type IdentifierNormalization = "NFKC" | "NFKC_UPPERCASE" | "NFKC_LOWERCASE";
@@ -229,6 +230,14 @@ export async function createOrOverwritePatient(
       before = decryptDemographics(existing, existingKey);
       assertBirthBeforeCase(demographics.dateOfBirth, existing.started_at);
       row = await updatePatient(client, existing.id, actor.id, encrypted, demographics.sex, now);
+      await invalidateResearchCaseInputsInTransaction(
+        client,
+        actor,
+        existing.id,
+        "Patient demographics changed.",
+        requestId,
+        now,
+      );
     } else {
       created = true;
       row = await insertPatientAndCase(
@@ -280,6 +289,14 @@ export async function savePatientDemographics(
     const identifier = decryptField(existing, "official_identifier", existingKey);
     const encrypted = encryptPatient(identifier, demographics, key);
     const row = await updatePatient(client, patientId, actor.id, encrypted, demographics.sex, now);
+    await invalidateResearchCaseInputsInTransaction(
+      client,
+      actor,
+      patientId,
+      "Patient demographics changed.",
+      requestId,
+      now,
+    );
     await auditPatientSave(
       client,
       "PATIENT_DEMOGRAPHICS_SAVED",

@@ -2729,6 +2729,406 @@
           }
         }
       }
+    },
+    "/api/v1/patients/{patientId}/research-case": {
+      "get": {
+        "operationId": "getResearchCaseWorkflow",
+        "tags": ["research-cases"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "researchCase"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "researchCase": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "state",
+                        "revision",
+                        "inputRevision",
+                        "currentStep",
+                        "allowedCommands",
+                        "modelAllowedTools",
+                        "lastInputInvalidation"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "DATA_COLLECTION",
+                            "NORMALIZING_MEDICATIONS",
+                            "IMPUTING_BYPASSED_ASSESSMENTS",
+                            "ROUTING_BN",
+                            "GENERATING_CPTS",
+                            "RUNNING_BN",
+                            "CHECKING_PRIMARY_DDI",
+                            "GENERATING_PRIMARY_PLAN",
+                            "CLINICIAN_REVIEW",
+                            "RECHECKING_FINAL_DDI",
+                            "READY_TO_FINALIZE",
+                            "FINALIZED",
+                            "REVISION_DRAFT",
+                            "DELETED"
+                          ]
+                        },
+                        "revision": { "type": "integer", "minimum": 1 },
+                        "inputRevision": { "type": "integer", "minimum": 1 },
+                        "currentStep": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["ordinal", "label"],
+                          "properties": {
+                            "ordinal": { "type": "integer", "minimum": 1, "maximum": 10 },
+                            "label": { "type": "string", "minLength": 1, "maxLength": 100 }
+                          }
+                        },
+                        "allowedCommands": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "BEGIN_NORMALIZATION",
+                              "COMPLETE_MEDICATION_NORMALIZATION",
+                              "COMPLETE_ASSESSMENT_IMPUTATION",
+                              "COMPLETE_BN_ROUTING",
+                              "COMPLETE_CPT_GENERATION",
+                              "COMPLETE_BN_INFERENCE",
+                              "COMPLETE_PRIMARY_DDI",
+                              "COMPLETE_PRIMARY_PLAN",
+                              "REQUEST_FINAL_DDI_RECHECK",
+                              "CONFIRM_UNCHANGED_REGIMEN",
+                              "COMPLETE_FINAL_DDI",
+                              "FINALIZE",
+                              "CREATE_REVISION_DRAFT",
+                              "REQUEST_REVISION_DDI_RECHECK",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "modelAllowedTools": {
+                          "type": "array",
+                          "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+                        },
+                        "lastInputInvalidation": {
+                          "anyOf": [
+                            { "type": "null" },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["at", "reason"],
+                              "properties": {
+                                "at": { "type": "string", "format": "date-time" },
+                                "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/patients/{patientId}/research-case/transitions": {
+      "post": {
+        "operationId": "transitionResearchCase",
+        "tags": ["research-cases"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["schemaVersion", "command", "expectedRevision"],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "command": {
+                    "type": "string",
+                    "enum": [
+                      "BEGIN_NORMALIZATION",
+                      "COMPLETE_MEDICATION_NORMALIZATION",
+                      "COMPLETE_ASSESSMENT_IMPUTATION",
+                      "COMPLETE_BN_ROUTING",
+                      "COMPLETE_CPT_GENERATION",
+                      "COMPLETE_BN_INFERENCE",
+                      "COMPLETE_PRIMARY_DDI",
+                      "COMPLETE_PRIMARY_PLAN",
+                      "REQUEST_FINAL_DDI_RECHECK",
+                      "CONFIRM_UNCHANGED_REGIMEN",
+                      "COMPLETE_FINAL_DDI",
+                      "FINALIZE",
+                      "CREATE_REVISION_DRAFT",
+                      "REQUEST_REVISION_DDI_RECHECK",
+                      "DELETE"
+                    ]
+                  },
+                  "expectedRevision": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "researchCase"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "researchCase": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "state",
+                        "revision",
+                        "inputRevision",
+                        "currentStep",
+                        "allowedCommands",
+                        "modelAllowedTools",
+                        "lastInputInvalidation"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "DATA_COLLECTION",
+                            "NORMALIZING_MEDICATIONS",
+                            "IMPUTING_BYPASSED_ASSESSMENTS",
+                            "ROUTING_BN",
+                            "GENERATING_CPTS",
+                            "RUNNING_BN",
+                            "CHECKING_PRIMARY_DDI",
+                            "GENERATING_PRIMARY_PLAN",
+                            "CLINICIAN_REVIEW",
+                            "RECHECKING_FINAL_DDI",
+                            "READY_TO_FINALIZE",
+                            "FINALIZED",
+                            "REVISION_DRAFT",
+                            "DELETED"
+                          ]
+                        },
+                        "revision": { "type": "integer", "minimum": 1 },
+                        "inputRevision": { "type": "integer", "minimum": 1 },
+                        "currentStep": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["ordinal", "label"],
+                          "properties": {
+                            "ordinal": { "type": "integer", "minimum": 1, "maximum": 10 },
+                            "label": { "type": "string", "minLength": 1, "maxLength": 100 }
+                          }
+                        },
+                        "allowedCommands": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "BEGIN_NORMALIZATION",
+                              "COMPLETE_MEDICATION_NORMALIZATION",
+                              "COMPLETE_ASSESSMENT_IMPUTATION",
+                              "COMPLETE_BN_ROUTING",
+                              "COMPLETE_CPT_GENERATION",
+                              "COMPLETE_BN_INFERENCE",
+                              "COMPLETE_PRIMARY_DDI",
+                              "COMPLETE_PRIMARY_PLAN",
+                              "REQUEST_FINAL_DDI_RECHECK",
+                              "CONFIRM_UNCHANGED_REGIMEN",
+                              "COMPLETE_FINAL_DDI",
+                              "FINALIZE",
+                              "CREATE_REVISION_DRAFT",
+                              "REQUEST_REVISION_DDI_RECHECK",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "modelAllowedTools": {
+                          "type": "array",
+                          "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+                        },
+                        "lastInputInvalidation": {
+                          "anyOf": [
+                            { "type": "null" },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["at", "reason"],
+                              "properties": {
+                                "at": { "type": "string", "format": "date-time" },
+                                "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

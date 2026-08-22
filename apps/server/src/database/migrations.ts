@@ -477,6 +477,179 @@ export const migrations: readonly Migration[] = Object.freeze([
         ON insight.security_audit_events (subject_user_id, occurred_at, id);
     `,
   },
+  {
+    version: 8,
+    name: "research_case_workflow",
+    sql: `
+      CREATE TYPE insight.research_case_workflow_state AS ENUM (
+        'DATA_COLLECTION',
+        'NORMALIZING_MEDICATIONS',
+        'IMPUTING_BYPASSED_ASSESSMENTS',
+        'ROUTING_BN',
+        'GENERATING_CPTS',
+        'RUNNING_BN',
+        'CHECKING_PRIMARY_DDI',
+        'GENERATING_PRIMARY_PLAN',
+        'CLINICIAN_REVIEW',
+        'RECHECKING_FINAL_DDI',
+        'READY_TO_FINALIZE',
+        'FINALIZED',
+        'REVISION_DRAFT',
+        'DELETED'
+      );
+
+      CREATE TYPE insight.assessment_status AS ENUM (
+        'NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'BYPASSED'
+      );
+
+      ALTER TABLE insight.research_cases
+        ADD COLUMN workflow_state insight.research_case_workflow_state
+          NOT NULL DEFAULT 'DATA_COLLECTION',
+        ADD COLUMN workflow_revision bigint NOT NULL DEFAULT 1
+          CHECK (workflow_revision > 0),
+        ADD COLUMN input_revision bigint NOT NULL DEFAULT 1
+          CHECK (input_revision > 0),
+        ADD COLUMN last_input_invalidation_at timestamptz,
+        ADD COLUMN last_input_invalidation_reason text;
+
+      CREATE TABLE insight.research_case_assessments (
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        assessment_type text NOT NULL CHECK (
+          assessment_type IN ('DSM5TR', 'PANSS', 'CSSRS_RECENT')
+        ),
+        status insight.assessment_status NOT NULL DEFAULT 'NOT_STARTED',
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        PRIMARY KEY (research_case_id, assessment_type)
+      );
+
+      INSERT INTO insight.research_case_assessments
+        (research_case_id, assessment_type, updated_by_user_id, updated_at)
+      SELECT research_case.id, assessment_type, research_case.created_by_user_id,
+             research_case.created_at
+      FROM insight.research_cases research_case
+      CROSS JOIN unnest(ARRAY['DSM5TR', 'PANSS', 'CSSRS_RECENT']) AS assessment_type;
+
+      CREATE FUNCTION insight.initialize_research_case_assessments()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        INSERT INTO insight.research_case_assessments
+          (research_case_id, assessment_type, updated_by_user_id, updated_at)
+        SELECT NEW.id, assessment_type, NEW.created_by_user_id, NEW.created_at
+        FROM unnest(ARRAY['DSM5TR', 'PANSS', 'CSSRS_RECENT']) AS assessment_type;
+        RETURN NEW;
+      END;
+      $function$;
+
+      CREATE TRIGGER research_cases_initialize_assessments
+      AFTER INSERT ON insight.research_cases
+      FOR EACH ROW EXECUTE FUNCTION insight.initialize_research_case_assessments();
+
+      CREATE TABLE insight.research_case_domain_results (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        result_type text NOT NULL CHECK (result_type IN (
+          'DATA_COLLECTION_VALIDATED', 'MEDICATION_NORMALIZATION',
+          'ASSESSMENT_IMPUTATION', 'BN_ROUTING', 'CPT_SNAPSHOT',
+          'BN_INFERENCE', 'PRIMARY_DDI', 'PRIMARY_PLAN',
+          'REGIMEN_UNCHANGED', 'FINAL_DDI'
+        )),
+        status text NOT NULL CHECK (status IN ('SUCCEEDED', 'FAILED')),
+        workflow_revision bigint NOT NULL CHECK (workflow_revision > 0),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        result_reference text NOT NULL CHECK (
+          result_reference = btrim(result_reference)
+          AND result_reference <> ''
+          AND char_length(result_reference) <= 500
+        ),
+        provenance jsonb NOT NULL CHECK (jsonb_typeof(provenance) = 'object'),
+        recorded_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        invalidated_at timestamptz,
+        invalidated_by_user_id uuid REFERENCES insight.users(id),
+        invalidation_reason text,
+        CHECK (
+          (invalidated_at IS NULL AND invalidated_by_user_id IS NULL AND invalidation_reason IS NULL)
+          OR
+          (invalidated_at IS NOT NULL AND invalidated_by_user_id IS NOT NULL AND invalidation_reason IS NOT NULL)
+        )
+      );
+
+      CREATE INDEX research_case_domain_results_current_idx
+        ON insight.research_case_domain_results
+          (research_case_id, input_revision, result_type, recorded_at DESC, id DESC)
+        WHERE invalidated_at IS NULL;
+
+      CREATE FUNCTION insight.protect_research_case_domain_result()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.workflow_transition', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'research case domain results are service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+
+      CREATE TRIGGER research_case_domain_results_service_owned
+      BEFORE INSERT OR UPDATE ON insight.research_case_domain_results
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_research_case_domain_result();
+
+      CREATE TABLE insight.research_case_transition_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL,
+        patient_id uuid NOT NULL,
+        command text NOT NULL,
+        from_state insight.research_case_workflow_state NOT NULL,
+        to_state insight.research_case_workflow_state NOT NULL,
+        from_revision bigint NOT NULL CHECK (from_revision > 0),
+        to_revision bigint NOT NULL CHECK (to_revision = from_revision + 1),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        request_id uuid NOT NULL,
+        domain_result_ids uuid[] NOT NULL DEFAULT '{}',
+        provenance jsonb NOT NULL CHECK (jsonb_typeof(provenance) = 'object'),
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE INDEX research_case_transition_events_case_idx
+        ON insight.research_case_transition_events
+          (research_case_id, to_revision, occurred_at, id);
+
+      CREATE TRIGGER research_case_transition_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.research_case_transition_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+
+      CREATE FUNCTION insight.protect_research_case_workflow_state()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF (
+          OLD.workflow_state IS DISTINCT FROM NEW.workflow_state
+          OR OLD.workflow_revision IS DISTINCT FROM NEW.workflow_revision
+          OR OLD.input_revision IS DISTINCT FROM NEW.input_revision
+          OR OLD.last_input_invalidation_at IS DISTINCT FROM NEW.last_input_invalidation_at
+          OR OLD.last_input_invalidation_reason IS DISTINCT FROM NEW.last_input_invalidation_reason
+        ) AND current_setting('insight.workflow_transition', true) IS DISTINCT FROM 'allowed'
+        THEN
+          RAISE EXCEPTION 'research case workflow state is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+
+      CREATE TRIGGER research_cases_protect_workflow_state
+      BEFORE UPDATE ON insight.research_cases
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_research_case_workflow_state();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

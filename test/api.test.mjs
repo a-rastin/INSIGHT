@@ -166,6 +166,8 @@ test("published OpenAPI matches the checked-in contract", async (t) => {
   assert.ok(published.paths["/api/v1/admin/deployment-evidence/{version}/activate"]);
   assert.ok(published.paths["/api/v1/patients"]);
   assert.ok(published.paths["/api/v1/patients/{patientId}"]);
+  assert.ok(published.paths["/api/v1/patients/{patientId}/research-case"]);
+  assert.ok(published.paths["/api/v1/patients/{patientId}/research-case/transitions"]);
   assert.doesNotMatch(JSON.stringify(published.paths), /encounter|visit/i);
   assert.equal(published.paths["/api/v1/signup"], undefined);
   assert.equal(published.paths["/api/v1/recover-password"], undefined);

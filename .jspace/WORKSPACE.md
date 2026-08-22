@@ -1,11 +1,13 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Deliver psychiatrist-only shared Patient Registry UI and verified role/privacy behavior.
+Implement and commit persisted Research Case state machine with revisioned audited transactional transitions and exhaustive persistence tests.
 
 ## Core
-- canonical identity — configured normalized identifier serializes to one encrypted UUID Patient and one Research Case
+- server authority — only transition commands mutate persisted Research Case state under optimistic revision checks
+- guarded audit — domain-result prerequisites, invalidation, revision increment, and provenance commit atomically
 - contract lockstep — route schemas generate published OpenAPI and browser types checked in tests
+- canonical identity — configured normalized identifier serializes to one encrypted UUID Patient and one Research Case
 - safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
 
 ## Verified
@@ -108,8 +110,9 @@ Deliver psychiatrist-only shared Patient Registry UI and verified role/privacy b
 - ✓97 Patient packet and repository regressions verified. — verified by: Prettier, ESLint, TypeScript, OpenAPI drift, artifact scan, production builds, 7 server unit files, 12 web tests, 25 PostgreSQL integration tests, shell syntax, Compose validation, and clean diff checks.
 - ✓98 Patient and Research Case packet committed as b17de14. — verified by: git log and status; coverage: all 16 staged packet files committed and no uncommitted product changes remain.
 - ✓99 Shared Patient Registry backend/UI and focused verification pass. — verified by: Verifier: Prettier, targeted ESLint, TypeScript, 26 unit/component tests, PostgreSQL 16 Patient integration, OpenAPI drift check, production build, three-role Playwright E2E, and artifact scan; coverage: shared list/profile/create/search, duplicate overwrite, age display, all requested states, both Psychiatrist contexts, Administrator UI/API denial, keyboard submit/search, URL/log privacy, and generated contracts.
+- ✓100 Research Case workflow state machine passes static, contract, unit, browser-boundary, PostgreSQL transactional, and restart-persistence verification. — verified by: Prettier, ESLint, TypeScript, 8 server unit files, 19 web tests, OpenAPI drift check, and focused PostgreSQL 16 integration covering the full transition table, stale revisions, illegal skips, forged writes, BYPASSED assessments, invalidation, audit provenance, and restart persistence.
 
 ## Open
 
 ## Next
-Review final diff, commit scoped files, and report absent root Plan.md.
+Review the final scoped diff, ship the implementation files, commit the packet, and remove the temporary PostgreSQL container.

@@ -15,6 +15,18 @@ import {
   type PatientInput,
   type PatientRecord,
 } from "./patients.js";
+import {
+  WORKFLOW_COMMANDS,
+  WORKFLOW_STATES,
+  RequiredDomainResultError,
+  ResearchCaseNotFoundError,
+  StaleResearchCaseRevisionError,
+  WorkflowTransitionError,
+  getResearchCaseWorkflow,
+  transitionResearchCase,
+  type ResearchCaseWorkflow,
+  type WorkflowCommand,
+} from "./workflow.js";
 
 interface PatientHttpOptions {
   readonly pool: Pool;
@@ -27,6 +39,12 @@ interface VersionedPatientInput extends PatientInput {
 
 interface VersionedDemographics extends PatientDemographics {
   readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
+}
+
+interface VersionedTransitionCommand {
+  readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
+  readonly command: WorkflowCommand;
+  readonly expectedRevision: number;
 }
 
 const UUID_PATTERN =
@@ -167,12 +185,86 @@ const demographicsBodySchema = {
   },
 } as const;
 
+const transitionBodySchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["schemaVersion", "command", "expectedRevision"],
+  properties: {
+    schemaVersion: { type: "string", const: CURRENT_SCHEMA_VERSION },
+    command: { type: "string", enum: WORKFLOW_COMMANDS },
+    expectedRevision: { type: "integer", minimum: 1 },
+  },
+} as const;
+
+const workflowSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "id",
+    "state",
+    "revision",
+    "inputRevision",
+    "currentStep",
+    "allowedCommands",
+    "modelAllowedTools",
+    "lastInputInvalidation",
+  ],
+  properties: {
+    id: { type: "string", pattern: UUID_PATTERN },
+    state: { type: "string", enum: WORKFLOW_STATES },
+    revision: { type: "integer", minimum: 1 },
+    inputRevision: { type: "integer", minimum: 1 },
+    currentStep: {
+      type: "object",
+      additionalProperties: false,
+      required: ["ordinal", "label"],
+      properties: {
+        ordinal: { type: "integer", minimum: 1, maximum: 10 },
+        label: { type: "string", minLength: 1, maxLength: 100 },
+      },
+    },
+    allowedCommands: { type: "array", items: { type: "string", enum: WORKFLOW_COMMANDS } },
+    modelAllowedTools: {
+      type: "array",
+      items: { type: "string", minLength: 1, maxLength: 100 },
+    },
+    lastInputInvalidation: {
+      anyOf: [
+        { type: "null" },
+        {
+          type: "object",
+          additionalProperties: false,
+          required: ["at", "reason"],
+          properties: {
+            at: { type: "string", format: "date-time" },
+            reason: { type: "string", minLength: 1, maxLength: 500 },
+          },
+        },
+      ],
+    },
+  },
+} as const;
+
+const workflowResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["schemaVersion", "researchCase"],
+  properties: {
+    schemaVersion: { type: "string", const: CURRENT_SCHEMA_VERSION },
+    researchCase: workflowSchema,
+  },
+} as const;
+
 function body(patient: PatientRecord) {
   return { schemaVersion: CURRENT_SCHEMA_VERSION, patient };
 }
 
 function listBody(patients: readonly PatientRecord[]) {
   return { schemaVersion: CURRENT_SCHEMA_VERSION, patients };
+}
+
+function workflowBody(researchCase: ResearchCaseWorkflow) {
+  return { schemaVersion: CURRENT_SCHEMA_VERSION, researchCase };
 }
 
 function apiError(
@@ -234,6 +326,58 @@ export const patientRoutes =
           return reply.send(body(patient));
         } catch (error) {
           return patientError(error, request, reply);
+        }
+      },
+    );
+
+    api.get<{ Params: { patientId: string } }>(
+      "/patients/:patientId/research-case",
+      {
+        schema: {
+          operationId: "getResearchCaseWorkflow",
+          tags: ["research-cases"],
+          params: patientParamsSchema,
+          response: response(workflowResponseSchema),
+        },
+      },
+      async (request, reply) => {
+        try {
+          const researchCase = await getResearchCaseWorkflow(
+            options.pool,
+            actor(getSession(request)!),
+            request.params.patientId,
+          );
+          return reply.send(workflowBody(researchCase));
+        } catch (error) {
+          return workflowError(error, request, reply);
+        }
+      },
+    );
+
+    api.post<{ Params: { patientId: string }; Body: VersionedTransitionCommand }>(
+      "/patients/:patientId/research-case/transitions",
+      {
+        schema: {
+          operationId: "transitionResearchCase",
+          tags: ["research-cases"],
+          params: patientParamsSchema,
+          body: transitionBodySchema,
+          response: response(workflowResponseSchema),
+        },
+      },
+      async (request, reply) => {
+        try {
+          const researchCase = await transitionResearchCase(
+            options.pool,
+            actor(getSession(request)!),
+            request.params.patientId,
+            request.body.command,
+            request.body.expectedRevision,
+            request.id,
+          );
+          return reply.send(workflowBody(researchCase));
+        } catch (error) {
+          return workflowError(error, request, reply);
         }
       },
     );
@@ -304,6 +448,48 @@ function patientError(error: unknown, request: FastifyRequest, reply: FastifyRep
     return reply
       .status(404)
       .send(apiError(request, 404, "PATIENT_NOT_FOUND", "Patient was not found."));
+  }
+  throw error;
+}
+
+function workflowError(error: unknown, request: FastifyRequest, reply: FastifyReply) {
+  if (error instanceof ResearchCaseNotFoundError) {
+    return reply
+      .status(404)
+      .send(apiError(request, 404, "PATIENT_NOT_FOUND", "Patient was not found."));
+  }
+  if (error instanceof StaleResearchCaseRevisionError) {
+    return reply.status(409).send({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      error: {
+        status: 409,
+        code: "STALE_RESEARCH_CASE_REVISION",
+        message: "Research Case revision is stale.",
+        requestId: request.id,
+      },
+    });
+  }
+  if (error instanceof RequiredDomainResultError) {
+    return reply.status(409).send({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      error: {
+        status: 409,
+        code: "REQUIRED_DOMAIN_RESULT_MISSING",
+        message: "Required workflow result is unavailable.",
+        requestId: request.id,
+      },
+    });
+  }
+  if (error instanceof WorkflowTransitionError) {
+    return reply.status(409).send({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      error: {
+        status: 409,
+        code: "WORKFLOW_TRANSITION_NOT_ALLOWED",
+        message: "Workflow command is not allowed.",
+        requestId: request.id,
+      },
+    });
   }
   throw error;
 }

@@ -276,6 +276,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getResearchCaseWorkflow"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/patients/{patientId}/research-case/transitions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["transitionResearchCase"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1882,6 +1914,237 @@ export interface operations {
               createdAt: string;
               /** Format: date-time */
               updatedAt: string;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getResearchCaseWorkflow: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            researchCase: {
+              id: string;
+              /** @enum {string} */
+              state:
+                | "DATA_COLLECTION"
+                | "NORMALIZING_MEDICATIONS"
+                | "IMPUTING_BYPASSED_ASSESSMENTS"
+                | "ROUTING_BN"
+                | "GENERATING_CPTS"
+                | "RUNNING_BN"
+                | "CHECKING_PRIMARY_DDI"
+                | "GENERATING_PRIMARY_PLAN"
+                | "CLINICIAN_REVIEW"
+                | "RECHECKING_FINAL_DDI"
+                | "READY_TO_FINALIZE"
+                | "FINALIZED"
+                | "REVISION_DRAFT"
+                | "DELETED";
+              revision: number;
+              inputRevision: number;
+              currentStep: {
+                ordinal: number;
+                label: string;
+              };
+              allowedCommands: (
+                | "BEGIN_NORMALIZATION"
+                | "COMPLETE_MEDICATION_NORMALIZATION"
+                | "COMPLETE_ASSESSMENT_IMPUTATION"
+                | "COMPLETE_BN_ROUTING"
+                | "COMPLETE_CPT_GENERATION"
+                | "COMPLETE_BN_INFERENCE"
+                | "COMPLETE_PRIMARY_DDI"
+                | "COMPLETE_PRIMARY_PLAN"
+                | "REQUEST_FINAL_DDI_RECHECK"
+                | "CONFIRM_UNCHANGED_REGIMEN"
+                | "COMPLETE_FINAL_DDI"
+                | "FINALIZE"
+                | "CREATE_REVISION_DRAFT"
+                | "REQUEST_REVISION_DDI_RECHECK"
+                | "DELETE"
+              )[];
+              modelAllowedTools: string[];
+              lastInputInvalidation: null | {
+                /** Format: date-time */
+                at: string;
+                reason: string;
+              };
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  transitionResearchCase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          /** @enum {string} */
+          command:
+            | "BEGIN_NORMALIZATION"
+            | "COMPLETE_MEDICATION_NORMALIZATION"
+            | "COMPLETE_ASSESSMENT_IMPUTATION"
+            | "COMPLETE_BN_ROUTING"
+            | "COMPLETE_CPT_GENERATION"
+            | "COMPLETE_BN_INFERENCE"
+            | "COMPLETE_PRIMARY_DDI"
+            | "COMPLETE_PRIMARY_PLAN"
+            | "REQUEST_FINAL_DDI_RECHECK"
+            | "CONFIRM_UNCHANGED_REGIMEN"
+            | "COMPLETE_FINAL_DDI"
+            | "FINALIZE"
+            | "CREATE_REVISION_DRAFT"
+            | "REQUEST_REVISION_DDI_RECHECK"
+            | "DELETE";
+          expectedRevision: number;
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            researchCase: {
+              id: string;
+              /** @enum {string} */
+              state:
+                | "DATA_COLLECTION"
+                | "NORMALIZING_MEDICATIONS"
+                | "IMPUTING_BYPASSED_ASSESSMENTS"
+                | "ROUTING_BN"
+                | "GENERATING_CPTS"
+                | "RUNNING_BN"
+                | "CHECKING_PRIMARY_DDI"
+                | "GENERATING_PRIMARY_PLAN"
+                | "CLINICIAN_REVIEW"
+                | "RECHECKING_FINAL_DDI"
+                | "READY_TO_FINALIZE"
+                | "FINALIZED"
+                | "REVISION_DRAFT"
+                | "DELETED";
+              revision: number;
+              inputRevision: number;
+              currentStep: {
+                ordinal: number;
+                label: string;
+              };
+              allowedCommands: (
+                | "BEGIN_NORMALIZATION"
+                | "COMPLETE_MEDICATION_NORMALIZATION"
+                | "COMPLETE_ASSESSMENT_IMPUTATION"
+                | "COMPLETE_BN_ROUTING"
+                | "COMPLETE_CPT_GENERATION"
+                | "COMPLETE_BN_INFERENCE"
+                | "COMPLETE_PRIMARY_DDI"
+                | "COMPLETE_PRIMARY_PLAN"
+                | "REQUEST_FINAL_DDI_RECHECK"
+                | "CONFIRM_UNCHANGED_REGIMEN"
+                | "COMPLETE_FINAL_DDI"
+                | "FINALIZE"
+                | "CREATE_REVISION_DRAFT"
+                | "REQUEST_REVISION_DDI_RECHECK"
+                | "DELETE"
+              )[];
+              modelAllowedTools: string[];
+              lastInputInvalidation: null | {
+                /** Format: date-time */
+                at: string;
+                reason: string;
+              };
             };
           };
         };
