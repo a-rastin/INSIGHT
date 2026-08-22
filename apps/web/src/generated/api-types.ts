@@ -36,6 +36,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/deployment-evidence": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getDeploymentEvidence"];
+    put?: never;
+    post: operations["recordDeploymentEvidence"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/deployment-evidence/{version}/activate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["activateIdentifiedResearchMode"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/login": {
     parameters: {
       query?: never;
@@ -313,6 +345,304 @@ export interface operations {
               /** @enum {string} */
               worker: "ready";
             };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getDeploymentEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            /** @enum {string} */
+            identifiedMode: "DISABLED" | "ENABLED";
+            /** @enum {string} */
+            reason:
+              | "ACTIVE"
+              | "NO_EVIDENCE"
+              | "EVIDENCE_CHANGED"
+              | "APPROVAL_NOT_YET_VALID"
+              | "APPROVAL_EXPIRED";
+            evidence: {
+              version: number;
+              responsibleAuthority: string;
+              approvalBasis: string;
+              approvalReference: string;
+              /** Format: date-time */
+              approvalGrantedAt: string;
+              /** Format: date-time */
+              approvalExpiresAt: string;
+              /** @enum {string} */
+              environmentStatus: "SYNTHETIC_OR_DEIDENTIFIED" | "APPROVED_IDENTIFIED_RESEARCH";
+              securityControls: {
+                participantConsentOrWaiver: boolean;
+                administratorSeparation: boolean;
+                encryptionInTransit: boolean;
+                encryptionAtRest: boolean;
+                auditControls: boolean;
+                dataGovernanceRules: boolean;
+                modelDisclosureControls: boolean;
+                environmentSeparation: boolean;
+              };
+              /** Format: uuid */
+              recordedByUserId: string;
+              /** Format: date-time */
+              recordedAt: string;
+            } | null;
+            /** @enum {string} */
+            notice: "INSIGHT records external deployment evidence; it does not grant ethics or legal approval.";
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  recordDeploymentEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          responsibleAuthority: string;
+          approvalBasis: string;
+          approvalReference: string;
+          /** Format: date-time */
+          approvalGrantedAt: string;
+          /** Format: date-time */
+          approvalExpiresAt: string;
+          /** @enum {string} */
+          environmentStatus: "SYNTHETIC_OR_DEIDENTIFIED" | "APPROVED_IDENTIFIED_RESEARCH";
+          securityControls: {
+            participantConsentOrWaiver: boolean;
+            administratorSeparation: boolean;
+            encryptionInTransit: boolean;
+            encryptionAtRest: boolean;
+            auditControls: boolean;
+            dataGovernanceRules: boolean;
+            modelDisclosureControls: boolean;
+            environmentSeparation: boolean;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            /** @enum {string} */
+            identifiedMode: "DISABLED" | "ENABLED";
+            /** @enum {string} */
+            reason:
+              | "ACTIVE"
+              | "NO_EVIDENCE"
+              | "EVIDENCE_CHANGED"
+              | "APPROVAL_NOT_YET_VALID"
+              | "APPROVAL_EXPIRED";
+            evidence: {
+              version: number;
+              responsibleAuthority: string;
+              approvalBasis: string;
+              approvalReference: string;
+              /** Format: date-time */
+              approvalGrantedAt: string;
+              /** Format: date-time */
+              approvalExpiresAt: string;
+              /** @enum {string} */
+              environmentStatus: "SYNTHETIC_OR_DEIDENTIFIED" | "APPROVED_IDENTIFIED_RESEARCH";
+              securityControls: {
+                participantConsentOrWaiver: boolean;
+                administratorSeparation: boolean;
+                encryptionInTransit: boolean;
+                encryptionAtRest: boolean;
+                auditControls: boolean;
+                dataGovernanceRules: boolean;
+                modelDisclosureControls: boolean;
+                environmentSeparation: boolean;
+              };
+              /** Format: uuid */
+              recordedByUserId: string;
+              /** Format: date-time */
+              recordedAt: string;
+            } | null;
+            /** @enum {string} */
+            notice: "INSIGHT records external deployment evidence; it does not grant ethics or legal approval.";
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  activateIdentifiedResearchMode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        version: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            /** @enum {string} */
+            identifiedMode: "DISABLED" | "ENABLED";
+            /** @enum {string} */
+            reason:
+              | "ACTIVE"
+              | "NO_EVIDENCE"
+              | "EVIDENCE_CHANGED"
+              | "APPROVAL_NOT_YET_VALID"
+              | "APPROVAL_EXPIRED";
+            evidence: {
+              version: number;
+              responsibleAuthority: string;
+              approvalBasis: string;
+              approvalReference: string;
+              /** Format: date-time */
+              approvalGrantedAt: string;
+              /** Format: date-time */
+              approvalExpiresAt: string;
+              /** @enum {string} */
+              environmentStatus: "SYNTHETIC_OR_DEIDENTIFIED" | "APPROVED_IDENTIFIED_RESEARCH";
+              securityControls: {
+                participantConsentOrWaiver: boolean;
+                administratorSeparation: boolean;
+                encryptionInTransit: boolean;
+                encryptionAtRest: boolean;
+                auditControls: boolean;
+                dataGovernanceRules: boolean;
+                modelDisclosureControls: boolean;
+                environmentSeparation: boolean;
+              };
+              /** Format: uuid */
+              recordedByUserId: string;
+              /** Format: date-time */
+              recordedAt: string;
+            } | null;
+            /** @enum {string} */
+            notice: "INSIGHT records external deployment evidence; it does not grant ethics or legal approval.";
           };
         };
       };

@@ -178,6 +178,93 @@ export const migrations: readonly Migration[] = Object.freeze([
       $function$;
     `,
   },
+  {
+    version: 5,
+    name: "identified_research_gate",
+    sql: `
+      CREATE TABLE insight.deployment_evidence_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        version integer NOT NULL UNIQUE CHECK (version > 0),
+        schema_version integer NOT NULL CHECK (schema_version = 1),
+        responsible_authority text NOT NULL CHECK (
+          responsible_authority = btrim(responsible_authority)
+          AND responsible_authority <> ''
+          AND char_length(responsible_authority) <= 500
+        ),
+        approval_basis text NOT NULL CHECK (
+          approval_basis = btrim(approval_basis)
+          AND approval_basis <> ''
+          AND char_length(approval_basis) <= 2000
+        ),
+        approval_reference text NOT NULL CHECK (
+          approval_reference = btrim(approval_reference)
+          AND approval_reference <> ''
+          AND char_length(approval_reference) <= 500
+        ),
+        approval_granted_at timestamptz NOT NULL,
+        approval_expires_at timestamptz NOT NULL,
+        environment_status text NOT NULL CHECK (environment_status IN (
+          'SYNTHETIC_OR_DEIDENTIFIED', 'APPROVED_IDENTIFIED_RESEARCH'
+        )),
+        participant_consent_or_waiver boolean NOT NULL,
+        administrator_separation boolean NOT NULL,
+        encryption_in_transit boolean NOT NULL,
+        encryption_at_rest boolean NOT NULL,
+        audit_controls boolean NOT NULL,
+        data_governance_rules boolean NOT NULL,
+        model_disclosure_controls boolean NOT NULL,
+        environment_separation boolean NOT NULL,
+        recorded_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (approval_expires_at > approval_granted_at)
+      );
+
+      CREATE FUNCTION insight.protect_deployment_evidence_version()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        RAISE EXCEPTION 'deployment evidence versions are immutable'
+          USING ERRCODE = '55000';
+      END;
+      $function$;
+
+      CREATE TRIGGER deployment_evidence_versions_immutable
+      BEFORE UPDATE OR DELETE ON insight.deployment_evidence_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_deployment_evidence_version();
+
+      CREATE TABLE insight.deployment_mode_state (
+        singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+        active_evidence_version integer REFERENCES insight.deployment_evidence_versions(version),
+        activated_by_user_id uuid REFERENCES insight.users(id),
+        activated_at timestamptz,
+        CHECK (
+          (active_evidence_version IS NULL AND activated_by_user_id IS NULL AND activated_at IS NULL)
+          OR
+          (active_evidence_version IS NOT NULL AND activated_by_user_id IS NOT NULL AND activated_at IS NOT NULL)
+        )
+      );
+
+      INSERT INTO insight.deployment_mode_state (singleton) VALUES (true);
+
+      CREATE TABLE insight.operational_audit_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_type text NOT NULL CHECK (event_type IN (
+          'DEPLOYMENT_EVIDENCE_RECORDED', 'IDENTIFIED_MODE_ACTIVATED', 'IDENTIFIED_MODE_DISABLED'
+        )),
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        evidence_version integer NOT NULL REFERENCES insight.deployment_evidence_versions(version),
+        environment_status text NOT NULL CHECK (environment_status IN (
+          'SYNTHETIC_OR_DEIDENTIFIED', 'APPROVED_IDENTIFIED_RESEARCH'
+        )),
+        request_id uuid,
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE INDEX operational_audit_events_occurred_idx
+        ON insight.operational_audit_events (occurred_at DESC);
+    `,
+  },
 ]);
 
 export function prepareMigrations(

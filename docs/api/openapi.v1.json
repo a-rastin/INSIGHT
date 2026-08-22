@@ -183,6 +183,537 @@
         }
       }
     },
+    "/api/v1/admin/deployment-evidence": {
+      "get": {
+        "operationId": "getDeploymentEvidence",
+        "tags": ["administration"],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "identifiedMode", "reason", "evidence", "notice"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "identifiedMode": { "type": "string", "enum": ["DISABLED", "ENABLED"] },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "ACTIVE",
+                        "NO_EVIDENCE",
+                        "EVIDENCE_CHANGED",
+                        "APPROVAL_NOT_YET_VALID",
+                        "APPROVAL_EXPIRED"
+                      ]
+                    },
+                    "evidence": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "version",
+                            "responsibleAuthority",
+                            "approvalBasis",
+                            "approvalReference",
+                            "approvalGrantedAt",
+                            "approvalExpiresAt",
+                            "environmentStatus",
+                            "securityControls",
+                            "recordedByUserId",
+                            "recordedAt"
+                          ],
+                          "properties": {
+                            "version": { "type": "integer", "minimum": 1 },
+                            "responsibleAuthority": { "type": "string" },
+                            "approvalBasis": { "type": "string" },
+                            "approvalReference": { "type": "string" },
+                            "approvalGrantedAt": { "type": "string", "format": "date-time" },
+                            "approvalExpiresAt": { "type": "string", "format": "date-time" },
+                            "environmentStatus": {
+                              "type": "string",
+                              "enum": ["SYNTHETIC_OR_DEIDENTIFIED", "APPROVED_IDENTIFIED_RESEARCH"]
+                            },
+                            "securityControls": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "participantConsentOrWaiver",
+                                "administratorSeparation",
+                                "encryptionInTransit",
+                                "encryptionAtRest",
+                                "auditControls",
+                                "dataGovernanceRules",
+                                "modelDisclosureControls",
+                                "environmentSeparation"
+                              ],
+                              "properties": {
+                                "participantConsentOrWaiver": { "type": "boolean" },
+                                "administratorSeparation": { "type": "boolean" },
+                                "encryptionInTransit": { "type": "boolean" },
+                                "encryptionAtRest": { "type": "boolean" },
+                                "auditControls": { "type": "boolean" },
+                                "dataGovernanceRules": { "type": "boolean" },
+                                "modelDisclosureControls": { "type": "boolean" },
+                                "environmentSeparation": { "type": "boolean" }
+                              }
+                            },
+                            "recordedByUserId": { "type": "string", "format": "uuid" },
+                            "recordedAt": { "type": "string", "format": "date-time" }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    },
+                    "notice": {
+                      "type": "string",
+                      "enum": [
+                        "INSIGHT records external deployment evidence; it does not grant ethics or legal approval."
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "recordDeploymentEvidence",
+        "tags": ["administration"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "schemaVersion",
+                  "responsibleAuthority",
+                  "approvalBasis",
+                  "approvalReference",
+                  "approvalGrantedAt",
+                  "approvalExpiresAt",
+                  "environmentStatus",
+                  "securityControls"
+                ],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "responsibleAuthority": { "type": "string", "minLength": 1, "maxLength": 500 },
+                  "approvalBasis": { "type": "string", "minLength": 1, "maxLength": 2000 },
+                  "approvalReference": { "type": "string", "minLength": 1, "maxLength": 500 },
+                  "approvalGrantedAt": { "type": "string", "format": "date-time" },
+                  "approvalExpiresAt": { "type": "string", "format": "date-time" },
+                  "environmentStatus": {
+                    "type": "string",
+                    "enum": ["SYNTHETIC_OR_DEIDENTIFIED", "APPROVED_IDENTIFIED_RESEARCH"]
+                  },
+                  "securityControls": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "participantConsentOrWaiver",
+                      "administratorSeparation",
+                      "encryptionInTransit",
+                      "encryptionAtRest",
+                      "auditControls",
+                      "dataGovernanceRules",
+                      "modelDisclosureControls",
+                      "environmentSeparation"
+                    ],
+                    "properties": {
+                      "participantConsentOrWaiver": { "type": "boolean" },
+                      "administratorSeparation": { "type": "boolean" },
+                      "encryptionInTransit": { "type": "boolean" },
+                      "encryptionAtRest": { "type": "boolean" },
+                      "auditControls": { "type": "boolean" },
+                      "dataGovernanceRules": { "type": "boolean" },
+                      "modelDisclosureControls": { "type": "boolean" },
+                      "environmentSeparation": { "type": "boolean" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "identifiedMode", "reason", "evidence", "notice"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "identifiedMode": { "type": "string", "enum": ["DISABLED", "ENABLED"] },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "ACTIVE",
+                        "NO_EVIDENCE",
+                        "EVIDENCE_CHANGED",
+                        "APPROVAL_NOT_YET_VALID",
+                        "APPROVAL_EXPIRED"
+                      ]
+                    },
+                    "evidence": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "version",
+                            "responsibleAuthority",
+                            "approvalBasis",
+                            "approvalReference",
+                            "approvalGrantedAt",
+                            "approvalExpiresAt",
+                            "environmentStatus",
+                            "securityControls",
+                            "recordedByUserId",
+                            "recordedAt"
+                          ],
+                          "properties": {
+                            "version": { "type": "integer", "minimum": 1 },
+                            "responsibleAuthority": { "type": "string" },
+                            "approvalBasis": { "type": "string" },
+                            "approvalReference": { "type": "string" },
+                            "approvalGrantedAt": { "type": "string", "format": "date-time" },
+                            "approvalExpiresAt": { "type": "string", "format": "date-time" },
+                            "environmentStatus": {
+                              "type": "string",
+                              "enum": ["SYNTHETIC_OR_DEIDENTIFIED", "APPROVED_IDENTIFIED_RESEARCH"]
+                            },
+                            "securityControls": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "participantConsentOrWaiver",
+                                "administratorSeparation",
+                                "encryptionInTransit",
+                                "encryptionAtRest",
+                                "auditControls",
+                                "dataGovernanceRules",
+                                "modelDisclosureControls",
+                                "environmentSeparation"
+                              ],
+                              "properties": {
+                                "participantConsentOrWaiver": { "type": "boolean" },
+                                "administratorSeparation": { "type": "boolean" },
+                                "encryptionInTransit": { "type": "boolean" },
+                                "encryptionAtRest": { "type": "boolean" },
+                                "auditControls": { "type": "boolean" },
+                                "dataGovernanceRules": { "type": "boolean" },
+                                "modelDisclosureControls": { "type": "boolean" },
+                                "environmentSeparation": { "type": "boolean" }
+                              }
+                            },
+                            "recordedByUserId": { "type": "string", "format": "uuid" },
+                            "recordedAt": { "type": "string", "format": "date-time" }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    },
+                    "notice": {
+                      "type": "string",
+                      "enum": [
+                        "INSIGHT records external deployment evidence; it does not grant ethics or legal approval."
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/deployment-evidence/{version}/activate": {
+      "post": {
+        "operationId": "activateIdentifiedResearchMode",
+        "tags": ["administration"],
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 1 },
+            "in": "path",
+            "name": "version",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "identifiedMode", "reason", "evidence", "notice"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "identifiedMode": { "type": "string", "enum": ["DISABLED", "ENABLED"] },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "ACTIVE",
+                        "NO_EVIDENCE",
+                        "EVIDENCE_CHANGED",
+                        "APPROVAL_NOT_YET_VALID",
+                        "APPROVAL_EXPIRED"
+                      ]
+                    },
+                    "evidence": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "version",
+                            "responsibleAuthority",
+                            "approvalBasis",
+                            "approvalReference",
+                            "approvalGrantedAt",
+                            "approvalExpiresAt",
+                            "environmentStatus",
+                            "securityControls",
+                            "recordedByUserId",
+                            "recordedAt"
+                          ],
+                          "properties": {
+                            "version": { "type": "integer", "minimum": 1 },
+                            "responsibleAuthority": { "type": "string" },
+                            "approvalBasis": { "type": "string" },
+                            "approvalReference": { "type": "string" },
+                            "approvalGrantedAt": { "type": "string", "format": "date-time" },
+                            "approvalExpiresAt": { "type": "string", "format": "date-time" },
+                            "environmentStatus": {
+                              "type": "string",
+                              "enum": ["SYNTHETIC_OR_DEIDENTIFIED", "APPROVED_IDENTIFIED_RESEARCH"]
+                            },
+                            "securityControls": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "participantConsentOrWaiver",
+                                "administratorSeparation",
+                                "encryptionInTransit",
+                                "encryptionAtRest",
+                                "auditControls",
+                                "dataGovernanceRules",
+                                "modelDisclosureControls",
+                                "environmentSeparation"
+                              ],
+                              "properties": {
+                                "participantConsentOrWaiver": { "type": "boolean" },
+                                "administratorSeparation": { "type": "boolean" },
+                                "encryptionInTransit": { "type": "boolean" },
+                                "encryptionAtRest": { "type": "boolean" },
+                                "auditControls": { "type": "boolean" },
+                                "dataGovernanceRules": { "type": "boolean" },
+                                "modelDisclosureControls": { "type": "boolean" },
+                                "environmentSeparation": { "type": "boolean" }
+                              }
+                            },
+                            "recordedByUserId": { "type": "string", "format": "uuid" },
+                            "recordedAt": { "type": "string", "format": "date-time" }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    },
+                    "notice": {
+                      "type": "string",
+                      "enum": [
+                        "INSIGHT records external deployment evidence; it does not grant ethics or legal approval."
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/login": {
       "post": {
         "operationId": "login",

@@ -152,6 +152,8 @@ test("published OpenAPI matches the checked-in contract", async (t) => {
   assert.deepEqual(response.json(), published);
   assert.ok(published.paths["/api/v1/admin/users"]);
   assert.ok(published.paths["/api/v1/admin/users/{userId}/reset-password"]);
+  assert.ok(published.paths["/api/v1/admin/deployment-evidence"]);
+  assert.ok(published.paths["/api/v1/admin/deployment-evidence/{version}/activate"]);
   assert.equal(published.paths["/api/v1/signup"], undefined);
   assert.equal(published.paths["/api/v1/recover-password"], undefined);
 });

@@ -20,6 +20,11 @@ import Fastify, {
 } from "fastify";
 import type { Pool } from "pg";
 
+import {
+  IdentifiedResearchModeDisabledError,
+  assertIdentifiedPatientCreationAllowed,
+} from "./deployment/evidence.js";
+import { deploymentEvidenceRoutes } from "./deployment/http.js";
 import { authenticationRoutes, type AuthenticationHttpOptions } from "./identity/http.js";
 import {
   isValidCsrf,
@@ -194,6 +199,30 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           .send(errorBody(request, 403, "INVALID_CSRF", "Request is not permitted."));
         return;
       }
+
+      if (request.method === "POST" && path === `${API_PREFIX}/patients`) {
+        if (context.user.role === "ADMINISTRATOR") {
+          await reply
+            .status(403)
+            .send(errorBody(request, 403, "FORBIDDEN", "Request is not permitted."));
+          return;
+        }
+        try {
+          await assertIdentifiedPatientCreationAllowed(options.authentication!.pool);
+        } catch (error) {
+          if (!(error instanceof IdentifiedResearchModeDisabledError)) throw error;
+          await reply
+            .status(403)
+            .send(
+              errorBody(
+                request,
+                403,
+                "IDENTIFIED_MODE_DISABLED",
+                "Identified Patient creation is disabled.",
+              ),
+            );
+        }
+      }
     });
   }
 
@@ -209,6 +238,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     void app.register(options.registerApiRoutes, { prefix: API_PREFIX });
   }
   if (options.authentication) {
+    void app.register(
+      deploymentEvidenceRoutes(options.authentication.pool, (request) =>
+        requestSessions.get(request),
+      ),
+      { prefix: API_PREFIX },
+    );
     void app.register(
       authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
       { prefix: API_PREFIX },
