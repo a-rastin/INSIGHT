@@ -1019,11 +1019,11 @@ export const TRIAL_RESPONSES = [
   "WORSENED",
   "UNKNOWN",
 ] as const;
-export const CONTRAINDICATION_OUTCOMES = [
-  "CONTRAINDICATED",
+export const COMORBIDITY_RULE_RESULT_KINDS = [
+  "CONTRAINDICATION",
   "CAUTION",
-  "MONITORING_REQUIRED",
-  "UNKNOWN",
+  "MONITORING_REQUIREMENT",
+  "BN_ROUTING_FACT",
 ] as const;
 
 const optionalClinicalText = (maxLength: number) =>
@@ -1074,6 +1074,91 @@ export const AdverseEffectCatalogHistoryResponseSchema = Type.Object(
     versions: Type.Array(AdverseEffectCatalogVersionSchema),
   },
   { $id: "insight.adverse-effect-catalog-history-response.v1", additionalProperties: false },
+);
+
+const governedIdSchema = Type.String({
+  pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+  maxLength: 200,
+});
+
+export const ComorbidityTermInputSchema = Type.Object(
+  {
+    termId: governedIdSchema,
+    label: Type.String({ minLength: 1, maxLength: 500 }),
+  },
+  { $id: "insight.comorbidity-term-input.v1", additionalProperties: false },
+);
+export type ComorbidityTermInput = Static<typeof ComorbidityTermInputSchema>;
+
+export const ComorbidityRuleResultDefinitionSchema = Type.Object(
+  {
+    kind: Type.Union(COMORBIDITY_RULE_RESULT_KINDS.map((value) => Type.Literal(value))),
+    targetId: governedIdSchema,
+    value: Type.String({ minLength: 1, maxLength: 500 }),
+    explanation: Type.String({ minLength: 1, maxLength: 2000 }),
+  },
+  { additionalProperties: false },
+);
+export type ComorbidityRuleResultDefinition = Static<typeof ComorbidityRuleResultDefinitionSchema>;
+
+export const ComorbidityRuleInputSchema = Type.Object(
+  {
+    ruleId: governedIdSchema,
+    allOfTermIds: Type.Array(governedIdSchema, { minItems: 1, maxItems: 100 }),
+    results: Type.Array(ComorbidityRuleResultDefinitionSchema, { minItems: 1, maxItems: 100 }),
+  },
+  { $id: "insight.comorbidity-rule-input.v1", additionalProperties: false },
+);
+export type ComorbidityRuleInput = Static<typeof ComorbidityRuleInputSchema>;
+
+export const ClinicalReviewerRecordSchema = Type.Object(
+  {
+    reviewerId: Type.String({ minLength: 1, maxLength: 200 }),
+    reviewedAt: TimestampSchema,
+    recordReference: Type.String({ minLength: 1, maxLength: 1000 }),
+  },
+  { additionalProperties: false },
+);
+export type ClinicalReviewerRecord = Static<typeof ClinicalReviewerRecordSchema>;
+
+export const ComorbidityKnowledgeInputSchema = Type.Object(
+  {
+    sourceReference: Type.String({ minLength: 1, maxLength: 1000 }),
+    reviewerRecord: ClinicalReviewerRecordSchema,
+    terms: Type.Array(ComorbidityTermInputSchema, { minItems: 1, maxItems: 500 }),
+    rules: Type.Array(ComorbidityRuleInputSchema, { maxItems: 1000 }),
+  },
+  { $id: "insight.comorbidity-knowledge-input.v1", additionalProperties: false },
+);
+export type ComorbidityKnowledgeInput = Static<typeof ComorbidityKnowledgeInputSchema>;
+
+export const ComorbidityKnowledgeVersionSchema = Type.Object(
+  {
+    id: UuidSchema,
+    version: Type.Integer({ minimum: 1 }),
+    ...ComorbidityKnowledgeInputSchema.properties,
+    createdByUserId: UuidSchema,
+    createdAt: TimestampSchema,
+    active: Type.Boolean(),
+  },
+  { $id: "insight.comorbidity-knowledge-version.v1", additionalProperties: false },
+);
+export type ComorbidityKnowledgeVersion = Static<typeof ComorbidityKnowledgeVersionSchema>;
+
+export const ComorbidityKnowledgeResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    knowledge: Type.Union([ComorbidityKnowledgeVersionSchema, Type.Null()]),
+  },
+  { $id: "insight.comorbidity-knowledge-response.v1", additionalProperties: false },
+);
+
+export const ComorbidityKnowledgeHistoryResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    versions: Type.Array(ComorbidityKnowledgeVersionSchema),
+  },
+  { $id: "insight.comorbidity-knowledge-history-response.v1", additionalProperties: false },
 );
 
 const catalogReferenceSchema = Type.Object(
@@ -1131,16 +1216,38 @@ export const ComorbiditySelectionInputSchema = Type.Object(
 );
 export type ComorbiditySelectionInput = Static<typeof ComorbiditySelectionInputSchema>;
 
-export const ContraindicationOutputInputSchema = Type.Object(
+export const ComorbiditySelectionRecordSchema = Type.Object(
   {
-    ruleVersionId: Type.String({ minLength: 1, maxLength: 200 }),
-    ruleId: Type.String({ minLength: 1, maxLength: 200 }),
-    outcome: Type.Union(CONTRAINDICATION_OUTCOMES.map((value) => Type.Literal(value))),
-    explanation: optionalClinicalText(2000),
+    ...ComorbiditySelectionInputSchema.properties,
+    label: Type.String({ minLength: 1, maxLength: 500 }),
   },
   { additionalProperties: false },
 );
-export type ContraindicationOutputInput = Static<typeof ContraindicationOutputInputSchema>;
+
+export const ComorbidityRuleResultSchema = Type.Object(
+  {
+    knowledgeVersionId: UuidSchema,
+    knowledgeVersion: Type.Integer({ minimum: 1 }),
+    ruleId: governedIdSchema,
+    kind: Type.Union(COMORBIDITY_RULE_RESULT_KINDS.map((value) => Type.Literal(value))),
+    targetId: governedIdSchema,
+    value: Type.String({ minLength: 1, maxLength: 500 }),
+    explanation: Type.String({ minLength: 1, maxLength: 2000 }),
+    matchedTermIds: Type.Array(governedIdSchema, { minItems: 1, maxItems: 100 }),
+  },
+  { additionalProperties: false },
+);
+export type ComorbidityRuleResult = Static<typeof ComorbidityRuleResultSchema>;
+
+export const ComorbidityRuleEvaluationSchema = Type.Object(
+  {
+    knowledgeVersionId: UuidSchema,
+    knowledgeVersion: Type.Integer({ minimum: 1 }),
+    results: Type.Array(ComorbidityRuleResultSchema, { maxItems: 1000 }),
+  },
+  { additionalProperties: false },
+);
+export type ComorbidityRuleEvaluation = Static<typeof ComorbidityRuleEvaluationSchema>;
 
 export const MedicalHistoryInputSchema = Type.Object(
   {
@@ -1149,7 +1256,6 @@ export const MedicalHistoryInputSchema = Type.Object(
     priorTrials: Type.Optional(Type.Array(AntipsychoticTrialInputSchema, { maxItems: 100 })),
     currentMedications: Type.Array(CurrentMedicationInputSchema, { maxItems: 100 }),
     comorbidities: Type.Array(ComorbiditySelectionInputSchema, { maxItems: 100 }),
-    contraindications: Type.Array(ContraindicationOutputInputSchema, { maxItems: 200 }),
     supplementalNotes: optionalClinicalText(10000),
   },
   { $id: "insight.medical-history-input.v1", additionalProperties: false },
@@ -1179,6 +1285,8 @@ export const MedicalHistoryRecordSchema = Type.Object(
   {
     ...MedicalHistoryInputSchema.properties,
     priorTrials: Type.Optional(Type.Array(AntipsychoticTrialRecordSchema, { maxItems: 100 })),
+    comorbidities: Type.Array(ComorbiditySelectionRecordSchema, { maxItems: 100 }),
+    ruleEvaluation: Type.Union([ComorbidityRuleEvaluationSchema, Type.Null()]),
     researchCaseId: UuidSchema,
     revision: Type.Integer({ minimum: 1 }),
     createdByUserId: UuidSchema,

@@ -276,6 +276,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/comorbidity-knowledge": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getActiveComorbidityKnowledge"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/comorbidity-knowledge": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getComorbidityKnowledgeHistory"];
+    put?: never;
+    post: operations["saveComorbidityKnowledge"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/patients": {
     parameters: {
       query?: never;
@@ -1860,6 +1892,349 @@ export interface operations {
               terms: {
                 termId: string;
                 label: string;
+              }[];
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              active: boolean;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getActiveComorbidityKnowledge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            knowledge: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              sourceReference: string;
+              reviewerRecord: {
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                recordReference: string;
+              };
+              terms: {
+                termId: string;
+                label: string;
+              }[];
+              rules: {
+                ruleId: string;
+                allOfTermIds: string[];
+                results: {
+                  kind:
+                    | "CONTRAINDICATION"
+                    | "CAUTION"
+                    | "MONITORING_REQUIREMENT"
+                    | "BN_ROUTING_FACT";
+                  targetId: string;
+                  value: string;
+                  explanation: string;
+                }[];
+              }[];
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              active: boolean;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getComorbidityKnowledgeHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            versions: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              sourceReference: string;
+              reviewerRecord: {
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                recordReference: string;
+              };
+              terms: {
+                termId: string;
+                label: string;
+              }[];
+              rules: {
+                ruleId: string;
+                allOfTermIds: string[];
+                results: {
+                  kind:
+                    | "CONTRAINDICATION"
+                    | "CAUTION"
+                    | "MONITORING_REQUIREMENT"
+                    | "BN_ROUTING_FACT";
+                  targetId: string;
+                  value: string;
+                  explanation: string;
+                }[];
+              }[];
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              active: boolean;
+            }[];
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  saveComorbidityKnowledge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          /** insight.comorbidity-knowledge-input.v1 */
+          knowledge: {
+            sourceReference: string;
+            reviewerRecord: {
+              reviewerId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              reviewedAt: string;
+              recordReference: string;
+            };
+            terms: {
+              termId: string;
+              label: string;
+            }[];
+            rules: {
+              ruleId: string;
+              allOfTermIds: string[];
+              results: {
+                kind: "CONTRAINDICATION" | "CAUTION" | "MONITORING_REQUIREMENT" | "BN_ROUTING_FACT";
+                targetId: string;
+                value: string;
+                explanation: string;
+              }[];
+            }[];
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            knowledge: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              sourceReference: string;
+              reviewerRecord: {
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                recordReference: string;
+              };
+              terms: {
+                termId: string;
+                label: string;
+              }[];
+              rules: {
+                ruleId: string;
+                allOfTermIds: string[];
+                results: {
+                  kind:
+                    | "CONTRAINDICATION"
+                    | "CAUTION"
+                    | "MONITORING_REQUIREMENT"
+                    | "BN_ROUTING_FACT";
+                  targetId: string;
+                  value: string;
+                  explanation: string;
+                }[];
               }[];
               /**
                * INSIGHT UUID v1
@@ -3579,14 +3954,35 @@ export interface operations {
                 catalogVersionId: string;
                 termId: string;
                 supplementalText?: string;
-              }[];
-              contraindications: {
-                ruleVersionId: string;
-                ruleId: string;
-                outcome: "CONTRAINDICATED" | "CAUTION" | "MONITORING_REQUIRED" | "UNKNOWN";
-                explanation?: string;
+                label: string;
               }[];
               supplementalNotes?: string;
+              ruleEvaluation: {
+                /**
+                 * INSIGHT UUID v1
+                 * Format: uuid
+                 */
+                knowledgeVersionId: string;
+                knowledgeVersion: number;
+                results: {
+                  /**
+                   * INSIGHT UUID v1
+                   * Format: uuid
+                   */
+                  knowledgeVersionId: string;
+                  knowledgeVersion: number;
+                  ruleId: string;
+                  kind:
+                    | "CONTRAINDICATION"
+                    | "CAUTION"
+                    | "MONITORING_REQUIREMENT"
+                    | "BN_ROUTING_FACT";
+                  targetId: string;
+                  value: string;
+                  explanation: string;
+                  matchedTermIds: string[];
+                }[];
+              } | null;
               /**
                * INSIGHT UUID v1
                * Format: uuid
@@ -3705,12 +4101,6 @@ export interface operations {
               termId: string;
               supplementalText?: string;
             }[];
-            contraindications: {
-              ruleVersionId: string;
-              ruleId: string;
-              outcome: "CONTRAINDICATED" | "CAUTION" | "MONITORING_REQUIRED" | "UNKNOWN";
-              explanation?: string;
-            }[];
             supplementalNotes?: string;
           };
         };
@@ -3766,14 +4156,35 @@ export interface operations {
                 catalogVersionId: string;
                 termId: string;
                 supplementalText?: string;
-              }[];
-              contraindications: {
-                ruleVersionId: string;
-                ruleId: string;
-                outcome: "CONTRAINDICATED" | "CAUTION" | "MONITORING_REQUIRED" | "UNKNOWN";
-                explanation?: string;
+                label: string;
               }[];
               supplementalNotes?: string;
+              ruleEvaluation: {
+                /**
+                 * INSIGHT UUID v1
+                 * Format: uuid
+                 */
+                knowledgeVersionId: string;
+                knowledgeVersion: number;
+                results: {
+                  /**
+                   * INSIGHT UUID v1
+                   * Format: uuid
+                   */
+                  knowledgeVersionId: string;
+                  knowledgeVersion: number;
+                  ruleId: string;
+                  kind:
+                    | "CONTRAINDICATION"
+                    | "CAUTION"
+                    | "MONITORING_REQUIREMENT"
+                    | "BN_ROUTING_FACT";
+                  targetId: string;
+                  value: string;
+                  explanation: string;
+                  matchedTermIds: string[];
+                }[];
+              } | null;
               /**
                * INSIGHT UUID v1
                * Format: uuid

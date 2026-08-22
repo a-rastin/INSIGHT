@@ -22,6 +22,7 @@ import type { Pool } from "pg";
 
 import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
 import { assessmentRoutes } from "./assessment/http.js";
+import { comorbidityKnowledgeRoutes } from "./comorbidity-knowledge/http.js";
 import {
   IdentifiedResearchModeDisabledError,
   assertIdentifiedPatientCreationAllowed,
@@ -267,6 +268,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     );
     void app.register(
       adverseEffectCatalogRoutes(options.authentication.pool, (request) =>
+        requestSessions.get(request),
+      ),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      comorbidityKnowledgeRoutes(options.authentication.pool, (request) =>
         requestSessions.get(request),
       ),
       { prefix: API_PREFIX },

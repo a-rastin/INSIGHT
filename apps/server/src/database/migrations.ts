@@ -1320,6 +1320,117 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_adverse_effect_catalog_mutation();
     `,
   },
+  {
+    version: 17,
+    name: "comorbidity_knowledge",
+    sql: `
+      CREATE TABLE insight.comorbidity_knowledge_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        version integer NOT NULL UNIQUE CHECK (version > 0),
+        source_reference text NOT NULL CHECK (
+          source_reference = btrim(source_reference) AND source_reference <> ''
+          AND char_length(source_reference) <= 1000
+        ),
+        reviewer_id text NOT NULL CHECK (
+          reviewer_id = btrim(reviewer_id) AND reviewer_id <> '' AND char_length(reviewer_id) <= 200
+        ),
+        reviewed_at timestamptz NOT NULL,
+        reviewer_record_reference text NOT NULL CHECK (
+          reviewer_record_reference = btrim(reviewer_record_reference)
+          AND reviewer_record_reference <> '' AND char_length(reviewer_record_reference) <= 1000
+        ),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL
+      );
+
+      CREATE TABLE insight.comorbidity_knowledge_terms (
+        knowledge_version_id uuid NOT NULL REFERENCES insight.comorbidity_knowledge_versions(id),
+        term_id text NOT NULL CHECK (
+          term_id = btrim(term_id) AND term_id <> '' AND char_length(term_id) <= 200
+        ),
+        label text NOT NULL CHECK (
+          label = btrim(label) AND label <> '' AND char_length(label) <= 500
+        ),
+        position integer NOT NULL CHECK (position >= 0),
+        PRIMARY KEY (knowledge_version_id, term_id),
+        UNIQUE (knowledge_version_id, position)
+      );
+
+      CREATE TABLE insight.comorbidity_knowledge_rules (
+        knowledge_version_id uuid NOT NULL REFERENCES insight.comorbidity_knowledge_versions(id),
+        rule_id text NOT NULL CHECK (
+          rule_id = btrim(rule_id) AND rule_id <> '' AND char_length(rule_id) <= 200
+        ),
+        all_of_term_ids text[] NOT NULL CHECK (cardinality(all_of_term_ids) > 0),
+        results jsonb NOT NULL CHECK (jsonb_typeof(results) = 'array' AND jsonb_array_length(results) > 0),
+        PRIMARY KEY (knowledge_version_id, rule_id)
+      );
+
+      CREATE TABLE insight.comorbidity_knowledge_state (
+        singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+        active_version_id uuid REFERENCES insight.comorbidity_knowledge_versions(id),
+        activated_by_user_id uuid REFERENCES insight.users(id),
+        activated_at timestamptz,
+        CHECK (
+          (active_version_id IS NULL AND activated_by_user_id IS NULL AND activated_at IS NULL)
+          OR (active_version_id IS NOT NULL AND activated_by_user_id IS NOT NULL AND activated_at IS NOT NULL)
+        )
+      );
+      INSERT INTO insight.comorbidity_knowledge_state (singleton) VALUES (true);
+
+      CREATE TABLE insight.comorbidity_rule_evaluations (
+        research_case_id uuid PRIMARY KEY
+          REFERENCES insight.medical_histories(research_case_id) ON DELETE CASCADE,
+        knowledge_version_id uuid NOT NULL REFERENCES insight.comorbidity_knowledge_versions(id),
+        knowledge_version integer NOT NULL CHECK (knowledge_version > 0)
+      );
+
+      CREATE TABLE insight.comorbidity_rule_results (
+        research_case_id uuid NOT NULL
+          REFERENCES insight.comorbidity_rule_evaluations(research_case_id) ON DELETE CASCADE,
+        position integer NOT NULL CHECK (position >= 0),
+        knowledge_version_id uuid NOT NULL REFERENCES insight.comorbidity_knowledge_versions(id),
+        knowledge_version integer NOT NULL CHECK (knowledge_version > 0),
+        rule_id text NOT NULL,
+        kind text NOT NULL CHECK (
+          kind IN ('CONTRAINDICATION', 'CAUTION', 'MONITORING_REQUIREMENT', 'BN_ROUTING_FACT')
+        ),
+        target_id text NOT NULL,
+        value text NOT NULL,
+        explanation text NOT NULL,
+        matched_term_ids text[] NOT NULL CHECK (cardinality(matched_term_ids) > 0),
+        PRIMARY KEY (research_case_id, position),
+        UNIQUE (research_case_id, kind, target_id)
+      );
+
+      CREATE FUNCTION insight.reject_comorbidity_knowledge_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'INSERT'
+           AND current_setting('insight.comorbidity_knowledge_write', true) = 'allowed'
+        THEN RETURN NEW;
+        END IF;
+        RAISE EXCEPTION 'comorbidity knowledge versions are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+
+      CREATE TRIGGER comorbidity_knowledge_versions_immutable
+      BEFORE UPDATE OR DELETE ON insight.comorbidity_knowledge_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_comorbidity_knowledge_mutation();
+      CREATE TRIGGER comorbidity_knowledge_terms_immutable
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.comorbidity_knowledge_terms
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_comorbidity_knowledge_mutation();
+      CREATE TRIGGER comorbidity_knowledge_rules_immutable
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.comorbidity_knowledge_rules
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_comorbidity_knowledge_mutation();
+      CREATE TRIGGER comorbidity_rule_evaluations_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.comorbidity_rule_evaluations
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+      CREATE TRIGGER comorbidity_rule_results_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.comorbidity_rule_results
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

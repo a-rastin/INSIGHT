@@ -7,7 +7,6 @@ import { isContract, MedicalHistoryInputSchema } from "../packages/contracts/dis
 const common = {
   currentMedications: [{ rawMedication: "metformin" }],
   comorbidities: [],
-  contraindications: [],
 };
 
 test("medical-history conditional domain matrix is server-authoritative", () => {
@@ -85,7 +84,6 @@ test("normalization and catalog duplicates fail before persistence", () => {
         presentationStatus: "FIRST_PRESENTATION",
         currentMedications: [{ rawMedication: "haloperidol", normalizationState: "NORMALIZED" }],
         comorbidities: [],
-        contraindications: [],
       }),
     MedicalHistoryInputError,
   );
@@ -98,7 +96,6 @@ test("normalization and catalog duplicates fail before persistence", () => {
           { catalogVersionId: "v1", termId: "diabetes" },
           { catalogVersionId: "v1", termId: "diabetes" },
         ],
-        contraindications: [],
       }),
     MedicalHistoryInputError,
   );

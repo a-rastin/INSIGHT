@@ -1,13 +1,18 @@
 import type {
   AntipsychoticTrialInput,
+  ComorbidityRuleEvaluation,
+  ComorbidityRuleResult,
   ComorbiditySelectionInput,
-  ContraindicationOutputInput,
   CurrentMedicationInput,
   MedicalHistoryInput,
   MedicalHistoryRecord,
 } from "@insight/contracts";
 import type { Pool, PoolClient, QueryResultRow } from "pg";
 
+import {
+  evaluateComorbidityRules,
+  loadComorbidityKnowledgeVersion,
+} from "../comorbidity-knowledge/catalog.js";
 import { withTransaction } from "../database/transaction.js";
 import type { PatientActor } from "../patient/patients.js";
 import { invalidateResearchCaseInputsInTransaction } from "../patient/workflow.js";
@@ -60,13 +65,23 @@ interface ComorbidityRow extends QueryResultRow {
   catalog_version_id: string;
   term_id: string;
   supplemental_text: string | null;
+  label: string;
 }
 
-interface ContraindicationRow extends QueryResultRow {
-  rule_version_id: string;
+interface RuleEvaluationRow extends QueryResultRow {
+  knowledge_version_id: string;
+  knowledge_version: number;
+}
+
+interface RuleResultRow extends QueryResultRow {
+  knowledge_version_id: string;
+  knowledge_version: number;
   rule_id: string;
-  outcome: ContraindicationOutputInput["outcome"];
-  explanation: string | null;
+  kind: ComorbidityRuleResult["kind"];
+  target_id: string;
+  value: string;
+  explanation: string;
+  matched_term_ids: string[];
 }
 
 interface AdverseEffectTermRow extends QueryResultRow {
@@ -126,14 +141,9 @@ export function validateMedicalHistoryInput(input: MedicalHistoryInput): Medical
   const currentMedications = input.currentMedications.map(validateCurrentMedication);
   const validatedTrials = priorTrials.map(validateTrial);
   const comorbidities = input.comorbidities.map(validateComorbidity);
-  const contraindications = input.contraindications.map(validateContraindication);
   rejectDuplicateKeys(
     comorbidities.map(({ catalogVersionId, termId }) => `${catalogVersionId}\0${termId}`),
     "comorbidity",
-  );
-  rejectDuplicateKeys(
-    contraindications.map(({ ruleVersionId, ruleId }) => `${ruleVersionId}\0${ruleId}`),
-    "contraindication",
   );
 
   return {
@@ -146,7 +156,6 @@ export function validateMedicalHistoryInput(input: MedicalHistoryInput): Medical
       : {}),
     currentMedications,
     comorbidities,
-    contraindications,
     ...(input.supplementalNotes === undefined
       ? {}
       : { supplementalNotes: requiredText(input.supplementalNotes, "Supplemental notes") }),
@@ -188,6 +197,11 @@ export async function saveMedicalHistory(
     );
     const revision = Number(existing.rows[0]?.revision ?? 0) + 1;
     await validateAdverseEffectPins(client, researchCase.id, history.priorTrials ?? []);
+    const ruleEvaluation = await resolveComorbidityEvaluation(
+      client,
+      researchCase.id,
+      history.comorbidities,
+    );
     await client.query("SELECT set_config('insight.medical_history_write', 'allowed', true)");
     await client.query(
       `INSERT INTO insight.medical_histories (
@@ -216,6 +230,7 @@ export async function saveMedicalHistory(
       "current_medication_entries",
       "comorbidity_selections",
       "contraindication_outputs",
+      "comorbidity_rule_evaluations",
     ]) {
       await client.query(`DELETE FROM insight.${table} WHERE research_case_id = $1`, [
         researchCase.id,
@@ -224,7 +239,7 @@ export async function saveMedicalHistory(
     await insertTrials(client, researchCase.id, history.priorTrials ?? []);
     await insertCurrentMedications(client, researchCase.id, history.currentMedications);
     await insertComorbidities(client, researchCase.id, history.comorbidities);
-    await insertContraindications(client, researchCase.id, history.contraindications);
+    if (ruleEvaluation) await insertRuleEvaluation(client, researchCase.id, ruleEvaluation);
     await client.query(
       `INSERT INTO insight.medical_history_save_events (
          research_case_id, patient_id, revision, presentation_status,
@@ -304,15 +319,6 @@ function validateComorbidity(input: ComorbiditySelectionInput): ComorbiditySelec
     catalogVersionId: requiredText(input.catalogVersionId, "Comorbidity catalog version"),
     termId: requiredText(input.termId, "Comorbidity term"),
     supplementalText: optionalText(input.supplementalText, "Comorbidity supplemental text"),
-  });
-}
-
-function validateContraindication(input: ContraindicationOutputInput): ContraindicationOutputInput {
-  return compact({
-    ruleVersionId: requiredText(input.ruleVersionId, "Contraindication rule version"),
-    ruleId: requiredText(input.ruleId, "Contraindication rule"),
-    outcome: input.outcome,
-    explanation: optionalText(input.explanation, "Contraindication explanation"),
   });
 }
 
@@ -485,6 +491,62 @@ async function insertCurrentMedications(
   }
 }
 
+async function resolveComorbidityEvaluation(
+  client: PoolClient,
+  researchCaseId: string,
+  selections: readonly ComorbiditySelectionInput[],
+): Promise<ComorbidityRuleEvaluation | null> {
+  const activeResult = await client.query<{ id: string }>(
+    `SELECT version.id::text AS id
+     FROM insight.comorbidity_knowledge_state state
+     JOIN insight.comorbidity_knowledge_versions version ON version.id = state.active_version_id
+     WHERE state.singleton = true`,
+  );
+  const activeVersionId = activeResult.rows[0]?.id;
+  if (selections.length === 0) {
+    if (!activeVersionId) return null;
+    const active = await loadComorbidityKnowledgeVersion(client, activeVersionId);
+    return active ? evaluateComorbidityRules(active, []) : null;
+  }
+
+  const versionIds = new Set(selections.map(({ catalogVersionId }) => catalogVersionId));
+  if (versionIds.size !== 1) {
+    throw new MedicalHistoryInputError("All comorbidity selections must use one catalog version.");
+  }
+  const versionId = [...versionIds][0]!;
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(versionId)
+  ) {
+    throw new MedicalHistoryInputError("Comorbidity catalog version is invalid.");
+  }
+  const knowledge = await loadComorbidityKnowledgeVersion(client, versionId);
+  if (!knowledge) throw new MedicalHistoryInputError("Comorbidity catalog version was not found.");
+  const governedTerms = new Set(knowledge.terms.map(({ termId }) => termId));
+  if (selections.some(({ termId }) => !governedTerms.has(termId))) {
+    throw new MedicalHistoryInputError("Comorbidity term was not found in its pinned catalog.");
+  }
+
+  const existing = await client.query<{ catalog_version_id: string; term_id: string }>(
+    `SELECT catalog_version_id, term_id FROM insight.comorbidity_selections
+     WHERE research_case_id = $1`,
+    [researchCaseId],
+  );
+  const existingPins = new Set(
+    existing.rows.map(({ catalog_version_id, term_id }) => `${catalog_version_id}\0${term_id}`),
+  );
+  if (
+    selections.some(
+      ({ catalogVersionId, termId }) =>
+        catalogVersionId !== activeVersionId && !existingPins.has(`${catalogVersionId}\0${termId}`),
+    )
+  ) {
+    throw new MedicalHistoryInputError(
+      "New comorbidity selections must use a term from the active catalog version.",
+    );
+  }
+  return evaluateComorbidityRules(knowledge, selections);
+}
+
 async function insertComorbidities(
   client: PoolClient,
   researchCaseId: string,
@@ -506,23 +568,33 @@ async function insertComorbidities(
   }
 }
 
-async function insertContraindications(
+async function insertRuleEvaluation(
   client: PoolClient,
   researchCaseId: string,
-  contraindications: readonly ContraindicationOutputInput[],
+  evaluation: ComorbidityRuleEvaluation,
 ): Promise<void> {
-  for (const [position, output] of contraindications.entries()) {
+  await client.query(
+    `INSERT INTO insight.comorbidity_rule_evaluations
+       (research_case_id, knowledge_version_id, knowledge_version) VALUES ($1, $2, $3)`,
+    [researchCaseId, evaluation.knowledgeVersionId, evaluation.knowledgeVersion],
+  );
+  for (const [position, result] of evaluation.results.entries()) {
     await client.query(
-      `INSERT INTO insight.contraindication_outputs (
-         research_case_id, position, rule_version_id, rule_id, outcome, explanation
-       ) VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO insight.comorbidity_rule_results (
+         research_case_id, position, knowledge_version_id, knowledge_version, rule_id,
+         kind, target_id, value, explanation, matched_term_ids
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         researchCaseId,
         position,
-        output.ruleVersionId,
-        output.ruleId,
-        output.outcome,
-        output.explanation ?? null,
+        result.knowledgeVersionId,
+        result.knowledgeVersion,
+        result.ruleId,
+        result.kind,
+        result.targetId,
+        result.value,
+        result.explanation,
+        result.matchedTermIds,
       ],
     );
   }
@@ -538,7 +610,7 @@ async function loadHistory(
   );
   const row = historyResult.rows[0];
   if (!row) return null;
-  const [trials, medications, comorbidities, contraindications, adverseEffectTerms] =
+  const [trials, medications, comorbidities, evaluation, ruleResults, adverseEffectTerms] =
     await Promise.all([
       database.query<TrialRow>(
         "SELECT * FROM insight.prior_antipsychotic_trials WHERE research_case_id = $1 ORDER BY position",
@@ -549,11 +621,20 @@ async function loadHistory(
         [researchCaseId],
       ),
       database.query<ComorbidityRow>(
-        "SELECT * FROM insight.comorbidity_selections WHERE research_case_id = $1 ORDER BY position",
+        `SELECT selection.*, term.label
+         FROM insight.comorbidity_selections selection
+         JOIN insight.comorbidity_knowledge_terms term
+           ON term.knowledge_version_id::text = selection.catalog_version_id
+          AND term.term_id = selection.term_id
+         WHERE selection.research_case_id = $1 ORDER BY selection.position`,
         [researchCaseId],
       ),
-      database.query<ContraindicationRow>(
-        "SELECT * FROM insight.contraindication_outputs WHERE research_case_id = $1 ORDER BY position",
+      database.query<RuleEvaluationRow>(
+        "SELECT * FROM insight.comorbidity_rule_evaluations WHERE research_case_id = $1",
+        [researchCaseId],
+      ),
+      database.query<RuleResultRow>(
+        "SELECT * FROM insight.comorbidity_rule_results WHERE research_case_id = $1 ORDER BY position",
         [researchCaseId],
       ),
       database.query<AdverseEffectTermRow>(
@@ -600,17 +681,26 @@ async function loadHistory(
       compact({
         catalogVersionId: entry.catalog_version_id,
         termId: entry.term_id,
+        label: entry.label,
         supplementalText: entry.supplemental_text ?? undefined,
       }),
     ),
-    contraindications: contraindications.rows.map((entry) =>
-      compact({
-        ruleVersionId: entry.rule_version_id,
-        ruleId: entry.rule_id,
-        outcome: entry.outcome,
-        explanation: entry.explanation ?? undefined,
-      }),
-    ),
+    ruleEvaluation: evaluation.rows[0]
+      ? {
+          knowledgeVersionId: evaluation.rows[0].knowledge_version_id,
+          knowledgeVersion: Number(evaluation.rows[0].knowledge_version),
+          results: ruleResults.rows.map((entry) => ({
+            knowledgeVersionId: entry.knowledge_version_id,
+            knowledgeVersion: Number(entry.knowledge_version),
+            ruleId: entry.rule_id,
+            kind: entry.kind,
+            targetId: entry.target_id,
+            value: entry.value,
+            explanation: entry.explanation,
+            matchedTermIds: entry.matched_term_ids,
+          })),
+        }
+      : null,
     ...(row.supplemental_notes === null ? {} : { supplementalNotes: row.supplemental_notes }),
     revision: Number(row.revision),
     createdByUserId: row.created_by_user_id,

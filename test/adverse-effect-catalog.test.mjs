@@ -48,7 +48,6 @@ test("OTHER supports multiselect and an explicitly empty detail", () => {
     ],
     currentMedications: [],
     comorbidities: [],
-    contraindications: [],
   };
   assert.equal(isContract(MedicalHistoryInputSchema, history), true);
   assert.equal(validateMedicalHistoryInput(history).priorTrials[0].otherAdverseEffectDetail, "");

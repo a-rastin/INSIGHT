@@ -23,10 +23,7 @@ const identifierConfiguration = {
 };
 const common = {
   currentMedications: [{ rawMedication: "metformin", normalizationState: "UNKNOWN" }],
-  comorbidities: [
-    { catalogVersionId: "comorbidity-v1", termId: "diabetes", supplementalText: "Controlled" },
-  ],
-  contraindications: [{ ruleVersionId: "rules-v1", ruleId: "candidate-x", outcome: "UNKNOWN" }],
+  comorbidities: [],
   supplementalNotes: "Synthetic history note",
 };
 

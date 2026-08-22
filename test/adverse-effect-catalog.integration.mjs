@@ -248,7 +248,6 @@ function historyInput(catalogVersionId) {
     ],
     currentMedications: [],
     comorbidities: [],
-    contraindications: [],
   };
 }
 
