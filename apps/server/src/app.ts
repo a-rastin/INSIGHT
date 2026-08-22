@@ -33,6 +33,7 @@ import {
   sessionTokenFromCookie,
   type SessionContext,
 } from "./identity/sessions.js";
+import { medicalHistoryRoutes } from "./medical-history/http.js";
 import { patientRoutes } from "./patient/http.js";
 import type { OfficialIdentifierConfiguration } from "./patient/patients.js";
 
@@ -279,6 +280,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       );
       void app.register(
         assessmentRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
+        { prefix: API_PREFIX },
+      );
+      void app.register(
+        medicalHistoryRoutes(options.authentication.pool, (request) =>
+          requestSessions.get(request),
+        ),
         { prefix: API_PREFIX },
       );
     }

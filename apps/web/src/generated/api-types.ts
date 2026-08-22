@@ -356,6 +356,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/medical-history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getMedicalHistory"];
+    put: operations["saveMedicalHistory"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3185,6 +3201,321 @@ export interface operations {
               createdAt: string | null;
               updatedAt: string | null;
             };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getMedicalHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            medicalHistory: {
+              presentationStatus: "FIRST_PRESENTATION" | "KNOWN_SCHIZOPHRENIA";
+              previouslyTreated?: boolean;
+              priorTrials?: {
+                medication: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
+                dose?: string;
+                doseUnit?: string;
+                treatmentStart?: string;
+                treatmentEnd?: string;
+                approximatePeriod?: string;
+                response?:
+                  | "FULL_RESPONSE"
+                  | "PARTIAL_RESPONSE"
+                  | "NO_RESPONSE"
+                  | "WORSENED"
+                  | "UNKNOWN";
+                adverseEffects?: {
+                  catalogVersionId: string;
+                  termId: string;
+                }[];
+                otherAdverseEffectDetail?: string;
+                discontinuationReason?: string;
+                notes?: string;
+              }[];
+              currentMedications: {
+                rawMedication: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
+                dose?: string;
+                doseUnit?: string;
+                route?: string;
+                frequency?: string;
+              }[];
+              comorbidities: {
+                catalogVersionId: string;
+                termId: string;
+                supplementalText?: string;
+              }[];
+              contraindications: {
+                ruleVersionId: string;
+                ruleId: string;
+                outcome: "CONTRAINDICATED" | "CAUTION" | "MONITORING_REQUIRED" | "UNKNOWN";
+                explanation?: string;
+              }[];
+              supplementalNotes?: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              researchCaseId: string;
+              revision: number;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              updatedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              updatedAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  saveMedicalHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          expectedRevision: number;
+          /** insight.medical-history-input.v1 */
+          history: {
+            presentationStatus: "FIRST_PRESENTATION" | "KNOWN_SCHIZOPHRENIA";
+            previouslyTreated?: boolean;
+            priorTrials?: {
+              medication: string;
+              normalizationState?: "NORMALIZED" | "UNKNOWN";
+              canonicalMedicationId?: string;
+              dose?: string;
+              doseUnit?: string;
+              treatmentStart?: string;
+              treatmentEnd?: string;
+              approximatePeriod?: string;
+              response?:
+                | "FULL_RESPONSE"
+                | "PARTIAL_RESPONSE"
+                | "NO_RESPONSE"
+                | "WORSENED"
+                | "UNKNOWN";
+              adverseEffects?: {
+                catalogVersionId: string;
+                termId: string;
+              }[];
+              otherAdverseEffectDetail?: string;
+              discontinuationReason?: string;
+              notes?: string;
+            }[];
+            currentMedications: {
+              rawMedication: string;
+              normalizationState?: "NORMALIZED" | "UNKNOWN";
+              canonicalMedicationId?: string;
+              dose?: string;
+              doseUnit?: string;
+              route?: string;
+              frequency?: string;
+            }[];
+            comorbidities: {
+              catalogVersionId: string;
+              termId: string;
+              supplementalText?: string;
+            }[];
+            contraindications: {
+              ruleVersionId: string;
+              ruleId: string;
+              outcome: "CONTRAINDICATED" | "CAUTION" | "MONITORING_REQUIRED" | "UNKNOWN";
+              explanation?: string;
+            }[];
+            supplementalNotes?: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            medicalHistory: {
+              presentationStatus: "FIRST_PRESENTATION" | "KNOWN_SCHIZOPHRENIA";
+              previouslyTreated?: boolean;
+              priorTrials?: {
+                medication: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
+                dose?: string;
+                doseUnit?: string;
+                treatmentStart?: string;
+                treatmentEnd?: string;
+                approximatePeriod?: string;
+                response?:
+                  | "FULL_RESPONSE"
+                  | "PARTIAL_RESPONSE"
+                  | "NO_RESPONSE"
+                  | "WORSENED"
+                  | "UNKNOWN";
+                adverseEffects?: {
+                  catalogVersionId: string;
+                  termId: string;
+                }[];
+                otherAdverseEffectDetail?: string;
+                discontinuationReason?: string;
+                notes?: string;
+              }[];
+              currentMedications: {
+                rawMedication: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
+                dose?: string;
+                doseUnit?: string;
+                route?: string;
+                frequency?: string;
+              }[];
+              comorbidities: {
+                catalogVersionId: string;
+                termId: string;
+                supplementalText?: string;
+              }[];
+              contraindications: {
+                ruleVersionId: string;
+                ruleId: string;
+                outcome: "CONTRAINDICATED" | "CAUTION" | "MONITORING_REQUIRED" | "UNKNOWN";
+                explanation?: string;
+              }[];
+              supplementalNotes?: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              researchCaseId: string;
+              revision: number;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              updatedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              updatedAt: string;
+            } | null;
           };
         };
       };

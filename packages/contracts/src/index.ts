@@ -1011,6 +1011,117 @@ export function stableSerialize(value: JsonValue): string {
   return serializeJson(value, new Set());
 }
 
+export const PRESENTATION_STATUSES = ["FIRST_PRESENTATION", "KNOWN_SCHIZOPHRENIA"] as const;
+export const TRIAL_RESPONSES = [
+  "FULL_RESPONSE",
+  "PARTIAL_RESPONSE",
+  "NO_RESPONSE",
+  "WORSENED",
+  "UNKNOWN",
+] as const;
+export const CONTRAINDICATION_OUTCOMES = [
+  "CONTRAINDICATED",
+  "CAUTION",
+  "MONITORING_REQUIRED",
+  "UNKNOWN",
+] as const;
+
+const optionalClinicalText = (maxLength: number) =>
+  Type.Optional(Type.String({ minLength: 1, maxLength }));
+const catalogReferenceSchema = Type.Object(
+  {
+    catalogVersionId: Type.String({ minLength: 1, maxLength: 200 }),
+    termId: Type.String({ minLength: 1, maxLength: 200 }),
+  },
+  { additionalProperties: false },
+);
+
+export const CurrentMedicationInputSchema = Type.Object(
+  {
+    rawMedication: Type.String({ minLength: 1, maxLength: 500 }),
+    normalizationState: Type.Optional(
+      Type.Union([Type.Literal("NORMALIZED"), Type.Literal("UNKNOWN")]),
+    ),
+    canonicalMedicationId: optionalClinicalText(200),
+    dose: optionalClinicalText(100),
+    doseUnit: optionalClinicalText(100),
+    route: optionalClinicalText(100),
+    frequency: optionalClinicalText(200),
+  },
+  { additionalProperties: false },
+);
+export type CurrentMedicationInput = Static<typeof CurrentMedicationInputSchema>;
+
+export const AntipsychoticTrialInputSchema = Type.Object(
+  {
+    medication: Type.String({ minLength: 1, maxLength: 500 }),
+    normalizationState: Type.Optional(
+      Type.Union([Type.Literal("NORMALIZED"), Type.Literal("UNKNOWN")]),
+    ),
+    canonicalMedicationId: optionalClinicalText(200),
+    dose: optionalClinicalText(100),
+    doseUnit: optionalClinicalText(100),
+    treatmentStart: Type.Optional(Type.String({ pattern: "^\\d{4}-\\d{2}-\\d{2}$" })),
+    treatmentEnd: Type.Optional(Type.String({ pattern: "^\\d{4}-\\d{2}-\\d{2}$" })),
+    approximatePeriod: optionalClinicalText(500),
+    response: Type.Optional(Type.Union(TRIAL_RESPONSES.map((value) => Type.Literal(value)))),
+    adverseEffects: Type.Optional(Type.Array(catalogReferenceSchema, { maxItems: 100 })),
+    otherAdverseEffectDetail: optionalClinicalText(2000),
+    discontinuationReason: optionalClinicalText(2000),
+    notes: optionalClinicalText(5000),
+  },
+  { additionalProperties: false },
+);
+export type AntipsychoticTrialInput = Static<typeof AntipsychoticTrialInputSchema>;
+
+export const ComorbiditySelectionInputSchema = Type.Object(
+  {
+    ...catalogReferenceSchema.properties,
+    supplementalText: optionalClinicalText(2000),
+  },
+  { additionalProperties: false },
+);
+export type ComorbiditySelectionInput = Static<typeof ComorbiditySelectionInputSchema>;
+
+export const ContraindicationOutputInputSchema = Type.Object(
+  {
+    ruleVersionId: Type.String({ minLength: 1, maxLength: 200 }),
+    ruleId: Type.String({ minLength: 1, maxLength: 200 }),
+    outcome: Type.Union(CONTRAINDICATION_OUTCOMES.map((value) => Type.Literal(value))),
+    explanation: optionalClinicalText(2000),
+  },
+  { additionalProperties: false },
+);
+export type ContraindicationOutputInput = Static<typeof ContraindicationOutputInputSchema>;
+
+export const MedicalHistoryInputSchema = Type.Object(
+  {
+    presentationStatus: Type.Union(PRESENTATION_STATUSES.map((value) => Type.Literal(value))),
+    previouslyTreated: Type.Optional(Type.Boolean()),
+    priorTrials: Type.Optional(Type.Array(AntipsychoticTrialInputSchema, { maxItems: 100 })),
+    currentMedications: Type.Array(CurrentMedicationInputSchema, { maxItems: 100 }),
+    comorbidities: Type.Array(ComorbiditySelectionInputSchema, { maxItems: 100 }),
+    contraindications: Type.Array(ContraindicationOutputInputSchema, { maxItems: 200 }),
+    supplementalNotes: optionalClinicalText(10000),
+  },
+  { $id: "insight.medical-history-input.v1", additionalProperties: false },
+);
+export type MedicalHistoryInput = Static<typeof MedicalHistoryInputSchema>;
+
+export const MedicalHistoryRecordSchema = Type.Object(
+  {
+    ...MedicalHistoryInputSchema.properties,
+    researchCaseId: UuidSchema,
+    revision: Type.Integer({ minimum: 1 }),
+    createdByUserId: UuidSchema,
+    updatedByUserId: UuidSchema,
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  },
+  { $id: "insight.medical-history-record.v1", additionalProperties: false },
+);
+export type MedicalHistoryRecord = Static<typeof MedicalHistoryRecordSchema>;
+
 export async function sha256Hex(input: string | Uint8Array): Promise<Sha256> {
   const bytes =
     typeof input === "string" ? new TextEncoder().encode(input) : Uint8Array.from(input);

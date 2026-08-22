@@ -12,6 +12,7 @@ export * from "./assessment/index.js";
 export * from "./audit/index.js";
 export * from "./deployment/index.js";
 export * from "./identity/index.js";
+export * from "./medical-history/index.js";
 export * from "./patient/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {

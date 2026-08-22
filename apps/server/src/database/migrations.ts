@@ -1095,6 +1095,170 @@ export const migrations: readonly Migration[] = Object.freeze([
       DELETE FROM insight.cssrs_recent_assessments WHERE status = 'BYPASSED';
     `,
   },
+  {
+    version: 15,
+    name: "medical_history",
+    sql: `
+      CREATE TYPE insight.presentation_status AS ENUM (
+        'FIRST_PRESENTATION', 'KNOWN_SCHIZOPHRENIA'
+      );
+      CREATE TYPE insight.trial_response AS ENUM (
+        'FULL_RESPONSE', 'PARTIAL_RESPONSE', 'NO_RESPONSE', 'WORSENED', 'UNKNOWN'
+      );
+      CREATE TYPE insight.contraindication_outcome AS ENUM (
+        'CONTRAINDICATED', 'CAUTION', 'MONITORING_REQUIRED', 'UNKNOWN'
+      );
+
+      CREATE TABLE insight.medical_histories (
+        research_case_id uuid PRIMARY KEY
+          REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        presentation_status insight.presentation_status NOT NULL,
+        previously_treated boolean,
+        supplemental_notes text CHECK (
+          supplemental_notes IS NULL OR (
+            supplemental_notes = btrim(supplemental_notes)
+            AND supplemental_notes <> '' AND char_length(supplemental_notes) <= 10000
+          )
+        ),
+        revision bigint NOT NULL CHECK (revision > 0),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL,
+        CHECK (
+          (presentation_status = 'FIRST_PRESENTATION' AND previously_treated IS NULL)
+          OR
+          (presentation_status = 'KNOWN_SCHIZOPHRENIA' AND previously_treated IS NOT NULL)
+        )
+      );
+
+      CREATE TABLE insight.prior_antipsychotic_trials (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL
+          REFERENCES insight.medical_histories(research_case_id) ON DELETE CASCADE,
+        position integer NOT NULL CHECK (position >= 0),
+        medication text NOT NULL CHECK (
+          medication = btrim(medication) AND medication <> '' AND char_length(medication) <= 500
+        ),
+        normalization_state text CHECK (normalization_state IN ('NORMALIZED', 'UNKNOWN')),
+        canonical_medication_id text,
+        dose text,
+        dose_unit text,
+        treatment_start date,
+        treatment_end date,
+        approximate_period text,
+        response insight.trial_response,
+        adverse_effects jsonb CHECK (
+          adverse_effects IS NULL OR jsonb_typeof(adverse_effects) = 'array'
+        ),
+        other_adverse_effect_detail text,
+        discontinuation_reason text,
+        notes text,
+        UNIQUE (research_case_id, position),
+        CHECK (treatment_end IS NULL OR treatment_start IS NULL OR treatment_end >= treatment_start),
+        CHECK (
+          (normalization_state = 'NORMALIZED' AND canonical_medication_id IS NOT NULL)
+          OR (normalization_state IS DISTINCT FROM 'NORMALIZED' AND canonical_medication_id IS NULL)
+        )
+      );
+
+      CREATE TABLE insight.current_medication_entries (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL
+          REFERENCES insight.medical_histories(research_case_id) ON DELETE CASCADE,
+        position integer NOT NULL CHECK (position >= 0),
+        raw_medication text NOT NULL CHECK (
+          raw_medication = btrim(raw_medication) AND raw_medication <> ''
+          AND char_length(raw_medication) <= 500
+        ),
+        normalization_state text CHECK (normalization_state IN ('NORMALIZED', 'UNKNOWN')),
+        canonical_medication_id text,
+        dose text,
+        dose_unit text,
+        route text,
+        frequency text,
+        UNIQUE (research_case_id, position),
+        CHECK (
+          (normalization_state = 'NORMALIZED' AND canonical_medication_id IS NOT NULL)
+          OR (normalization_state IS DISTINCT FROM 'NORMALIZED' AND canonical_medication_id IS NULL)
+        )
+      );
+
+      CREATE TABLE insight.comorbidity_selections (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL
+          REFERENCES insight.medical_histories(research_case_id) ON DELETE CASCADE,
+        position integer NOT NULL CHECK (position >= 0),
+        catalog_version_id text NOT NULL,
+        term_id text NOT NULL,
+        supplemental_text text,
+        UNIQUE (research_case_id, position),
+        UNIQUE (research_case_id, catalog_version_id, term_id)
+      );
+
+      CREATE TABLE insight.contraindication_outputs (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL
+          REFERENCES insight.medical_histories(research_case_id) ON DELETE CASCADE,
+        position integer NOT NULL CHECK (position >= 0),
+        rule_version_id text NOT NULL,
+        rule_id text NOT NULL,
+        outcome insight.contraindication_outcome NOT NULL,
+        explanation text,
+        UNIQUE (research_case_id, position),
+        UNIQUE (research_case_id, rule_version_id, rule_id)
+      );
+
+      CREATE TABLE insight.medical_history_save_events (
+        id bigserial PRIMARY KEY,
+        research_case_id uuid NOT NULL,
+        patient_id uuid NOT NULL,
+        revision bigint NOT NULL CHECK (revision > 0),
+        presentation_status insight.presentation_status NOT NULL,
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        request_id uuid NOT NULL,
+        occurred_at timestamptz NOT NULL,
+        UNIQUE (research_case_id, revision)
+      );
+
+      CREATE INDEX medical_history_save_events_case_idx
+        ON insight.medical_history_save_events (research_case_id, revision, id);
+
+      CREATE FUNCTION insight.protect_medical_history_write()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF current_setting('insight.medical_history_write', true) IS DISTINCT FROM 'allowed'
+           AND NOT (TG_OP = 'DELETE' AND pg_trigger_depth() > 1)
+        THEN
+          RAISE EXCEPTION 'medical history data is service-owned'
+            USING ERRCODE = '55000';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+
+      CREATE TRIGGER medical_histories_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.medical_histories
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+      CREATE TRIGGER prior_trials_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.prior_antipsychotic_trials
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+      CREATE TRIGGER current_medications_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.current_medication_entries
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+      CREATE TRIGGER comorbidities_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.comorbidity_selections
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+      CREATE TRIGGER contraindications_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.contraindication_outputs
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
+      CREATE TRIGGER medical_history_save_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.medical_history_save_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(
