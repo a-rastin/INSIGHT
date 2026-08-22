@@ -69,7 +69,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -564,6 +565,144 @@ p {
   font-size: 0.8125rem;
 }
 
+.medical-history > .banner {
+  margin-bottom: var(--space-4);
+}
+
+.medical-history__form,
+.history-list,
+.history-field,
+.choice-fieldset {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.medical-history__form {
+  gap: var(--space-5);
+}
+
+.history-section,
+.history-entry,
+.validation-panel,
+.validation-summary,
+.caution-summary {
+  min-width: 0;
+  padding: var(--space-5);
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.history-section > h3,
+.history-section > p,
+.validation-panel > h3,
+.validation-panel > p,
+.caution-summary > h3 {
+  margin-bottom: var(--space-2);
+}
+
+.history-entry {
+  background: var(--surface-1);
+}
+
+.history-entry > legend,
+.choice-fieldset > legend {
+  padding: 0 var(--space-2);
+  font-weight: 700;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.history-field,
+.field-label {
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.history-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.choice-fieldset {
+  margin: var(--space-4) 0;
+  border: 1px solid var(--border-strong);
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.choice-grid label {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.choice-grid input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.validation-panel {
+  background: var(--surface-1);
+  border-left: 4px solid var(--info);
+}
+
+.validation-summary {
+  background: var(--urgent-bg);
+  border-left: 4px solid var(--urgent);
+}
+
+.validation-summary h3,
+.validation-summary ul {
+  margin: 0;
+}
+
+.validation-summary ul {
+  padding-left: var(--space-5);
+  margin-top: var(--space-2);
+}
+
+.caution-summary {
+  background: var(--warning-bg);
+  border-left: 4px solid var(--warning);
+}
+
+.caution-summary ul {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.caution-summary li {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.caution-summary li p,
+.caution-summary li small {
+  margin: 0;
+}
+
 .select-field {
   display: grid;
   gap: var(--space-2);
@@ -979,7 +1118,9 @@ tbody tr:last-child td {
 
   .patient-form,
   .profile-grid,
-  .panss-scores {
+  .panss-scores,
+  .history-grid,
+  .choice-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
