@@ -1,11 +1,13 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Implement psychiatrist-only immediate Patient hard deletion: commit DB aggregate deletion, preserve clinical audit and Patient/Research Case linkage, then one best-effort file removal; verify residue, authorization, idempotency, and file-failure success.
+Implement and verify versioned DSM-5-TR assessment end to end without inventing clinical content.
 
 ## Core
-- hard-delete ordering — attributable audit and aggregate deletion commit before exactly one best-effort artifact-tree removal attempt
+- clinical source integrity — use only repository-approved DSM schema, vectors, wording, and reviewer reference; missing material stays explicit
+- authority separation — computed assessment never mutates psychiatrist confirmation or bypass decision
 - surviving audit — Patient and Research Case audit rows retain original linkage, payloads, provenance, and Psychiatrist-only read authorization
+- hard-delete ordering — attributable audit and aggregate deletion commit before exactly one best-effort artifact-tree removal attempt
 - guarded audit — domain-result prerequisites, invalidation, revision increment, and provenance commit atomically
 - server authority — only transition commands mutate persisted Research Case state under optimistic revision checks
 - contract lockstep — route schemas generate published OpenAPI and browser types checked in tests
@@ -118,6 +120,7 @@ Implement psychiatrist-only immediate Patient hard deletion: commit DB aggregate
 - ✓103 Patient hard-deletion packet committed. — verified by: Verifier: git commit 6466aeb; coverage: all 13 staged packet files and no unrelated paths.
 
 ## Open
+- ?04 Governed DSM-5-TR criterion wording, deterministic calculation rules, reviewer-approved golden vectors, and reviewer sign-off reference are absent from allowed repository paths. — settled by: User supplies approved artifact paths/content and sign-off reference.
 
 ## Next
-Await the next implementation issue; protected CONTEXT progress tracker remains unchanged by repository rule.
+Wait for governed clinical source artifact and reviewer vectors; do not invent them.

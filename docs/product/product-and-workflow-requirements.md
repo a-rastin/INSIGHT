@@ -93,19 +93,15 @@ There is no New Visit, Encounter list, or second Research Case action.
 
 ### DSM-5-TR
 
-- Display the governed schizophrenia diagnostic criteria and structured selectable responses.
+- Display the schizophrenia diagnostic criteria and selectable responses.
 - Calculate the deterministic criteria result locally.
 - Bypass represents the Psychiatrist's certainty and requires no explanation.
-
-Exact criterion wording and calculation require a governed source artifact before Packet 3 implementation.
 
 ### PANSS
 
 - Display every governed PANSS item and permitted response value.
 - Calculate total/subscale outputs deterministically.
 - Permit unrestricted bypass.
-
-Exact PANSS source/version, permission, wording, and scoring must be governed before Packet 3 implementation.
 
 ### C-SSRS Screen Version - Recent
 
