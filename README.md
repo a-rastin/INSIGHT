@@ -236,6 +236,8 @@ Migration 15 adds transactional medical-history snapshots, and migration 16 adds
 
 Migration 17 adds immutable comorbidity knowledge versions, governed terms and deterministic rules, reviewer/source records, active-version state, and service-owned pinned rule evaluations. Validation and clinical-review limits are documented in [Comorbidity Knowledge Review Record](docs/reviews/comorbidity-knowledge-review.md).
 
+Migration 18 adds immutable Administrator-owned model-endpoint versions, encrypted write-only credentials, metadata-only audit events, and `PENDING`, `CHECKING`, `COMPATIBLE`, and `INCOMPATIBLE` compatibility state. `GET` and `PUT /api/v1/admin/model-endpoint`, `DELETE /api/v1/admin/model-endpoint/credential`, and `POST /api/v1/admin/model-endpoint/check` expose only normalized non-secret metadata. Every replacement or clear disables AI eligibility until the exact saved URL, model, credential, and probe version pass the two-request tool-call check. Provider retention, training, and DPA terms remain a displayed accepted risk rather than an activation gate.
+
 Patient routes require one deployment identifier configuration. Set `INSIGHT_OFFICIAL_IDENTIFIER_TYPE`, `INSIGHT_OFFICIAL_IDENTIFIER_ISSUER`, `INSIGHT_OFFICIAL_IDENTIFIER_PATTERN`, and `INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION`; normalization must be `NFKC`, `NFKC_UPPERCASE`, or `NFKC_LOWERCASE`. The Compose file forwards these runtime values and contains no jurisdiction-specific default.
 
 Migration deployment, failure recovery, full-restore boundaries, and major-upgrade steps are documented in [Database Migrations and Recovery](docs/operations/database-migrations.md).

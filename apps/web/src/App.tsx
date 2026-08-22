@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { AdminUsersPage } from "./AdminUsersPage";
+import { ModelEndpointPage } from "./ModelEndpointPage";
 import { CreatePatientPage, PatientProfilePage, PatientRegistryPage } from "./PatientPages";
 import {
   Badge,
@@ -29,7 +30,14 @@ type Route = {
   label: string;
   title: string;
   description: string;
-  page: "workspace" | "patients" | "patient-create" | "patient-profile" | "users" | "placeholder";
+  page:
+    | "workspace"
+    | "patients"
+    | "patient-create"
+    | "patient-profile"
+    | "users"
+    | "model-endpoint"
+    | "placeholder";
 };
 
 type Session = operations["getSession"]["responses"][200]["content"]["application/json"];
@@ -99,7 +107,7 @@ const administratorRoutes: Route[] = [
     label: "Model Endpoint",
     title: "Model Endpoint",
     description: "Configure and verify the hosted model endpoint.",
-    page: "placeholder",
+    page: "model-endpoint",
   },
   {
     path: "/administration/medication-comorbidity-knowledge",
@@ -369,6 +377,9 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
           />
         ) : null}
         {route?.page === "users" ? <AdminUsersPage csrfToken={session.csrfToken} /> : null}
+        {route?.page === "model-endpoint" ? (
+          <ModelEndpointPage csrfToken={session.csrfToken} />
+        ) : null}
         {route?.page === "placeholder" ? <PlaceholderPage title={route.title} /> : null}
         {!route ? <NotFoundPage /> : null}
       </main>

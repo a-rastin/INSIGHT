@@ -5,7 +5,7 @@ export interface OperationalAuditActor {
   readonly role: "ADMINISTRATOR" | "PSYCHIATRIST";
 }
 
-type OperationalTargetType = "USER" | "DEPLOYMENT_EVIDENCE";
+type OperationalTargetType = "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
 
 export interface OperationalAuditEvent {
   readonly id: string;
@@ -66,6 +66,13 @@ export async function listOperationalAuditEvents(
            jsonb_build_object('environmentStatus', environment_status) AS after_metadata,
            request_id, occurred_at
     FROM insight.operational_audit_events
+    UNION ALL
+    SELECT id, event_type, actor_user_id, 'MODEL_ENDPOINT' AS target_type,
+           configuration_id::text AS target_id, configuration_version::text AS target_version,
+           NULL::jsonb AS before_metadata,
+           jsonb_build_object('baseUrl', base_url, 'model', model) AS after_metadata,
+           request_id, occurred_at
+    FROM insight.model_endpoint_audit_events
     ORDER BY occurred_at, id
   `);
 

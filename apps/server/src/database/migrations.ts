@@ -1431,6 +1431,84 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_medical_history_write();
     `,
   },
+  {
+    version: 18,
+    name: "model_endpoint_configuration",
+    sql: `
+      CREATE TABLE insight.model_endpoint_configurations (
+        id uuid PRIMARY KEY,
+        version integer NOT NULL UNIQUE CHECK (version > 0),
+        base_url text NOT NULL CHECK (
+          base_url = btrim(base_url) AND base_url <> '' AND char_length(base_url) <= 2000
+        ),
+        model text NOT NULL CHECK (
+          model = btrim(model) AND model <> '' AND char_length(model) <= 500
+        ),
+        credential_ciphertext bytea,
+        credential_iv bytea CHECK (credential_iv IS NULL OR octet_length(credential_iv) = 12),
+        credential_tag bytea CHECK (credential_tag IS NULL OR octet_length(credential_tag) = 16),
+        encryption_key_version integer REFERENCES insight.application_encryption_keys(version),
+        compatibility_test_version text NOT NULL,
+        configuration_fingerprint text NOT NULL CHECK (
+          configuration_fingerprint ~ '^[0-9a-f]{64}$'
+        ),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (
+          (credential_ciphertext IS NULL AND credential_iv IS NULL AND credential_tag IS NULL
+            AND encryption_key_version IS NULL)
+          OR
+          (credential_ciphertext IS NOT NULL AND credential_iv IS NOT NULL
+            AND credential_tag IS NOT NULL AND encryption_key_version IS NOT NULL)
+        )
+      );
+
+      CREATE TABLE insight.model_endpoint_state (
+        singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+        current_configuration_id uuid REFERENCES insight.model_endpoint_configurations(id),
+        status text NOT NULL CHECK (status IN (
+          'PENDING', 'CHECKING', 'COMPATIBLE', 'INCOMPATIBLE'
+        )),
+        failure_category text CHECK (failure_category IN (
+          'AUTHENTICATION', 'ENDPOINT', 'RATE_LIMITED', 'PROVIDER', 'TIMEOUT',
+          'MALFORMED_RESPONSE', 'TOOL_CALL', 'TOOL_ROUND_TRIP'
+        )),
+        returned_model text CHECK (returned_model IS NULL OR char_length(returned_model) <= 500),
+        last_checked_at timestamptz,
+        CHECK (status <> 'COMPATIBLE' OR failure_category IS NULL),
+        CHECK (status <> 'INCOMPATIBLE' OR failure_category IS NOT NULL)
+      );
+      INSERT INTO insight.model_endpoint_state (singleton, status) VALUES (true, 'PENDING');
+
+      CREATE TABLE insight.model_endpoint_audit_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_type text NOT NULL CHECK (event_type IN (
+          'MODEL_ENDPOINT_REPLACED', 'MODEL_ENDPOINT_CREDENTIAL_CLEARED'
+        )),
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        configuration_id uuid NOT NULL REFERENCES insight.model_endpoint_configurations(id),
+        configuration_version integer NOT NULL CHECK (configuration_version > 0),
+        base_url text NOT NULL,
+        model text NOT NULL,
+        request_id uuid,
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE FUNCTION insight.reject_model_endpoint_configuration_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        RAISE EXCEPTION 'model endpoint configuration versions are immutable'
+          USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER model_endpoint_configurations_immutable
+      BEFORE UPDATE OR DELETE ON insight.model_endpoint_configurations
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_model_endpoint_configuration_mutation();
+      CREATE TRIGGER model_endpoint_audit_events_no_mutation
+      BEFORE UPDATE OR DELETE ON insight.model_endpoint_audit_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

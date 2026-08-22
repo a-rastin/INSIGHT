@@ -15,6 +15,7 @@ export * from "./audit/index.js";
 export * from "./deployment/index.js";
 export * from "./identity/index.js";
 export * from "./medical-history/index.js";
+export * from "./model-endpoint/index.js";
 export * from "./patient/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
@@ -34,6 +35,9 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       pool,
       allowInsecureLoopbackCookie:
         env.NODE_ENV === "development" && ["127.0.0.1", "::1", "localhost"].includes(host),
+    },
+    modelEndpoint: {
+      allowDevelopmentLoopbackHttp: env.NODE_ENV === "development",
     },
     patient: {
       officialIdentifier: officialIdentifierConfigurationFromEnv(env),

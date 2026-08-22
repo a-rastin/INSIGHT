@@ -159,6 +159,63 @@ export const ReadinessResponseSchema = Type.Object(
 );
 export type ReadinessResponse = Static<typeof ReadinessResponseSchema>;
 
+export const MODEL_ENDPOINT_STATUSES = [
+  "PENDING",
+  "CHECKING",
+  "COMPATIBLE",
+  "INCOMPATIBLE",
+] as const;
+export const MODEL_ENDPOINT_FAILURE_CATEGORIES = [
+  "AUTHENTICATION",
+  "ENDPOINT",
+  "RATE_LIMITED",
+  "PROVIDER",
+  "TIMEOUT",
+  "MALFORMED_RESPONSE",
+  "TOOL_CALL",
+  "TOOL_ROUND_TRIP",
+] as const;
+
+export const ModelEndpointReplaceRequestSchema = Type.Object(
+  {
+    baseUrl: Type.String({ minLength: 1, maxLength: 2000 }),
+    model: Type.String({ minLength: 1, maxLength: 500 }),
+    credential: Type.String({ minLength: 1, maxLength: 4096 }),
+  },
+  { $id: "insight.model-endpoint-replace-request.v1", additionalProperties: false },
+);
+export type ModelEndpointReplaceRequest = Static<typeof ModelEndpointReplaceRequestSchema>;
+
+export const ModelEndpointConfigurationSchema = Type.Object(
+  {
+    version: Type.Integer({ minimum: 1 }),
+    baseUrl: Type.String({ minLength: 1, maxLength: 2000 }),
+    model: Type.String({ minLength: 1, maxLength: 500 }),
+    credentialConfigured: Type.Boolean(),
+    status: Type.Union(MODEL_ENDPOINT_STATUSES.map((value) => Type.Literal(value))),
+    aiEligible: Type.Boolean(),
+    compatibilityTestVersion: Type.String({ minLength: 1, maxLength: 100 }),
+    configurationFingerprint: Sha256Schema,
+    failureCategory: Type.Union([
+      ...MODEL_ENDPOINT_FAILURE_CATEGORIES.map((value) => Type.Literal(value)),
+      Type.Null(),
+    ]),
+    returnedModel: Type.Union([Type.String({ maxLength: 500 }), Type.Null()]),
+    lastCheckedAt: Type.Union([TimestampSchema, Type.Null()]),
+    createdAt: TimestampSchema,
+  },
+  { $id: "insight.model-endpoint-configuration.v1", additionalProperties: false },
+);
+export type ModelEndpointConfiguration = Static<typeof ModelEndpointConfigurationSchema>;
+
+export const ModelEndpointConfigurationResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    configuration: Type.Union([ModelEndpointConfigurationSchema, Type.Null()]),
+  },
+  { $id: "insight.model-endpoint-configuration-response.v1", additionalProperties: false },
+);
+
 export interface ContractValidationIssue {
   readonly path: string;
   readonly message: string;

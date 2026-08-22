@@ -48,6 +48,49 @@ test("Administrator session exposes only operational navigation", async ({ page 
   await expect(page.getByRole("link", { name: "Patient Registry" })).toHaveCount(0);
 });
 
+test("Administrator replaces write-only model credential and sees compatibility risk", async ({
+  page,
+}) => {
+  const savedSecret = "synthetic-e2e-provider-key";
+  const pending = {
+    version: 1,
+    baseUrl: "https://provider.example/custom/v1",
+    model: "research-model",
+    credentialConfigured: true,
+    status: "PENDING",
+    aiEligible: false,
+    compatibilityTestVersion: "1",
+    configurationFingerprint: "a".repeat(64),
+    failureCategory: null,
+    returnedModel: null,
+    lastCheckedAt: null,
+    createdAt: "2026-08-22T12:00:00.000Z",
+  };
+  await page.route("**/api/v1/**", async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/v1/session") return route.fulfill({ json: session("ADMINISTRATOR") });
+    if (path === "/api/v1/admin/model-endpoint" && request.method() === "GET") {
+      return route.fulfill({ json: { schemaVersion: "1", configuration: null } });
+    }
+    if (path === "/api/v1/admin/model-endpoint" && request.method() === "PUT") {
+      expect(request.postDataJSON().credential).toBe(savedSecret);
+      return route.fulfill({ status: 201, json: { schemaVersion: "1", configuration: pending } });
+    }
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto("/administration/model-endpoint");
+  await expect(page.getByText("Accepted hosted-provider risk")).toBeVisible();
+  await page.getByLabel("Base URL").fill("https://provider.example/custom/v1/");
+  await page.getByLabel(/^Model/).fill("research-model");
+  await page.getByLabel("API key").fill(savedSecret);
+  await page.getByRole("button", { name: "Replace and check" }).click();
+  await expect(page.getByText("Configured", { exact: true })).toBeVisible();
+  await expect(page.getByText(savedSecret)).toHaveCount(0);
+  await expect(page.getByLabel("API key")).toHaveValue("");
+  await expect(page.getByText("Disabled", { exact: true })).toBeVisible();
+});
+
 test("Psychiatrist acknowledges research use once and keeps safe navigation after refresh", async ({
   page,
 }) => {

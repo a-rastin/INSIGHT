@@ -244,6 +244,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/model-endpoint": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getModelEndpointConfiguration"];
+    put: operations["replaceModelEndpointConfiguration"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/model-endpoint/credential": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations["clearModelEndpointCredential"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/model-endpoint/check": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["checkModelEndpointCompatibility"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/adverse-effect-catalog": {
     parameters: {
       query?: never;
@@ -1656,6 +1704,350 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getModelEndpointConfiguration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            configuration: {
+              version: number;
+              baseUrl: string;
+              model: string;
+              credentialConfigured: boolean;
+              status: "PENDING" | "CHECKING" | "COMPATIBLE" | "INCOMPATIBLE";
+              aiEligible: boolean;
+              compatibilityTestVersion: string;
+              /** INSIGHT SHA-256 v1 */
+              configurationFingerprint: string;
+              failureCategory:
+                | "AUTHENTICATION"
+                | "ENDPOINT"
+                | "RATE_LIMITED"
+                | "PROVIDER"
+                | "TIMEOUT"
+                | "MALFORMED_RESPONSE"
+                | "TOOL_CALL"
+                | "TOOL_ROUND_TRIP"
+                | null;
+              returnedModel: string | null;
+              lastCheckedAt: string | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  replaceModelEndpointConfiguration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          baseUrl: string;
+          model: string;
+          credential: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            configuration: {
+              version: number;
+              baseUrl: string;
+              model: string;
+              credentialConfigured: boolean;
+              status: "PENDING" | "CHECKING" | "COMPATIBLE" | "INCOMPATIBLE";
+              aiEligible: boolean;
+              compatibilityTestVersion: string;
+              /** INSIGHT SHA-256 v1 */
+              configurationFingerprint: string;
+              failureCategory:
+                | "AUTHENTICATION"
+                | "ENDPOINT"
+                | "RATE_LIMITED"
+                | "PROVIDER"
+                | "TIMEOUT"
+                | "MALFORMED_RESPONSE"
+                | "TOOL_CALL"
+                | "TOOL_ROUND_TRIP"
+                | null;
+              returnedModel: string | null;
+              lastCheckedAt: string | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  clearModelEndpointCredential: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            configuration: {
+              version: number;
+              baseUrl: string;
+              model: string;
+              credentialConfigured: boolean;
+              status: "PENDING" | "CHECKING" | "COMPATIBLE" | "INCOMPATIBLE";
+              aiEligible: boolean;
+              compatibilityTestVersion: string;
+              /** INSIGHT SHA-256 v1 */
+              configurationFingerprint: string;
+              failureCategory:
+                | "AUTHENTICATION"
+                | "ENDPOINT"
+                | "RATE_LIMITED"
+                | "PROVIDER"
+                | "TIMEOUT"
+                | "MALFORMED_RESPONSE"
+                | "TOOL_CALL"
+                | "TOOL_ROUND_TRIP"
+                | null;
+              returnedModel: string | null;
+              lastCheckedAt: string | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  checkModelEndpointCompatibility: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            configuration: {
+              version: number;
+              baseUrl: string;
+              model: string;
+              credentialConfigured: boolean;
+              status: "PENDING" | "CHECKING" | "COMPATIBLE" | "INCOMPATIBLE";
+              aiEligible: boolean;
+              compatibilityTestVersion: string;
+              /** INSIGHT SHA-256 v1 */
+              configurationFingerprint: string;
+              failureCategory:
+                | "AUTHENTICATION"
+                | "ENDPOINT"
+                | "RATE_LIMITED"
+                | "PROVIDER"
+                | "TIMEOUT"
+                | "MALFORMED_RESPONSE"
+                | "TOOL_CALL"
+                | "TOOL_ROUND_TRIP"
+                | null;
+              returnedModel: string | null;
+              lastCheckedAt: string | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+            } | null;
+          };
+        };
       };
       /** @description Default Response */
       default: {

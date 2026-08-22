@@ -36,6 +36,7 @@ import {
   type SessionContext,
 } from "./identity/sessions.js";
 import { medicalHistoryRoutes } from "./medical-history/http.js";
+import { modelEndpointRoutes, type ModelEndpointHttpOptions } from "./model-endpoint/http.js";
 import { patientRoutes } from "./patient/http.js";
 import type { OfficialIdentifierConfiguration } from "./patient/patients.js";
 
@@ -62,6 +63,7 @@ export interface AppOptions {
   readonly registerApiRoutes?: FastifyPluginAsync;
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
+  readonly modelEndpoint?: Omit<ModelEndpointHttpOptions, "pool">;
   readonly patient?: {
     readonly officialIdentifier: OfficialIdentifierConfiguration;
     readonly artifactRoot?: string;
@@ -264,6 +266,13 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     );
     void app.register(
       authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      modelEndpointRoutes(
+        { pool: options.authentication.pool, ...options.modelEndpoint },
+        (request) => requestSessions.get(request),
+      ),
       { prefix: API_PREFIX },
     );
     void app.register(

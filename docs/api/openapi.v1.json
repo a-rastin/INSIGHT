@@ -2011,6 +2011,682 @@
         }
       }
     },
+    "/api/v1/admin/model-endpoint": {
+      "get": {
+        "operationId": "getModelEndpointConfiguration",
+        "tags": ["administration"],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "configuration"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "configuration": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "version",
+                            "baseUrl",
+                            "model",
+                            "credentialConfigured",
+                            "status",
+                            "aiEligible",
+                            "compatibilityTestVersion",
+                            "configurationFingerprint",
+                            "failureCategory",
+                            "returnedModel",
+                            "lastCheckedAt",
+                            "createdAt"
+                          ],
+                          "properties": {
+                            "version": { "minimum": 1, "type": "integer" },
+                            "baseUrl": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "model": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "credentialConfigured": { "type": "boolean" },
+                            "status": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["PENDING"] },
+                                { "type": "string", "enum": ["CHECKING"] },
+                                { "type": "string", "enum": ["COMPATIBLE"] },
+                                { "type": "string", "enum": ["INCOMPATIBLE"] }
+                              ]
+                            },
+                            "aiEligible": { "type": "boolean" },
+                            "compatibilityTestVersion": {
+                              "minLength": 1,
+                              "maxLength": 100,
+                              "type": "string"
+                            },
+                            "configurationFingerprint": {
+                              "title": "INSIGHT SHA-256 v1",
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "failureCategory": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["AUTHENTICATION"] },
+                                { "type": "string", "enum": ["ENDPOINT"] },
+                                { "type": "string", "enum": ["RATE_LIMITED"] },
+                                { "type": "string", "enum": ["PROVIDER"] },
+                                { "type": "string", "enum": ["TIMEOUT"] },
+                                { "type": "string", "enum": ["MALFORMED_RESPONSE"] },
+                                { "type": "string", "enum": ["TOOL_CALL"] },
+                                { "type": "string", "enum": ["TOOL_ROUND_TRIP"] },
+                                { "type": "null" }
+                              ]
+                            },
+                            "returnedModel": {
+                              "anyOf": [{ "maxLength": 500, "type": "string" }, { "type": "null" }]
+                            },
+                            "lastCheckedAt": {
+                              "anyOf": [
+                                {
+                                  "title": "INSIGHT timestamp v1",
+                                  "format": "date-time",
+                                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                  "type": "string"
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "createdAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            }
+                          },
+                          "title": "insight.model-endpoint-configuration.v1"
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "replaceModelEndpointConfiguration",
+        "tags": ["administration"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["baseUrl", "model", "credential"],
+                "properties": {
+                  "baseUrl": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                  "model": { "minLength": 1, "maxLength": 500, "type": "string" },
+                  "credential": { "minLength": 1, "maxLength": 4096, "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "configuration"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "configuration": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "version",
+                            "baseUrl",
+                            "model",
+                            "credentialConfigured",
+                            "status",
+                            "aiEligible",
+                            "compatibilityTestVersion",
+                            "configurationFingerprint",
+                            "failureCategory",
+                            "returnedModel",
+                            "lastCheckedAt",
+                            "createdAt"
+                          ],
+                          "properties": {
+                            "version": { "minimum": 1, "type": "integer" },
+                            "baseUrl": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "model": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "credentialConfigured": { "type": "boolean" },
+                            "status": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["PENDING"] },
+                                { "type": "string", "enum": ["CHECKING"] },
+                                { "type": "string", "enum": ["COMPATIBLE"] },
+                                { "type": "string", "enum": ["INCOMPATIBLE"] }
+                              ]
+                            },
+                            "aiEligible": { "type": "boolean" },
+                            "compatibilityTestVersion": {
+                              "minLength": 1,
+                              "maxLength": 100,
+                              "type": "string"
+                            },
+                            "configurationFingerprint": {
+                              "title": "INSIGHT SHA-256 v1",
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "failureCategory": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["AUTHENTICATION"] },
+                                { "type": "string", "enum": ["ENDPOINT"] },
+                                { "type": "string", "enum": ["RATE_LIMITED"] },
+                                { "type": "string", "enum": ["PROVIDER"] },
+                                { "type": "string", "enum": ["TIMEOUT"] },
+                                { "type": "string", "enum": ["MALFORMED_RESPONSE"] },
+                                { "type": "string", "enum": ["TOOL_CALL"] },
+                                { "type": "string", "enum": ["TOOL_ROUND_TRIP"] },
+                                { "type": "null" }
+                              ]
+                            },
+                            "returnedModel": {
+                              "anyOf": [{ "maxLength": 500, "type": "string" }, { "type": "null" }]
+                            },
+                            "lastCheckedAt": {
+                              "anyOf": [
+                                {
+                                  "title": "INSIGHT timestamp v1",
+                                  "format": "date-time",
+                                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                  "type": "string"
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "createdAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/model-endpoint/credential": {
+      "delete": {
+        "operationId": "clearModelEndpointCredential",
+        "tags": ["administration"],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "configuration"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "configuration": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "version",
+                            "baseUrl",
+                            "model",
+                            "credentialConfigured",
+                            "status",
+                            "aiEligible",
+                            "compatibilityTestVersion",
+                            "configurationFingerprint",
+                            "failureCategory",
+                            "returnedModel",
+                            "lastCheckedAt",
+                            "createdAt"
+                          ],
+                          "properties": {
+                            "version": { "minimum": 1, "type": "integer" },
+                            "baseUrl": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "model": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "credentialConfigured": { "type": "boolean" },
+                            "status": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["PENDING"] },
+                                { "type": "string", "enum": ["CHECKING"] },
+                                { "type": "string", "enum": ["COMPATIBLE"] },
+                                { "type": "string", "enum": ["INCOMPATIBLE"] }
+                              ]
+                            },
+                            "aiEligible": { "type": "boolean" },
+                            "compatibilityTestVersion": {
+                              "minLength": 1,
+                              "maxLength": 100,
+                              "type": "string"
+                            },
+                            "configurationFingerprint": {
+                              "title": "INSIGHT SHA-256 v1",
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "failureCategory": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["AUTHENTICATION"] },
+                                { "type": "string", "enum": ["ENDPOINT"] },
+                                { "type": "string", "enum": ["RATE_LIMITED"] },
+                                { "type": "string", "enum": ["PROVIDER"] },
+                                { "type": "string", "enum": ["TIMEOUT"] },
+                                { "type": "string", "enum": ["MALFORMED_RESPONSE"] },
+                                { "type": "string", "enum": ["TOOL_CALL"] },
+                                { "type": "string", "enum": ["TOOL_ROUND_TRIP"] },
+                                { "type": "null" }
+                              ]
+                            },
+                            "returnedModel": {
+                              "anyOf": [{ "maxLength": 500, "type": "string" }, { "type": "null" }]
+                            },
+                            "lastCheckedAt": {
+                              "anyOf": [
+                                {
+                                  "title": "INSIGHT timestamp v1",
+                                  "format": "date-time",
+                                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                  "type": "string"
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "createdAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/model-endpoint/check": {
+      "post": {
+        "operationId": "checkModelEndpointCompatibility",
+        "tags": ["administration"],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "configuration"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "configuration": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "version",
+                            "baseUrl",
+                            "model",
+                            "credentialConfigured",
+                            "status",
+                            "aiEligible",
+                            "compatibilityTestVersion",
+                            "configurationFingerprint",
+                            "failureCategory",
+                            "returnedModel",
+                            "lastCheckedAt",
+                            "createdAt"
+                          ],
+                          "properties": {
+                            "version": { "minimum": 1, "type": "integer" },
+                            "baseUrl": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "model": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "credentialConfigured": { "type": "boolean" },
+                            "status": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["PENDING"] },
+                                { "type": "string", "enum": ["CHECKING"] },
+                                { "type": "string", "enum": ["COMPATIBLE"] },
+                                { "type": "string", "enum": ["INCOMPATIBLE"] }
+                              ]
+                            },
+                            "aiEligible": { "type": "boolean" },
+                            "compatibilityTestVersion": {
+                              "minLength": 1,
+                              "maxLength": 100,
+                              "type": "string"
+                            },
+                            "configurationFingerprint": {
+                              "title": "INSIGHT SHA-256 v1",
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "failureCategory": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["AUTHENTICATION"] },
+                                { "type": "string", "enum": ["ENDPOINT"] },
+                                { "type": "string", "enum": ["RATE_LIMITED"] },
+                                { "type": "string", "enum": ["PROVIDER"] },
+                                { "type": "string", "enum": ["TIMEOUT"] },
+                                { "type": "string", "enum": ["MALFORMED_RESPONSE"] },
+                                { "type": "string", "enum": ["TOOL_CALL"] },
+                                { "type": "string", "enum": ["TOOL_ROUND_TRIP"] },
+                                { "type": "null" }
+                              ]
+                            },
+                            "returnedModel": {
+                              "anyOf": [{ "maxLength": 500, "type": "string" }, { "type": "null" }]
+                            },
+                            "lastCheckedAt": {
+                              "anyOf": [
+                                {
+                                  "title": "INSIGHT timestamp v1",
+                                  "format": "date-time",
+                                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                  "type": "string"
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "createdAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/adverse-effect-catalog": {
       "get": {
         "operationId": "getActiveAdverseEffectCatalog",
