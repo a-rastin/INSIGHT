@@ -1,7 +1,7 @@
 # J-Space Workspace Ledger
 
 ## Goal
-Build and verify the versioned Fastify REST/OpenAPI browser boundary without domain changes.
+Establish complete local-service CI and test layers without live clinical/model network calls or sensitive artifacts
 
 ## Core
 - safe API boundary — every request ID and error is server-owned, schema-validated, and redacted
@@ -105,4 +105,4 @@ Build and verify the versioned Fastify REST/OpenAPI browser boundary without dom
 ## Open
 
 ## Next
-Commit the completed Fastify REST/OpenAPI boundary packet.
+Inventory repository architecture and existing checks
