@@ -5,9 +5,11 @@ import { Type } from "@sinclair/typebox";
 
 import {
   DEFAULT_MODEL_AGENT_SETTINGS,
+  evaluateCptAttempt,
   InternalMcpGateway,
   MODEL_AGENT_PROMPT_VERSION,
   MODEL_TOOLS_BY_STATE,
+  McpToolError,
   ModelAgentError,
   WORKFLOW_STATES,
   pinModelAgent,
@@ -71,8 +73,8 @@ function endpoint(baseUrl) {
   };
 }
 
-function pin(gateway, baseUrl, overrides = {}) {
-  const trusted = context();
+function pin(gateway, baseUrl, overrides = {}, workflowState = "NORMALIZING_MEDICATIONS") {
+  const trusted = context(workflowState);
   return pinModelAgent({
     executionId: trusted.executionId,
     jobId: trusted.jobId,
@@ -215,6 +217,118 @@ test("synthetic activated configuration preserves complete tool round trip", asy
   const toolResult = JSON.parse(requests[1].messages[3].content);
   assert.equal(toolResult.ok, true);
   assert.equal(toolResult.provenance.toolVersion, "1.0.0");
+});
+
+test("CPT agent receives structured diagnostics for two retries before exact acceptance", async () => {
+  const cptContract = {
+    routeRuleRef: "route-1",
+    modelRef: "model-1",
+    modelVersion: "1",
+    modelHash: "a".repeat(64),
+    nodes: [
+      { nodeRef: "A", outcomes: ["yes", "no"], orderedParentRefs: [], requiredTableLength: 2 },
+    ],
+  };
+  const submitted = [];
+  const gateway = new InternalMcpGateway({
+    "research_case.get_context": () => ({
+      data: {
+        subjectRef: "abcdefghijklmnopqrstuvwx",
+        projectionType: "CPT_GENERATION",
+        projectionVersion: "1.0.0",
+        data: {
+          purpose: "CPT_GENERATION",
+          demographics: { age: 40, sex: "MALE" },
+          presentationStatus: null,
+          assessments: [],
+          medicalHistory: null,
+          comorbidities: [],
+          medications: [],
+          assessmentImputationAvailable: false,
+        },
+        omittedFieldClasses: [],
+        inputFingerprint: "b".repeat(64),
+      },
+    }),
+    "bn.get_routed_contracts": () => ({ data: [cptContract] }),
+    "bn.submit_cpt_snapshot": (_context, input) => {
+      submitted.push(input);
+      const evaluated = evaluateCptAttempt(cptContract, input.tables, submitted.length - 1);
+      if (!evaluated.accepted) {
+        throw new McpToolError(
+          "CPT_VALIDATION_FAILED",
+          {
+            attemptNumber: evaluated.attemptNumber,
+            attemptsRemaining: evaluated.attemptsRemaining,
+            diagnostics: evaluated.diagnostics,
+          },
+          evaluated.retryable,
+        );
+      }
+      return {
+        data: { status: "ACCEPTED", snapshotRef: "snapshot-1", snapshotHash: "c".repeat(64) },
+      };
+    },
+  });
+  let modelCalls = 0;
+  await withMockServer(
+    async (request, response) => {
+      const body = await readRequest(request);
+      modelCalls += 1;
+      if (modelCalls > 1 && modelCalls < 4) {
+        const toolResult = JSON.parse(body.messages.at(-1).content);
+        assert.equal(toolResult.error.code, "CPT_VALIDATION_FAILED");
+        assert.equal(toolResult.error.diagnostics.attemptsRemaining, 4 - modelCalls);
+        assert.equal(toolResult.error.diagnostics.diagnostics[0].code, "CPT_ROW_SUM");
+      }
+      if (modelCalls <= 3) {
+        const rows = modelCalls === 3 ? [0.4, 0.6] : [0.2 * modelCalls, 0.2 * modelCalls];
+        send(response, {
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: `cpt-${modelCalls}`,
+                    type: "function",
+                    function: {
+                      name: "bn.submit_cpt_snapshot",
+                      arguments: JSON.stringify({
+                        modelRef: "model-1",
+                        tables: [{ nodeRef: "A", probabilities: rows }],
+                      }),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          usage: { total_tokens: 1 },
+        });
+        return;
+      }
+      const accepted = JSON.parse(body.messages.at(-1).content);
+      assert.equal(accepted.ok, true);
+      send(response, {
+        choices: [
+          { message: { role: "assistant", content: JSON.stringify({ summary: "complete" }) } },
+        ],
+        usage: { total_tokens: 1 },
+      });
+    },
+    async (baseUrl) => {
+      const result = await runModelAgent({
+        pin: pin(gateway, baseUrl, {}, "GENERATING_CPTS"),
+        gateway,
+        assertCurrentRevision: async () => true,
+      });
+      assert.deepEqual(result.output, { summary: "complete" });
+    },
+  );
+  assert.equal(submitted.length, 3);
+  assert.equal(modelCalls, 4);
 });
 
 test("outside-allowlist call fails before domain execution", async () => {

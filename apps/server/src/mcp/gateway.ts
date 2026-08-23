@@ -108,9 +108,7 @@ const TOOL_DEFINITIONS = {
         imputationSnapshotRef: ref,
         dependencyFingerprint: Type.String({ pattern: "^[0-9a-f]{64}$" }),
         acceptedAssessmentTypes: Type.Array(
-          Type.Union(
-            ["DSM5TR", "PANSS", "CSSRS_RECENT"].map((value) => Type.Literal(value)),
-          ),
+          Type.Union(["DSM5TR", "PANSS", "CSSRS_RECENT"].map((value) => Type.Literal(value))),
           { minItems: 1, maxItems: 3, uniqueItems: true },
         ),
       },
@@ -154,10 +152,7 @@ const TOOL_DEFINITIONS = {
       { additionalProperties: false },
     ),
     outputSchema: Type.Union([
-      Type.Object(
-        { normalizationState: Type.Literal("UNKNOWN") },
-        { additionalProperties: false },
-      ),
+      Type.Object({ normalizationState: Type.Literal("UNKNOWN") }, { additionalProperties: false }),
       Type.Object(
         {
           normalizationState: Type.Literal("NORMALIZED"),
@@ -214,7 +209,7 @@ const TOOL_DEFINITIONS = {
         {
           routeRuleRef: ref,
           modelRef: ref,
-          modelVersion: ref,
+          modelVersion: shortText,
           modelHash: Type.String({ pattern: "^[0-9a-f]{64}$" }),
           nodes: Type.Array(
             Type.Object(
@@ -244,14 +239,14 @@ const TOOL_DEFINITIONS = {
           Type.Object(
             {
               nodeRef: ref,
-              probabilities: Type.Array(Type.Number({ minimum: 0, maximum: 1 }), {
-                minItems: 2,
+              probabilities: Type.Array(Type.Number(), {
+                minItems: 0,
                 maxItems: 1_000_000,
               }),
             },
             { additionalProperties: false },
           ),
-          { minItems: 1, maxItems: 10_000 },
+          { minItems: 0, maxItems: 10_000 },
         ),
       },
       { additionalProperties: false },
@@ -322,10 +317,7 @@ const TOOL_DEFINITIONS = {
               titration: Type.Optional(text),
               monitoring: Type.Array(text, { maxItems: 100 }),
               rationale: Type.Array(
-                Type.Object(
-                  { kind: ref, sourceRef: ref, text },
-                  { additionalProperties: false },
-                ),
+                Type.Object({ kind: ref, sourceRef: ref, text }, { additionalProperties: false }),
                 { minItems: 1, maxItems: 100 },
               ),
               warningRefs: Type.Array(ref, { maxItems: 100, uniqueItems: true }),
@@ -401,12 +393,16 @@ const SAFE_MESSAGES: Readonly<Record<ToolErrorCode, string>> = Object.freeze({
 const TRUSTED_INPUT_KEYS =
   /^(?:execution(?:Id)?|job(?:Id)?|subject(?:Ref)?|researchCaseRevision|revision|workflowState|state|actorRole|role|allowedToolNames|allowlist|idempotency(?:Key)?)$/i;
 const FORBIDDEN_INPUT_KEYS = /^(?:sql|queryText|path|filePath|record|records|command)$/i;
-const SQL = /\b(?:select|insert|update|delete|drop|alter|truncate|grant|revoke)\b[\s\S]*\b(?:from|into|table|set|on)\b/i;
+const SQL =
+  /\b(?:select|insert|update|delete|drop|alter|truncate|grant|revoke)\b[\s\S]*\b(?:from|into|table|set|on)\b/i;
 const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:[\\/]|\\\\)/;
 const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
 const SECRET = /\b(?:bearer\s+\S+|password|credential|api[_ -]?key|private[_ -]?key)\b/i;
 
-function failure(code: ToolErrorCode, diagnostics?: JsonValue): ToolResult<never> {
+function failure(
+  code: ToolErrorCode,
+  diagnostics?: JsonValue,
+): Extract<ToolResult<never>, { ok: false }> {
   return {
     ok: false,
     error: {
@@ -449,7 +445,8 @@ function isSafeVisible(value: unknown, sensitiveValues: readonly string[]): valu
       return typeof entry !== "number" || Number.isFinite(entry);
     }
     if (typeof entry === "string") {
-      if (UUID.test(entry) || SECRET.test(entry) || ABSOLUTE_PATH.test(entry) || SQL.test(entry)) return false;
+      if (UUID.test(entry) || SECRET.test(entry) || ABSOLUTE_PATH.test(entry) || SQL.test(entry))
+        return false;
       const folded = entry.normalize("NFKC").trim().toLocaleLowerCase("en-US");
       return entry.length <= 4000 && !forbidden.some((value) => folded.includes(value));
     }
@@ -485,6 +482,7 @@ export class McpToolError extends Error {
   constructor(
     readonly code: ToolErrorCode,
     readonly diagnostics?: JsonValue,
+    readonly retryable?: boolean,
   ) {
     super(SAFE_MESSAGES[code]);
     this.name = "McpToolError";
@@ -518,7 +516,10 @@ export class InternalMcpGateway {
   }
 
   async invoke(context: TrustedToolContext, request: unknown): Promise<ToolResult> {
-    if (!isPlainRecord(request) || Object.keys(request).some((key) => !["name", "input"].includes(key))) {
+    if (
+      !isPlainRecord(request) ||
+      Object.keys(request).some((key) => !["name", "input"].includes(key))
+    ) {
       return failure("INVALID_TOOL_INPUT");
     }
     const name = request.name;
@@ -529,7 +530,10 @@ export class InternalMcpGateway {
       return failure("TOOL_NOT_ALLOWED_IN_STATE");
     }
     const definition = TOOL_DEFINITIONS[name as ToolName];
-    if (hasProhibitedModelInput(request.input) || !Value.Check(definition.inputSchema, request.input)) {
+    if (
+      hasProhibitedModelInput(request.input) ||
+      !Value.Check(definition.inputSchema, request.input)
+    ) {
       return failure("INVALID_TOOL_INPUT");
     }
     const handler = this.handlers[name as ToolName];
@@ -578,7 +582,12 @@ export class InternalMcpGateway {
         warnings: JSON.parse(stableSerialize(warnings as unknown as JsonValue)) as ToolWarning[],
       };
     } catch (error) {
-      if (error instanceof McpToolError) return failure(error.code, safeDiagnostics(error.diagnostics));
+      if (error instanceof McpToolError) {
+        const result = failure(error.code, safeDiagnostics(error.diagnostics));
+        return error.retryable === undefined
+          ? result
+          : { ...result, error: { ...result.error, retryable: error.retryable } };
+      }
       return failure("DEPENDENCY_UNAVAILABLE");
     }
   }

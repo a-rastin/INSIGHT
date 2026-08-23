@@ -2168,6 +2168,75 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_routing_evaluation_mutation();
     `,
   },
+  {
+    version: 28,
+    name: "patient_specific_cpt_snapshots",
+    sql: `
+      CREATE TABLE insight.bn_cpt_attempts (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        execution_id text NOT NULL,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        model_version_id uuid NOT NULL REFERENCES insight.bn_model_versions(id),
+        dependency_fingerprint text NOT NULL CHECK (
+          dependency_fingerprint ~ '^[0-9a-f]{64}$'
+        ),
+        attempt_number integer NOT NULL CHECK (attempt_number BETWEEN 1 AND 3),
+        raw_response jsonb NOT NULL CHECK (jsonb_typeof(raw_response) = 'array'),
+        diagnostics jsonb NOT NULL CHECK (jsonb_typeof(diagnostics) = 'array'),
+        accepted boolean NOT NULL,
+        created_at timestamptz NOT NULL,
+        UNIQUE (execution_id, model_version_id, attempt_number),
+        UNIQUE (id, research_case_id, model_version_id),
+        CHECK (
+          (accepted AND jsonb_array_length(diagnostics) = 0)
+          OR (NOT accepted AND jsonb_array_length(diagnostics) > 0)
+        )
+      );
+
+      CREATE TABLE insight.bn_cpt_snapshots (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        snapshot_ref text NOT NULL UNIQUE CHECK (
+          snapshot_ref ~ '^cpt-snapshot-[0-9a-f]{64}$'
+        ),
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        model_version_id uuid NOT NULL REFERENCES insight.bn_model_versions(id),
+        dependency_fingerprint text NOT NULL CHECK (
+          dependency_fingerprint ~ '^[0-9a-f]{64}$'
+        ),
+        dependency_manifest jsonb NOT NULL CHECK (jsonb_typeof(dependency_manifest) = 'object'),
+        snapshot_hash text NOT NULL CHECK (snapshot_hash ~ '^[0-9a-f]{64}$'),
+        tables jsonb NOT NULL CHECK (
+          jsonb_typeof(tables) = 'array' AND jsonb_array_length(tables) > 0
+        ),
+        accepted_attempt_id uuid NOT NULL UNIQUE,
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL,
+        UNIQUE (research_case_id, model_version_id, dependency_fingerprint),
+        FOREIGN KEY (accepted_attempt_id, research_case_id, model_version_id)
+          REFERENCES insight.bn_cpt_attempts (id, research_case_id, model_version_id)
+      );
+
+      CREATE INDEX bn_cpt_attempts_case_idx ON insight.bn_cpt_attempts
+        (research_case_id, dependency_fingerprint, model_version_id, attempt_number);
+      CREATE INDEX bn_cpt_snapshots_reuse_idx ON insight.bn_cpt_snapshots
+        (research_case_id, dependency_fingerprint, model_version_id);
+
+      CREATE FUNCTION insight.reject_bn_cpt_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'BN CPT attempts and snapshots are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER bn_cpt_attempts_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_cpt_attempts
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_cpt_mutation();
+      CREATE TRIGGER bn_cpt_snapshots_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_cpt_snapshots
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_cpt_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(
