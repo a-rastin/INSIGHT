@@ -13,6 +13,7 @@ export * from "./assessment/index.js";
 export * from "./comorbidity-knowledge/index.js";
 export * from "./audit/index.js";
 export * from "./deployment/index.js";
+export * from "./deidentification/index.js";
 export * from "./identity/index.js";
 export * from "./jobs/index.js";
 export * from "./medical-history/index.js";
