@@ -181,7 +181,7 @@ describe("BN Manager", () => {
       ...activeModel,
       id: "20000000-0000-4000-8000-000000000002",
       version: 3,
-      lifecycle: "IMPORTED",
+      lifecycle: "ACTIVE",
       source: { ...activeModel.source, contentSha256: "d".repeat(64) },
     };
     vi.stubGlobal(
@@ -212,7 +212,7 @@ describe("BN Manager", () => {
       target: { value: "ExpectedUtility" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add node" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save as candidate version" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save and activate new version" }));
     expect(await screen.findByText("Version 3")).toBeTruthy();
     expect(savedSource).toContain("<NAME>ExpectedUtility</NAME>");
     expect(candidate.source.contentSha256).not.toBe(activeModel.source.contentSha256);
@@ -265,7 +265,7 @@ describe("BN Manager", () => {
       ...activeModel,
       id: "20000000-0000-4000-8000-000000000004",
       version: 3,
-      lifecycle: "IMPORTED",
+      lifecycle: "ACTIVE",
     };
     vi.stubGlobal("confirm", vi.fn(() => true));
     vi.stubGlobal(
@@ -290,7 +290,7 @@ describe("BN Manager", () => {
     expect(screen.getByText("Draft invalid")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Choice nature/ })).toBeTruthy();
     expect(
-      (screen.getByRole("button", { name: "Save as candidate version" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "Save and activate new version" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
     fireEvent.change(screen.getByLabelText("Node ID (optional)"), {
@@ -304,7 +304,7 @@ describe("BN Manager", () => {
       target: { value: sourceXml.replace("0.1 0.9 0.8 0.2", "0.2 0.8 0.8 0.2") },
     });
     expect(screen.getByText("Synchronized")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Save as candidate version" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save and activate new version" }));
     await screen.findByText("Version 3");
     expect(savedSource).toContain("<TABLE>0.2 0.8 0.8 0.2</TABLE>");
     expect(savedSource.endsWith("</BIF>\n")).toBe(true);

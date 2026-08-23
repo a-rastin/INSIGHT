@@ -2090,6 +2090,45 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_registry_mutation();
     `,
   },
+  {
+    version: 26,
+    name: "bn_model_lifecycle",
+    sql: `
+      ALTER TABLE insight.bn_model_lifecycle_events
+        DROP CONSTRAINT bn_model_lifecycle_events_lifecycle_check;
+      ALTER TABLE insight.bn_model_lifecycle_events
+        ADD CONSTRAINT bn_model_lifecycle_events_lifecycle_check CHECK (
+          lifecycle IN (
+            'IMPORTED', 'REJECTED', 'QUARANTINED', 'ACTIVE', 'SUPERSEDED', 'DISABLED'
+          )
+        );
+
+      CREATE TABLE insight.bn_research_case_model_pins (
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        pathway_identity text NOT NULL CHECK (
+          pathway_identity ~ '^[A-Z][A-Z0-9_]{0,127}$'
+        ),
+        model_version_id uuid NOT NULL REFERENCES insight.bn_model_versions(id),
+        model_version integer NOT NULL CHECK (model_version > 0),
+        content_sha256 text NOT NULL CHECK (content_sha256 ~ '^[0-9a-f]{64}$'),
+        semantic_sha256 text NOT NULL CHECK (semantic_sha256 ~ '^[0-9a-f]{64}$'),
+        pinned_at timestamptz NOT NULL,
+        PRIMARY KEY (research_case_id, pathway_identity)
+      );
+
+      CREATE FUNCTION insight.reject_bn_model_pin_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'BN model execution pins are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER bn_research_case_model_pins_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_research_case_model_pins
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_model_pin_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

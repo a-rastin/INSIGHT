@@ -1442,7 +1442,7 @@ export const BnModelVersionSchema = Type.Object(
     pathwayIdentity: Type.String({ pattern: "^[A-Z][A-Z0-9_]{0,127}$" }),
     version: Type.Integer({ minimum: 1 }),
     lifecycle: Type.Union(
-      ["IMPORTED", "REJECTED", "QUARANTINED", "ACTIVE", "SUPERSEDED"].map((value) =>
+      ["IMPORTED", "REJECTED", "QUARANTINED", "ACTIVE", "SUPERSEDED", "DISABLED"].map((value) =>
         Type.Literal(value),
       ),
     ),

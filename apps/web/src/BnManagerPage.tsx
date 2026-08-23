@@ -258,9 +258,7 @@ export function BnManagerPage({ csrfToken }: { csrfToken: string }) {
   const [draft, setDraft] = useState<XmlBifFile>();
   const [sourceDraft, setSourceDraft] = useState("");
   const [xmlValid, setXmlValid] = useState(false);
-  const [fidelityRisks, setFidelityRisks] = useState<
-    ReturnType<typeof detectXmlFidelityRisks>
-  >([]);
+  const [fidelityRisks, setFidelityRisks] = useState<ReturnType<typeof detectXmlFidelityRisks>>([]);
   const [fidelityAccepted, setFidelityAccepted] = useState(false);
   const [editDiagnostics, setEditDiagnostics] = useState<readonly Diagnostic[]>([]);
   const [newNodeType, setNewNodeType] = useState<VariableType>("nature");
@@ -495,6 +493,19 @@ export function BnManagerPage({ csrfToken }: { csrfToken: string }) {
     setBusy(false);
   }
 
+  async function lifecycleAction(model: Model, action: "disable" | "rollback") {
+    setBusy(true);
+    setError("");
+    const result = await apiClient.POST(`/api/v1/admin/bn-models/{modelId}/${action}`, {
+      params: { path: { modelId: model.id } },
+      headers: { "x-csrf-token": csrfToken },
+      body: { schemaVersion: "1" },
+    });
+    if (result.data) await load();
+    else setError(requestMessage(result.error));
+    setBusy(false);
+  }
+
   if (loading) return <LoadingState label="Loading Bayesian model versions" />;
   if (error && models.length === 0)
     return (
@@ -506,14 +517,27 @@ export function BnManagerPage({ csrfToken }: { csrfToken: string }) {
     );
 
   const selected = models.find(({ id }) => id === selectedId) ?? models[0];
+  const latestPassingVersion = selected
+    ? Math.max(
+        0,
+        ...models
+          .filter(
+            (model) =>
+              model.pathwayIdentity === selected.pathwayIdentity &&
+              model.validation.softwareCompatible &&
+              model.lifecycle !== "QUARANTINED",
+          )
+          .map(({ version }) => version),
+      )
+    : 0;
   const draftNetwork = draft?.networks[networkIndex];
   const network = draftNetwork ? projectNetwork(draftNetwork) : selected?.networks[networkIndex];
   const node = network?.nodes.find(({ id }) => id === selectedNode);
   return (
     <div className="page-stack bn-manager">
       <Banner title="Software validity is not clinical validity" tone="warning">
-        Passing XMLBIF checks allows software use. It does not establish evidence quality,
-        calibration, clinical validity, safety, or effectiveness.
+        Passing XMLBIF checks activates newest pathway version immediately. Evidence, calibration,
+        and clinical review remain visible but do not gate activation or establish safety.
       </Banner>
       {error ? (
         <p className="field-error" role="alert">
@@ -655,6 +679,30 @@ export function BnManagerPage({ csrfToken }: { csrfToken: string }) {
                     </ul>
                   )}
                 </div>
+                <div className="bn-graph-actions">
+                  {selected.lifecycle === "ACTIVE" ? (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      loading={busy}
+                      onClick={() => void lifecycleAction(selected, "disable")}
+                    >
+                      Disable for new executions
+                    </Button>
+                  ) : null}
+                  {selected.validation.softwareCompatible &&
+                  selected.lifecycle !== "QUARANTINED" &&
+                  selected.version < latestPassingVersion ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      loading={busy}
+                      onClick={() => void lifecycleAction(selected, "rollback")}
+                    >
+                      Roll back to this version
+                    </Button>
+                  ) : null}
+                </div>
               </section>
 
               <section className="card" aria-labelledby="bn-governance-title">
@@ -752,7 +800,7 @@ export function BnManagerPage({ csrfToken }: { csrfToken: string }) {
                             disabled={!xmlValid}
                             onClick={() => void saveCandidate()}
                           >
-                            Save as candidate version
+                            Save and activate new version
                           </Button>
                         </>
                       )}
@@ -870,7 +918,8 @@ export function BnManagerPage({ csrfToken }: { csrfToken: string }) {
                         </label>
                         {!xmlValid ? (
                           <p className="field-error" role="alert">
-                            Graph and table editors still show last valid model. Fix XML before saving.
+                            Graph and table editors still show last valid model. Fix XML before
+                            saving.
                           </p>
                         ) : null}
                       </section>

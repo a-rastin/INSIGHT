@@ -10,7 +10,13 @@ export const BN_IMPORTER_VERSION = "1.0.0";
 export const AKATHISIA_MISMATCHED_CONTENT_SHA256 =
   "7a84bdfe6314c16c10f4fb7503b067acada790f9e7feb369ab5bcf9925196022";
 
-export type BnModelLifecycle = "IMPORTED" | "REJECTED" | "QUARANTINED" | "ACTIVE" | "SUPERSEDED";
+export type BnModelLifecycle =
+  | "IMPORTED"
+  | "REJECTED"
+  | "QUARANTINED"
+  | "ACTIVE"
+  | "SUPERSEDED"
+  | "DISABLED";
 
 export interface BnRepositoryCandidate {
   readonly pathwayIdentity: string;

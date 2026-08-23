@@ -21,6 +21,26 @@ export interface BnModelActor {
   readonly role: Role;
 }
 
+export interface BnModelExecutionPin {
+  readonly researchCaseId: string;
+  readonly pathwayIdentity: string;
+  readonly modelId: string;
+  readonly version: number;
+  readonly contentSha256: string;
+  readonly semanticSha256: string;
+  readonly pinnedAt: string;
+}
+
+interface PinRow extends QueryResultRow {
+  research_case_id: string;
+  pathway_identity: string;
+  model_version_id: string;
+  model_version: number;
+  content_sha256: string;
+  semantic_sha256: string;
+  pinned_at: Date;
+}
+
 interface ModelRow extends QueryResultRow {
   id: string;
   pathway_identity: string;
@@ -54,6 +74,13 @@ export class BnModelInputError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "BnModelInputError";
+  }
+}
+
+export class BnModelUnavailableError extends Error {
+  constructor() {
+    super("No active compatible Bayesian model exists for the pathway.");
+    this.name = "BnModelUnavailableError";
   }
 }
 
@@ -124,8 +151,7 @@ export async function importAndRegisterBnModel(
         now,
       ],
     );
-    const lifecycle =
-      options.candidateOnly && imported.lifecycle === "ACTIVE" ? "IMPORTED" : imported.lifecycle;
+    const lifecycle = imported.lifecycle;
     const inserted = await client.query<{ id: string }>(
       `INSERT INTO insight.bn_model_versions (
          pathway_identity, version, artifact_id, registry_schema_version, importer_version,
@@ -148,12 +174,24 @@ export async function importAndRegisterBnModel(
         now,
       ],
     );
-    await client.query(
-      `INSERT INTO insight.bn_model_lifecycle_events
-         (model_version_id, lifecycle, actor_user_id, occurred_at, event_reference)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [inserted.rows[0]!.id, lifecycle, actor.id, now, sourceReference],
+    await insertLifecycleEvent(
+      client,
+      inserted.rows[0]!.id,
+      "IMPORTED",
+      actor.id,
+      now,
+      sourceReference,
     );
+    if (lifecycle !== "ACTIVE") {
+      await insertLifecycleEvent(
+        client,
+        inserted.rows[0]!.id,
+        lifecycle,
+        actor.id,
+        now,
+        sourceReference,
+      );
+    }
     if (lifecycle === "ACTIVE") {
       await activateImportedModel(
         client,
@@ -222,12 +260,138 @@ export async function getBnModelHistory(
   return loadModels(pool, artifactRoot);
 }
 
+export async function disableBnModel(
+  pool: Pool,
+  actor: BnModelActor,
+  modelId: string,
+  options: { readonly now?: Date; readonly artifactRoot?: string } = {},
+): Promise<BnModelVersion> {
+  requireAdministrator(actor);
+  const now = options.now ?? new Date();
+  await withTransaction(pool, async (client) => {
+    const model = await client.query<{ pathway_identity: string }>(
+      "SELECT pathway_identity FROM insight.bn_model_versions WHERE id = $1",
+      [modelId],
+    );
+    if (!model.rows[0]) throw new BnModelInputError("Bayesian model version does not exist.");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      model.rows[0].pathway_identity,
+    ]);
+    const removed = await client.query(
+      `DELETE FROM insight.bn_active_models
+       WHERE pathway_identity = $1 AND model_version_id = $2`,
+      [model.rows[0].pathway_identity, modelId],
+    );
+    if (removed.rowCount !== 1) {
+      throw new BnModelInputError("Only the active Bayesian model can be disabled.");
+    }
+    await insertLifecycleEvent(client, modelId, "DISABLED", actor.id, now, "administrator-disable");
+  });
+  return (await loadModels(pool, options.artifactRoot ?? resolve("artifacts"), modelId))[0]!;
+}
+
+export async function rollbackBnModel(
+  pool: Pool,
+  actor: BnModelActor,
+  modelId: string,
+  options: { readonly now?: Date; readonly artifactRoot?: string } = {},
+): Promise<BnModelVersion> {
+  requireAdministrator(actor);
+  const now = options.now ?? new Date();
+  await withTransaction(pool, async (client) => {
+    const model = await client.query<{
+      pathway_identity: string;
+      software_compatible: boolean;
+      initial_lifecycle: ImportedBnModel["lifecycle"];
+      version: number;
+    }>(
+      `SELECT pathway_identity, version,
+              (validation_report->>'softwareCompatible')::boolean AS software_compatible,
+              initial_lifecycle
+       FROM insight.bn_model_versions WHERE id = $1`,
+      [modelId],
+    );
+    if (!model.rows[0]) throw new BnModelInputError("Bayesian model version does not exist.");
+    if (
+      !model.rows[0].software_compatible ||
+      model.rows[0].initial_lifecycle === "QUARANTINED"
+    ) {
+      throw new BnModelInputError("Only a software-compatible Bayesian model can be restored.");
+    }
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      model.rows[0].pathway_identity,
+    ]);
+    const latestActivated = await client.query<{ version: number }>(
+      `SELECT max(model.version)::integer AS version
+       FROM insight.bn_model_versions model
+       JOIN insight.bn_model_lifecycle_events event ON event.model_version_id = model.id
+       WHERE model.pathway_identity = $1 AND event.lifecycle = 'ACTIVE'`,
+      [model.rows[0].pathway_identity],
+    );
+    if (model.rows[0].version >= (latestActivated.rows[0]?.version ?? 0)) {
+      throw new BnModelInputError("Rollback requires an earlier passing Bayesian model version.");
+    }
+    const active = await client.query<{ model_version_id: string }>(
+      "SELECT model_version_id FROM insight.bn_active_models WHERE pathway_identity = $1",
+      [model.rows[0].pathway_identity],
+    );
+    if (active.rows[0]?.model_version_id === modelId) {
+      throw new BnModelInputError("Bayesian model version is already active.");
+    }
+    await activateImportedModel(
+      client,
+      model.rows[0].pathway_identity,
+      modelId,
+      actor.id,
+      now,
+      "administrator-rollback",
+    );
+  });
+  return (await loadModels(pool, options.artifactRoot ?? resolve("artifacts"), modelId))[0]!;
+}
+
+export async function pinBnModelForExecution(
+  pool: Pool,
+  researchCaseId: string,
+  pathwayIdentity: string,
+  now = new Date(),
+): Promise<BnModelExecutionPin> {
+  if (!/^[A-Z][A-Z0-9_]{0,127}$/.test(pathwayIdentity)) throw new BnModelUnavailableError();
+  const row = await withTransaction(pool, async (client) => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      `${researchCaseId}:${pathwayIdentity}`,
+    ]);
+    const existing = await loadPin(client, researchCaseId, pathwayIdentity);
+    if (existing) return existing;
+    const inserted = await client.query<PinRow>(
+      `INSERT INTO insight.bn_research_case_model_pins (
+         research_case_id, pathway_identity, model_version_id, model_version,
+         content_sha256, semantic_sha256, pinned_at
+       )
+       SELECT $1, active.pathway_identity, model.id, model.version,
+              artifact.content_sha256, artifact.semantic_sha256, $3
+       FROM insight.bn_active_models active
+       JOIN insight.bn_model_versions model ON model.id = active.model_version_id
+       JOIN insight.bn_model_artifacts artifact ON artifact.id = model.artifact_id
+       WHERE active.pathway_identity = $2
+         AND (model.validation_report->>'softwareCompatible')::boolean
+         AND artifact.semantic_sha256 IS NOT NULL
+       RETURNING *`,
+      [researchCaseId, pathwayIdentity, now],
+    );
+    if (!inserted.rows[0]) throw new BnModelUnavailableError();
+    return inserted.rows[0];
+  });
+  return materializePin(row);
+}
+
 async function activateImportedModel(
   client: PoolClient,
   pathwayIdentity: string,
   modelId: string,
   actorId: string,
   now: Date,
+  eventReference = "automatic-activation",
 ): Promise<void> {
   const previous = await client.query<{ model_version_id: string }>(
     `SELECT model_version_id FROM insight.bn_active_models
@@ -235,11 +399,13 @@ async function activateImportedModel(
     [pathwayIdentity],
   );
   if (previous.rows[0] && previous.rows[0].model_version_id !== modelId) {
-    await client.query(
-      `INSERT INTO insight.bn_model_lifecycle_events
-         (model_version_id, lifecycle, actor_user_id, occurred_at, event_reference)
-       VALUES ($1,'SUPERSEDED',$2,$3,$4)`,
-      [previous.rows[0].model_version_id, actorId, now, `superseded-by:${modelId}`],
+    await insertLifecycleEvent(
+      client,
+      previous.rows[0].model_version_id,
+      "SUPERSEDED",
+      actorId,
+      now,
+      `superseded-by:${modelId}`,
     );
   }
   await client.query(
@@ -252,6 +418,48 @@ async function activateImportedModel(
        activated_at = EXCLUDED.activated_at`,
     [pathwayIdentity, modelId, actorId, now],
   );
+  await insertLifecycleEvent(client, modelId, "ACTIVE", actorId, now, eventReference);
+}
+
+async function insertLifecycleEvent(
+  client: PoolClient,
+  modelId: string,
+  lifecycle: ImportedBnModel["lifecycle"],
+  actorId: string,
+  now: Date,
+  reference: string,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO insight.bn_model_lifecycle_events
+       (model_version_id, lifecycle, actor_user_id, occurred_at, event_reference)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [modelId, lifecycle, actorId, now, reference],
+  );
+}
+
+async function loadPin(
+  client: PoolClient,
+  researchCaseId: string,
+  pathwayIdentity: string,
+): Promise<PinRow | undefined> {
+  const result = await client.query<PinRow>(
+    `SELECT * FROM insight.bn_research_case_model_pins
+     WHERE research_case_id = $1 AND pathway_identity = $2`,
+    [researchCaseId, pathwayIdentity],
+  );
+  return result.rows[0];
+}
+
+function materializePin(row: PinRow): BnModelExecutionPin {
+  return {
+    researchCaseId: row.research_case_id,
+    pathwayIdentity: row.pathway_identity,
+    modelId: row.model_version_id,
+    version: Number(row.model_version),
+    contentSha256: row.content_sha256,
+    semanticSha256: row.semantic_sha256,
+    pinnedAt: row.pinned_at.toISOString(),
+  };
 }
 
 async function loadModels(

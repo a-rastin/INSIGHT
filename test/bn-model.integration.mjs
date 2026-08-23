@@ -6,19 +6,31 @@ import test from "node:test";
 
 import {
   BnModelAuthorizationError,
+  BnModelUnavailableError,
+  createOrOverwritePatient,
   createBnModelCandidate,
   createUser,
+  disableBnModel,
   getBnModelHistory,
   getBnModelSource,
   importAndRegisterBnModel,
+  pinBnModelForExecution,
+  rollbackBnModel,
 } from "../.tsbuild/server/index.js";
 import {
   createPostgresPool,
   migrateToHead,
   withIsolatedTestDatabase,
 } from "../.tsbuild/server/database/index.js";
+import { makeSyntheticPatientIdentity } from "./support/synthetic-data.mjs";
 
 const adminConnectionString = process.env.TEST_DATABASE_URL;
+const identifierConfiguration = {
+  type: "RESEARCH_ID",
+  issuingAuthority: "INSIGHT_TEST",
+  pattern: "^SYNTHETIC-[0-9]{6}$",
+  normalization: "NFKC_UPPERCASE",
+};
 const source = (table) => `<BIF VERSION="0.3"><NETWORK><NAME>MedicationChoice</NAME>
   <VARIABLE TYPE="nature"><NAME>Input</NAME><OUTCOME>yes</OUTCOME><OUTCOME>no</OUTCOME></VARIABLE>
   <VARIABLE TYPE="nature"><NAME>Choice</NAME><OUTCOME>first</OUTCOME><OUTCOME>second</OUTCOME></VARIABLE>
@@ -95,16 +107,17 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
         assert.equal(valid.lifecycle, "ACTIVE");
         assert.equal(duplicate.id, valid.id);
         assert.equal(formattingCandidate.version, 2);
+        assert.equal(formattingCandidate.lifecycle, "ACTIVE");
         assert.equal(formattingCandidate.source.semanticSha256, valid.source.semanticSha256);
         assert.equal(candidate.version, 3);
-        assert.equal(candidate.lifecycle, "IMPORTED");
+        assert.equal(candidate.lifecycle, "ACTIVE");
         assert.notEqual(candidate.source.contentSha256, valid.source.contentSha256);
         assert.equal(await getBnModelSource(pool, actor, candidate.id, artifactRoot), editedSource);
         const active = await pool.query(
           "SELECT model_version_id FROM insight.bn_active_models WHERE pathway_identity = $1",
           ["PHARMACOTHERAPY"],
         );
-        assert.equal(active.rows[0].model_version_id, valid.id);
+        assert.equal(active.rows[0].model_version_id, candidate.id);
         assert.equal(invalid.version, 4);
         assert.equal(invalid.lifecycle, "REJECTED");
         assert.equal(invalid.validation.softwareCompatible, false);
@@ -117,10 +130,81 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
         assert.equal(invalid.calibration.status, "UNCALIBRATED");
         assert.equal(invalid.validation.clinicalValidity, "NOT_ESTABLISHED");
 
+        const patient = await createPatient(pool, psychiatrist, 941);
+        const originalPin = await pinBnModelForExecution(
+          pool,
+          patient.patient.researchCase.id,
+          "PHARMACOTHERAPY",
+        );
+        assert.equal(originalPin.modelId, candidate.id);
+
+        const concurrent = await Promise.all([
+          importAndRegisterBnModel(
+            pool,
+            actor,
+            input(source("0.2 0.8 0.7 0.3"), "concurrent-a.xml"),
+            { artifactRoot },
+          ),
+          importAndRegisterBnModel(
+            pool,
+            actor,
+            input(source("0.3 0.7 0.6 0.4"), "concurrent-b.xml"),
+            { artifactRoot },
+          ),
+        ]);
+        const newest = concurrent.toSorted((left, right) => right.version - left.version)[0];
+        assert.equal(newest.version, 6);
+        assert.equal(newest.lifecycle, "ACTIVE");
+        assert.equal(
+          (await pinBnModelForExecution(pool, patient.patient.researchCase.id, "PHARMACOTHERAPY"))
+            .modelId,
+          candidate.id,
+        );
+
+        const restored = await rollbackBnModel(pool, actor, valid.id, { artifactRoot });
+        assert.equal(restored.lifecycle, "ACTIVE");
+        const laterPatient = await createPatient(pool, psychiatrist, 942);
+        assert.equal(
+          (
+            await Promise.all([
+              pinBnModelForExecution(pool, laterPatient.patient.researchCase.id, "PHARMACOTHERAPY"),
+              pinBnModelForExecution(pool, laterPatient.patient.researchCase.id, "PHARMACOTHERAPY"),
+            ])
+          )[0].modelId,
+          valid.id,
+        );
+        await disableBnModel(pool, actor, valid.id, { artifactRoot });
+        const disabledPatient = await createPatient(pool, psychiatrist, 943);
+        await assert.rejects(
+          pinBnModelForExecution(pool, disabledPatient.patient.researchCase.id, "PHARMACOTHERAPY"),
+          BnModelUnavailableError,
+        );
+        assert.equal(
+          (await pinBnModelForExecution(pool, patient.patient.researchCase.id, "PHARMACOTHERAPY"))
+            .modelId,
+          candidate.id,
+        );
+        await assert.rejects(
+          pool.query(
+            "UPDATE insight.bn_research_case_model_pins SET model_version = 99 WHERE research_case_id = $1",
+            [patient.patient.researchCase.id],
+          ),
+          /immutable/,
+        );
+        const events = await pool.query(
+          `SELECT lifecycle FROM insight.bn_model_lifecycle_events
+           WHERE model_version_id = $1 ORDER BY sequence`,
+          [valid.id],
+        );
+        assert.deepEqual(
+          events.rows.map(({ lifecycle }) => lifecycle),
+          ["IMPORTED", "ACTIVE", "SUPERSEDED", "ACTIVE", "DISABLED"],
+        );
+
         const history = await getBnModelHistory(pool, actor, artifactRoot);
         assert.deepEqual(
           history.map(({ version }) => version),
-          [4, 3, 2, 1],
+          [6, 5, 4, 3, 2, 1],
         );
         await assert.rejects(
           pool.query("UPDATE insight.bn_model_versions SET version = 4 WHERE id = $1", [valid.id]),
@@ -138,3 +222,24 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
     await rm(artifactRoot, { recursive: true, force: true });
   }
 });
+
+async function createPatient(pool, psychiatrist, seed) {
+  const synthetic = makeSyntheticPatientIdentity(seed);
+  return createOrOverwritePatient(
+    pool,
+    { id: psychiatrist.id, role: psychiatrist.role },
+    {
+      officialIdentifier: {
+        type: identifierConfiguration.type,
+        issuingAuthority: identifierConfiguration.issuingAuthority,
+        value: synthetic.officialIdentifier,
+      },
+      firstName: synthetic.firstName,
+      lastName: "BnLifecycle",
+      dateOfBirth: synthetic.birthDate,
+      sex: synthetic.sex,
+    },
+    identifierConfiguration,
+    `00000000-0000-4000-8000-${String(seed).padStart(12, "0")}`,
+  );
+}

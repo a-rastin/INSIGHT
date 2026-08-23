@@ -17,9 +17,11 @@ import {
   BnModelAuthorizationError,
   BnModelInputError,
   createBnModelCandidate,
+  disableBnModel,
   getBnModelHistory,
   getBnModelSource,
   importAndRegisterBnModel,
+  rollbackBnModel,
 } from "./registry.js";
 
 const importSchema = Type.Object(
@@ -43,6 +45,11 @@ const candidateSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const lifecycleActionSchema = Type.Object(
+  { schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION) },
+  { additionalProperties: false },
+);
+
 interface ImportBody {
   readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
   readonly pathwayIdentity: string;
@@ -56,6 +63,10 @@ interface ImportBody {
 interface CandidateBody {
   readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
   readonly sourceXml: string;
+}
+
+interface LifecycleActionBody {
+  readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
 }
 
 export const bnModelRoutes =
@@ -171,6 +182,58 @@ export const bnModelRoutes =
             { artifactRoot },
           );
           return reply.status(201).send({ schemaVersion: CURRENT_SCHEMA_VERSION, model });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
+    api.post<{ Params: { modelId: string }; Body: LifecycleActionBody }>(
+      "/admin/bn-models/:modelId/disable",
+      {
+        schema: {
+          operationId: "disableBnModel",
+          tags: ["administration", "bayesian-models"],
+          params: Type.Object({ modelId: Type.String({ format: "uuid" }) }),
+          body: lifecycleActionSchema,
+          response: { 200: BnModelResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const model = await disableBnModel(
+            pool,
+            actor(getSession(request)!),
+            request.params.modelId,
+            { artifactRoot },
+          );
+          return reply.send({ schemaVersion: CURRENT_SCHEMA_VERSION, model });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
+    api.post<{ Params: { modelId: string }; Body: LifecycleActionBody }>(
+      "/admin/bn-models/:modelId/rollback",
+      {
+        schema: {
+          operationId: "rollbackBnModel",
+          tags: ["administration", "bayesian-models"],
+          params: Type.Object({ modelId: Type.String({ format: "uuid" }) }),
+          body: lifecycleActionSchema,
+          response: { 200: BnModelResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const model = await rollbackBnModel(
+            pool,
+            actor(getSession(request)!),
+            request.params.modelId,
+            { artifactRoot },
+          );
+          return reply.send({ schemaVersion: CURRENT_SCHEMA_VERSION, model });
         } catch (error) {
           return sendError(error, request, reply);
         }

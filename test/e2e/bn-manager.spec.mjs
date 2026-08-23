@@ -135,14 +135,31 @@ test("Administrator uploads immutable models and inspects invalid diagnostics at
           valid: true,
           fileName: "pharmacotherapy-edit-v1.xml",
         }),
-        lifecycle: "IMPORTED",
+        lifecycle: "ACTIVE",
         source: {
           ...model({ id: "x", version: 2, valid: true, fileName: "edit.xml" }).source,
           contentSha256: "e".repeat(64),
         },
       };
+      for (const current of models) {
+        if (current.lifecycle === "ACTIVE") current.lifecycle = "SUPERSEDED";
+      }
       models.unshift(candidate);
       return route.fulfill({ status: 201, json: { schemaVersion: "1", model: candidate } });
+    }
+    if (path.endsWith("/disable")) {
+      const target = models.find(({ id }) => path.includes(id));
+      expect(request.postDataJSON()).toEqual({ schemaVersion: "1" });
+      target.lifecycle = "DISABLED";
+      return route.fulfill({ json: { schemaVersion: "1", model: target } });
+    }
+    if (path.endsWith("/rollback")) {
+      const target = models.find(({ id }) => path.includes(id));
+      for (const current of models) {
+        if (current.lifecycle === "ACTIVE") current.lifecycle = "SUPERSEDED";
+      }
+      target.lifecycle = "ACTIVE";
+      return route.fulfill({ json: { schemaVersion: "1", model: target } });
     }
     return route.fulfill({ status: 404 });
   });
@@ -168,13 +185,11 @@ test("Administrator uploads immutable models and inspects invalid diagnostics at
   await page.getByLabel("yes P(first)").fill("0.3");
   await page.getByLabel("yes P(second)").fill("0.7");
   await page.getByRole("button", { name: "Apply row" }).first().click();
-  await expect(page.getByLabel("XMLBIF source")).toHaveValue(
-    /<TABLE>0\.3 0\.7 0\.8 0\.2<\/TABLE>/,
-  );
+  await expect(page.getByLabel("XMLBIF source")).toHaveValue(/<TABLE>0\.3 0\.7 0\.8 0\.2<\/TABLE>/);
   await page.getByLabel("XMLBIF source").fill("<BIF><NETWORK>");
   await expect(page.getByText("Draft invalid")).toBeVisible();
   await expect(page.getByRole("button", { name: /Choice nature/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Save as candidate version" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save and activate new version" })).toBeDisabled();
   await page
     .getByLabel("XMLBIF source")
     .fill(editableSource.replace("0.1 0.9 0.8 0.2", "0.3 0.7 0.8 0.2"));
@@ -182,9 +197,18 @@ test("Administrator uploads immutable models and inspects invalid diagnostics at
   await page.getByLabel("Node type").selectOption("utility");
   await page.getByLabel("Node ID (optional)").fill("ExpectedUtility");
   await page.getByRole("button", { name: "Add node" }).click();
-  await page.getByRole("button", { name: "Save as candidate version" }).click();
+  await page.getByRole("button", { name: "Save and activate new version" }).click();
   await expect(
-    page.getByRole("button", { name: /PHARMACOTHERAPY Version 2 IMPORTED/ }),
+    page.getByRole("button", { name: /PHARMACOTHERAPY Version 2 ACTIVE/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Disable for new executions" }).click();
+  await expect(
+    page.getByRole("button", { name: /PHARMACOTHERAPY Version 2 DISABLED/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /PHARMACOTHERAPY Version 1 SUPERSEDED/ }).click();
+  await page.getByRole("button", { name: "Roll back to this version" }).click();
+  await expect(
+    page.getByRole("button", { name: /PHARMACOTHERAPY Version 1 ACTIVE/ }),
   ).toBeVisible();
   await upload("invalid.xml", '<BIF VERSION="0.3">invalid</BIF>');
 
