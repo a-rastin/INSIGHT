@@ -492,6 +492,7 @@ export class McpToolError extends Error {
 
 export interface ModelToolDefinition {
   readonly name: ToolName;
+  readonly version: string;
   readonly description: string;
   readonly inputSchema: TSchema;
 }
@@ -509,6 +510,7 @@ export class InternalMcpGateway {
       (name) => stateTools.includes(name) && context.allowedToolNames.includes(name),
     ).map((name) => ({
       name,
+      version: TOOL_DEFINITIONS[name].version,
       description: TOOL_DEFINITIONS[name].description,
       inputSchema: TOOL_DEFINITIONS[name].inputSchema,
     }));

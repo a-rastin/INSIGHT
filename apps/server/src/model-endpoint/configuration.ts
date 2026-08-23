@@ -39,6 +39,15 @@ export interface ModelEndpointConfiguration {
   readonly createdAt: string;
 }
 
+export interface ActiveModelEndpoint {
+  readonly configurationId: string;
+  readonly configurationVersion: number;
+  readonly configurationFingerprint: string;
+  readonly baseUrl: string;
+  readonly model: string;
+  readonly credential: string;
+}
+
 interface ProviderToolCall {
   readonly id?: unknown;
   readonly function?: { readonly name?: unknown; readonly arguments?: unknown };
@@ -75,6 +84,41 @@ interface ConfigurationRow extends QueryResultRow {
 export class ModelEndpointAuthorizationError extends Error {}
 export class ModelEndpointInputError extends Error {}
 export class ModelEndpointNotConfiguredError extends Error {}
+
+export async function getActiveModelEndpointForExecution(
+  database: Pick<Pool, "query">,
+): Promise<ActiveModelEndpoint> {
+  const result = await database.query<ConfigurationRow>(`
+    SELECT configuration.*, state.status, state.failure_category, state.returned_model,
+           state.last_checked_at, key.key_material
+    FROM insight.model_endpoint_state state
+    JOIN insight.model_endpoint_configurations configuration
+      ON configuration.id = state.current_configuration_id
+    JOIN insight.application_encryption_keys key
+      ON key.version = configuration.encryption_key_version
+    WHERE state.singleton = true AND state.status = 'COMPATIBLE'
+      AND configuration.compatibility_test_version = $1
+      AND configuration.credential_ciphertext IS NOT NULL
+  `, [MODEL_COMPATIBILITY_TEST_VERSION]);
+  const row = result.rows[0];
+  if (!row?.key_material || !row.credential_ciphertext || !row.credential_iv || !row.credential_tag) {
+    throw new ModelEndpointNotConfiguredError();
+  }
+  return {
+    configurationId: row.id,
+    configurationVersion: row.version,
+    configurationFingerprint: row.configuration_fingerprint,
+    baseUrl: row.base_url,
+    model: row.model,
+    credential: decrypt(
+      row.credential_ciphertext,
+      row.credential_iv,
+      row.credential_tag,
+      row.key_material,
+      row.id,
+    ),
+  };
+}
 
 export function normalizeModelBaseUrl(value: string, allowDevelopmentLoopbackHttp = false): string {
   const input = value.trim();

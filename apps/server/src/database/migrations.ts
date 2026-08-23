@@ -1610,6 +1610,81 @@ export const migrations: readonly Migration[] = Object.freeze([
       );
     `,
   },
+  {
+    version: 20,
+    name: "model_agent_executions",
+    sql: `
+      CREATE TABLE insight.model_agent_executions (
+        id uuid PRIMARY KEY,
+        job_id uuid NOT NULL UNIQUE REFERENCES insight.jobs(id) ON DELETE CASCADE,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        research_case_revision bigint NOT NULL CHECK (research_case_revision >= 0),
+        input_revision bigint NOT NULL CHECK (input_revision >= 0),
+        workflow_state insight.research_case_workflow_state NOT NULL,
+        endpoint_configuration_id uuid NOT NULL
+          REFERENCES insight.model_endpoint_configurations(id),
+        endpoint_configuration_version integer NOT NULL CHECK (endpoint_configuration_version > 0),
+        endpoint_fingerprint text NOT NULL CHECK (endpoint_fingerprint ~ '^[0-9a-f]{64}$'),
+        prompt_version text NOT NULL CHECK (prompt_version <> ''),
+        prompt text NOT NULL CHECK (prompt <> ''),
+        input_schema jsonb NOT NULL CHECK (jsonb_typeof(input_schema) = 'object'),
+        output_schema jsonb NOT NULL CHECK (jsonb_typeof(output_schema) = 'object'),
+        input_payload jsonb NOT NULL,
+        tool_manifest jsonb NOT NULL CHECK (jsonb_typeof(tool_manifest) = 'array'),
+        settings jsonb NOT NULL CHECK (jsonb_typeof(settings) = 'object'),
+        trusted_context jsonb NOT NULL CHECK (jsonb_typeof(trusted_context) = 'object'),
+        messages jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(messages) = 'array'),
+        model_call_count integer NOT NULL DEFAULT 0 CHECK (model_call_count >= 0),
+        tool_call_count integer NOT NULL DEFAULT 0 CHECK (tool_call_count >= 0),
+        consumed_tokens integer NOT NULL DEFAULT 0 CHECK (consumed_tokens >= 0),
+        status text NOT NULL DEFAULT 'PENDING' CHECK (
+          status IN ('PENDING','RUNNING','SUCCEEDED','FAILED','CANCELLED')
+        ),
+        output jsonb,
+        failure_code text CHECK (
+          failure_code IS NULL OR failure_code IN (
+            'BUDGET_EXHAUSTED','ENDPOINT_EXHAUSTED','FINAL_SCHEMA_INVALID',
+            'MALFORMED_MODEL_RESPONSE','STALE_RESEARCH_CASE_REVISION','TOOL_CALL_REJECTED'
+          )
+        ),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        completed_at timestamptz,
+        CHECK (
+          (status = 'SUCCEEDED' AND output IS NOT NULL AND failure_code IS NULL
+            AND completed_at IS NOT NULL)
+          OR (status IN ('FAILED','CANCELLED') AND output IS NULL AND failure_code IS NOT NULL
+            AND completed_at IS NOT NULL)
+          OR (status IN ('PENDING','RUNNING') AND output IS NULL AND failure_code IS NULL
+            AND completed_at IS NULL)
+        )
+      );
+
+      CREATE FUNCTION insight.protect_model_agent_execution_pins()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF (NEW.job_id, NEW.research_case_id, NEW.research_case_revision, NEW.input_revision,
+            NEW.workflow_state, NEW.endpoint_configuration_id, NEW.endpoint_configuration_version,
+            NEW.endpoint_fingerprint, NEW.prompt_version, NEW.prompt, NEW.input_schema,
+            NEW.output_schema, NEW.input_payload, NEW.tool_manifest, NEW.settings,
+            NEW.trusted_context)
+           IS DISTINCT FROM
+           (OLD.job_id, OLD.research_case_id, OLD.research_case_revision, OLD.input_revision,
+            OLD.workflow_state, OLD.endpoint_configuration_id, OLD.endpoint_configuration_version,
+            OLD.endpoint_fingerprint, OLD.prompt_version, OLD.prompt, OLD.input_schema,
+            OLD.output_schema, OLD.input_payload, OLD.tool_manifest, OLD.settings,
+            OLD.trusted_context)
+        THEN
+          RAISE EXCEPTION 'model agent execution pins are immutable' USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+      CREATE TRIGGER model_agent_execution_pins_immutable
+      BEFORE UPDATE ON insight.model_agent_executions
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_model_agent_execution_pins();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

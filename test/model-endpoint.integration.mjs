@@ -1,14 +1,21 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import test from "node:test";
+import { Type } from "@sinclair/typebox";
 
 import {
+  DEFAULT_MODEL_AGENT_SETTINGS,
+  InternalMcpGateway,
+  MODEL_AGENT_PROMPT_VERSION,
   ModelEndpointAuthorizationError,
   checkModelEndpointCompatibility,
   clearModelEndpointCredential,
   createUser,
+  getActiveModelEndpointForExecution,
   getModelEndpointConfiguration,
+  pinModelAgent,
   replaceModelEndpointConfiguration,
+  runModelAgent,
 } from "../.tsbuild/server/index.js";
 import {
   createPostgresPool,
@@ -40,9 +47,50 @@ function argumentsFromSchema(body) {
 test("Administrator-only versioned model endpoint configuration", async (suite) => {
   assert.ok(adminConnectionString, "TEST_DATABASE_URL is required.");
   const requests = [];
+  const runtimeRequests = [];
   const server = createServer(async (request, response) => {
     const body = await readRequest(request);
     requests.push({ url: request.url, authorization: request.headers.authorization, body });
+    if (body.tool_choice === "auto") {
+      runtimeRequests.push(body);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify(
+          runtimeRequests.length === 1
+            ? {
+                choices: [
+                  {
+                    message: {
+                      role: "assistant",
+                      content: null,
+                      tool_calls: [
+                        {
+                          id: "runtime-call-1",
+                          type: "function",
+                          function: {
+                            name: "medication.search_candidates",
+                            arguments: JSON.stringify({
+                              medicationEntryRef: "entry-1",
+                              query: "risperidone",
+                            }),
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+                usage: { total_tokens: 10 },
+              }
+            : {
+                choices: [
+                  { message: { role: "assistant", content: JSON.stringify({ done: true }) } },
+                ],
+                usage: { total_tokens: 5 },
+              },
+        ),
+      );
+      return;
+    }
     const name = body.tool_choice.function.name;
     const argumentsValue = argumentsFromSchema(body);
     response.writeHead(200, { "content-type": "application/json" });
@@ -154,6 +202,71 @@ test("Administrator-only versioned model endpoint configuration", async (suite) 
           });
           assert.doesNotMatch(JSON.stringify(configuration), new RegExp(secret));
         });
+
+        await suite.test(
+          "activated configuration drives a complete model-agent workflow",
+          async () => {
+            const endpoint = await getActiveModelEndpointForExecution(pool);
+            assert.equal(endpoint.configurationVersion, configuration.version);
+            assert.equal(endpoint.configurationFingerprint, configuration.configurationFingerprint);
+            assert.equal(endpoint.credential, secret);
+            const context = {
+              executionId: "00000000-0000-4000-8000-000000000001",
+              jobId: "job-1",
+              subjectRef: "subject-reference",
+              researchCaseRevision: 7,
+              workflowState: "NORMALIZING_MEDICATIONS",
+              actorRole: "PSYCHIATRIST",
+              allowedToolNames: [
+                "research_case.get_context",
+                "medication.search_candidates",
+                "medication.commit_mapping",
+              ],
+              idempotencyKey: "idempotency-1",
+            };
+            const gateway = new InternalMcpGateway({
+              "medication.search_candidates": () => ({
+                data: {
+                  catalogVersion: "catalog-1",
+                  candidates: [
+                    {
+                      canonicalId: "rx-risperidone",
+                      preferredName: "Risperidone",
+                      synonyms: [],
+                    },
+                  ],
+                },
+              }),
+            });
+            const pin = pinModelAgent({
+              executionId: context.executionId,
+              jobId: context.jobId,
+              researchCaseId: "00000000-0000-4000-8000-000000000003",
+              researchCaseRevision: context.researchCaseRevision,
+              inputRevision: 2,
+              workflowState: context.workflowState,
+              endpoint,
+              promptVersion: MODEL_AGENT_PROMPT_VERSION,
+              prompt: "Use only supplied tools and return schema-valid JSON.",
+              inputSchema: Type.Object({ task: Type.Literal("normalize") }),
+              outputSchema: Type.Object({ done: Type.Literal(true) }),
+              input: { task: "normalize" },
+              settings: { ...DEFAULT_MODEL_AGENT_SETTINGS, retryDelayMilliseconds: 0 },
+              context,
+              gateway,
+            });
+            const result = await runModelAgent({
+              pin,
+              gateway,
+              assertCurrentRevision: async () => true,
+            });
+            assert.deepEqual(result.output, { done: true });
+            assert.equal(runtimeRequests.length, 2);
+            assert.equal(runtimeRequests[1].messages[2].role, "assistant");
+            assert.equal(runtimeRequests[1].messages[2].tool_calls[0].id, "runtime-call-1");
+            assert.equal(runtimeRequests[1].messages[3].tool_call_id, "runtime-call-1");
+          },
+        );
 
         await suite.test(
           "every configuration input invalidates fingerprint eligibility",
