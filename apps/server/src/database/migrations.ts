@@ -1838,6 +1838,99 @@ export const migrations: readonly Migration[] = Object.freeze([
           (research_case_id, input_revision, medical_history_revision, created_at DESC);
     `,
   },
+  {
+    version: 23,
+    name: "ddi_source_governance",
+    sql: `
+      CREATE TABLE insight.ddi_source_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        version integer NOT NULL CHECK (version > 0),
+        drug_identity text NOT NULL CHECK (
+          drug_identity ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$'
+        ),
+        title text NOT NULL CHECK (title = btrim(title) AND title <> ''),
+        source_url text NOT NULL CHECK (source_url ~ '^https://([^/]+\\.)?medscape\\.com/'),
+        publisher text NOT NULL CHECK (lower(publisher) = 'medscape'),
+        retrieved_at timestamptz NOT NULL,
+        content_date date NOT NULL,
+        content_hash text NOT NULL CHECK (content_hash ~ '^[0-9a-f]{64}$'),
+        parser_version text NOT NULL CHECK (parser_version <> ''),
+        transform_version text NOT NULL CHECK (transform_version <> ''),
+        reviewer_id text NOT NULL CHECK (reviewer_id = btrim(reviewer_id) AND reviewer_id <> ''),
+        reviewed_at timestamptz NOT NULL,
+        review_reference text NOT NULL CHECK (
+          review_reference = btrim(review_reference) AND review_reference <> ''
+        ),
+        permission_record jsonb NOT NULL CHECK (
+          jsonb_typeof(permission_record) = 'object'
+          AND permission_record ?& ARRAY[
+            'status', 'basis', 'recordReference', 'coversStorage',
+            'coversTransformation', 'coversResearchUse'
+          ]
+        ),
+        artifact_path text NOT NULL CHECK (
+          artifact_path = btrim(artifact_path) AND artifact_path <> ''
+          AND artifact_path !~ '(^/|(^|/)\\.\\.(/|$))'
+        ),
+        artifact_media_type text NOT NULL CHECK (
+          artifact_media_type = 'text/plain; charset=utf-8'
+        ),
+        artifact_byte_length bigint NOT NULL CHECK (artifact_byte_length > 0),
+        interactions jsonb NOT NULL CHECK (
+          jsonb_typeof(interactions) = 'array' AND jsonb_array_length(interactions) > 0
+        ),
+        imported_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        imported_at timestamptz NOT NULL,
+        UNIQUE (drug_identity, version),
+        UNIQUE (drug_identity, content_hash, parser_version, transform_version)
+      );
+
+      CREATE TABLE insight.ddi_source_lifecycle_events (
+        source_version_id uuid NOT NULL REFERENCES insight.ddi_source_versions(id),
+        sequence bigint GENERATED ALWAYS AS IDENTITY,
+        lifecycle text NOT NULL CHECK (
+          lifecycle IN ('quarantined', 'reviewed', 'active', 'superseded', 'rejected')
+        ),
+        actor_user_id uuid NOT NULL REFERENCES insight.users(id),
+        occurred_at timestamptz NOT NULL,
+        event_reference text CHECK (event_reference IS NULL OR btrim(event_reference) <> ''),
+        legal_approval_reference text CHECK (
+          legal_approval_reference IS NULL OR btrim(legal_approval_reference) <> ''
+        ),
+        clinical_approval_reference text CHECK (
+          clinical_approval_reference IS NULL OR btrim(clinical_approval_reference) <> ''
+        ),
+        PRIMARY KEY (source_version_id, sequence),
+        CHECK (
+          (lifecycle = 'active' AND legal_approval_reference IS NOT NULL
+            AND clinical_approval_reference IS NOT NULL)
+          OR (lifecycle <> 'active' AND legal_approval_reference IS NULL
+            AND clinical_approval_reference IS NULL)
+        )
+      );
+
+      CREATE TABLE insight.ddi_active_sources (
+        drug_identity text PRIMARY KEY,
+        source_version_id uuid NOT NULL UNIQUE REFERENCES insight.ddi_source_versions(id),
+        activated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        activated_at timestamptz NOT NULL
+      );
+
+      CREATE FUNCTION insight.reject_ddi_source_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        RAISE EXCEPTION 'DDI source versions and lifecycle events are immutable'
+          USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER ddi_source_versions_immutable
+      BEFORE UPDATE OR DELETE ON insight.ddi_source_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_ddi_source_mutation();
+      CREATE TRIGGER ddi_source_lifecycle_events_immutable
+      BEFORE UPDATE OR DELETE ON insight.ddi_source_lifecycle_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_ddi_source_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

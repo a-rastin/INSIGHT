@@ -4252,6 +4252,1576 @@
         }
       }
     },
+    "/api/v1/ddi-sources/active": {
+      "get": {
+        "operationId": "getActiveDdiSources",
+        "tags": ["ddi"],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "sources"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "version",
+                          "manifest",
+                          "artifact",
+                          "interactions",
+                          "lifecycle",
+                          "importedByUserId",
+                          "importedAt",
+                          "legalApprovalReference",
+                          "clinicalApprovalReference"
+                        ],
+                        "properties": {
+                          "id": {
+                            "title": "INSIGHT UUID v1",
+                            "format": "uuid",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                            "type": "string"
+                          },
+                          "version": { "minimum": 1, "type": "integer" },
+                          "manifest": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "drugIdentity",
+                              "title",
+                              "url",
+                              "publisher",
+                              "retrievedAt",
+                              "contentDate",
+                              "sha256",
+                              "parserVersion",
+                              "transformVersion",
+                              "reviewerId",
+                              "reviewedAt",
+                              "reviewReference",
+                              "permission",
+                              "lifecycle"
+                            ],
+                            "properties": {
+                              "drugIdentity": {
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+                                "maxLength": 200,
+                                "type": "string"
+                              },
+                              "title": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              "url": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                              "publisher": { "minLength": 1, "maxLength": 500, "type": "string" },
+                              "retrievedAt": {
+                                "title": "INSIGHT timestamp v1",
+                                "format": "date-time",
+                                "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                "type": "string"
+                              },
+                              "contentDate": {
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "type": "string"
+                              },
+                              "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                              "parserVersion": {
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "type": "string"
+                              },
+                              "transformVersion": {
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "type": "string"
+                              },
+                              "reviewerId": { "minLength": 1, "maxLength": 200, "type": "string" },
+                              "reviewedAt": {
+                                "title": "INSIGHT timestamp v1",
+                                "format": "date-time",
+                                "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                "type": "string"
+                              },
+                              "reviewReference": {
+                                "minLength": 1,
+                                "maxLength": 1000,
+                                "type": "string"
+                              },
+                              "permission": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "status",
+                                  "basis",
+                                  "recordReference",
+                                  "coversStorage",
+                                  "coversTransformation",
+                                  "coversResearchUse"
+                                ],
+                                "properties": {
+                                  "status": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["granted"] },
+                                      { "type": "string", "enum": ["not_granted"] }
+                                    ]
+                                  },
+                                  "basis": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                                  "recordReference": {
+                                    "minLength": 1,
+                                    "maxLength": 1000,
+                                    "type": "string"
+                                  },
+                                  "coversStorage": { "type": "boolean" },
+                                  "coversTransformation": { "type": "boolean" },
+                                  "coversResearchUse": { "type": "boolean" }
+                                },
+                                "title": "insight.ddi-permission-record.v1"
+                              },
+                              "lifecycle": { "type": "string", "enum": ["quarantined"] }
+                            },
+                            "title": "insight.ddi-source-manifest.v1"
+                          },
+                          "artifact": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "mediaType", "byteLength"],
+                            "properties": {
+                              "path": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              "mediaType": {
+                                "type": "string",
+                                "enum": ["text/plain; charset=utf-8"]
+                              },
+                              "byteLength": { "minimum": 1, "type": "integer" }
+                            }
+                          },
+                          "interactions": {
+                            "maxItems": 10000,
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["severity", "evidenceText", "evidenceReference"],
+                              "properties": {
+                                "severity": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["contraindicated"] },
+                                    { "type": "string", "enum": ["serious"] },
+                                    { "type": "string", "enum": ["monitor_closely"] },
+                                    { "type": "string", "enum": ["minor"] }
+                                  ]
+                                },
+                                "evidenceText": {
+                                  "minLength": 1,
+                                  "maxLength": 20000,
+                                  "type": "string"
+                                },
+                                "evidenceReference": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["sourceSha256", "lineStart", "lineEnd"],
+                                  "properties": {
+                                    "sourceSha256": {
+                                      "pattern": "^[0-9a-f]{64}$",
+                                      "type": "string"
+                                    },
+                                    "lineStart": { "minimum": 1, "type": "integer" },
+                                    "lineEnd": { "minimum": 1, "type": "integer" }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "lifecycle": {
+                            "anyOf": [
+                              { "type": "string", "enum": ["quarantined"] },
+                              { "type": "string", "enum": ["reviewed"] },
+                              { "type": "string", "enum": ["active"] },
+                              { "type": "string", "enum": ["superseded"] },
+                              { "type": "string", "enum": ["rejected"] }
+                            ]
+                          },
+                          "importedByUserId": {
+                            "title": "INSIGHT UUID v1",
+                            "format": "uuid",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                            "type": "string"
+                          },
+                          "importedAt": {
+                            "title": "INSIGHT timestamp v1",
+                            "format": "date-time",
+                            "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                            "type": "string"
+                          },
+                          "legalApprovalReference": {
+                            "anyOf": [
+                              { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              { "type": "null" }
+                            ]
+                          },
+                          "clinicalApprovalReference": {
+                            "anyOf": [
+                              { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              { "type": "null" }
+                            ]
+                          }
+                        },
+                        "title": "insight.ddi-source-version.v1"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ddi-sources": {
+      "get": {
+        "operationId": "getDdiSourceHistory",
+        "tags": ["administration", "ddi"],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "sources"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "version",
+                          "manifest",
+                          "artifact",
+                          "interactions",
+                          "lifecycle",
+                          "importedByUserId",
+                          "importedAt",
+                          "legalApprovalReference",
+                          "clinicalApprovalReference"
+                        ],
+                        "properties": {
+                          "id": {
+                            "title": "INSIGHT UUID v1",
+                            "format": "uuid",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                            "type": "string"
+                          },
+                          "version": { "minimum": 1, "type": "integer" },
+                          "manifest": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "drugIdentity",
+                              "title",
+                              "url",
+                              "publisher",
+                              "retrievedAt",
+                              "contentDate",
+                              "sha256",
+                              "parserVersion",
+                              "transformVersion",
+                              "reviewerId",
+                              "reviewedAt",
+                              "reviewReference",
+                              "permission",
+                              "lifecycle"
+                            ],
+                            "properties": {
+                              "drugIdentity": {
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+                                "maxLength": 200,
+                                "type": "string"
+                              },
+                              "title": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              "url": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                              "publisher": { "minLength": 1, "maxLength": 500, "type": "string" },
+                              "retrievedAt": {
+                                "title": "INSIGHT timestamp v1",
+                                "format": "date-time",
+                                "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                "type": "string"
+                              },
+                              "contentDate": {
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "type": "string"
+                              },
+                              "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                              "parserVersion": {
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "type": "string"
+                              },
+                              "transformVersion": {
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "type": "string"
+                              },
+                              "reviewerId": { "minLength": 1, "maxLength": 200, "type": "string" },
+                              "reviewedAt": {
+                                "title": "INSIGHT timestamp v1",
+                                "format": "date-time",
+                                "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                "type": "string"
+                              },
+                              "reviewReference": {
+                                "minLength": 1,
+                                "maxLength": 1000,
+                                "type": "string"
+                              },
+                              "permission": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "status",
+                                  "basis",
+                                  "recordReference",
+                                  "coversStorage",
+                                  "coversTransformation",
+                                  "coversResearchUse"
+                                ],
+                                "properties": {
+                                  "status": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["granted"] },
+                                      { "type": "string", "enum": ["not_granted"] }
+                                    ]
+                                  },
+                                  "basis": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                                  "recordReference": {
+                                    "minLength": 1,
+                                    "maxLength": 1000,
+                                    "type": "string"
+                                  },
+                                  "coversStorage": { "type": "boolean" },
+                                  "coversTransformation": { "type": "boolean" },
+                                  "coversResearchUse": { "type": "boolean" }
+                                }
+                              },
+                              "lifecycle": { "type": "string", "enum": ["quarantined"] }
+                            }
+                          },
+                          "artifact": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "mediaType", "byteLength"],
+                            "properties": {
+                              "path": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              "mediaType": {
+                                "type": "string",
+                                "enum": ["text/plain; charset=utf-8"]
+                              },
+                              "byteLength": { "minimum": 1, "type": "integer" }
+                            }
+                          },
+                          "interactions": {
+                            "maxItems": 10000,
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["severity", "evidenceText", "evidenceReference"],
+                              "properties": {
+                                "severity": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["contraindicated"] },
+                                    { "type": "string", "enum": ["serious"] },
+                                    { "type": "string", "enum": ["monitor_closely"] },
+                                    { "type": "string", "enum": ["minor"] }
+                                  ]
+                                },
+                                "evidenceText": {
+                                  "minLength": 1,
+                                  "maxLength": 20000,
+                                  "type": "string"
+                                },
+                                "evidenceReference": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["sourceSha256", "lineStart", "lineEnd"],
+                                  "properties": {
+                                    "sourceSha256": {
+                                      "pattern": "^[0-9a-f]{64}$",
+                                      "type": "string"
+                                    },
+                                    "lineStart": { "minimum": 1, "type": "integer" },
+                                    "lineEnd": { "minimum": 1, "type": "integer" }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "lifecycle": {
+                            "anyOf": [
+                              { "type": "string", "enum": ["quarantined"] },
+                              { "type": "string", "enum": ["reviewed"] },
+                              { "type": "string", "enum": ["active"] },
+                              { "type": "string", "enum": ["superseded"] },
+                              { "type": "string", "enum": ["rejected"] }
+                            ]
+                          },
+                          "importedByUserId": {
+                            "title": "INSIGHT UUID v1",
+                            "format": "uuid",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                            "type": "string"
+                          },
+                          "importedAt": {
+                            "title": "INSIGHT timestamp v1",
+                            "format": "date-time",
+                            "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                            "type": "string"
+                          },
+                          "legalApprovalReference": {
+                            "anyOf": [
+                              { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              { "type": "null" }
+                            ]
+                          },
+                          "clinicalApprovalReference": {
+                            "anyOf": [
+                              { "minLength": 1, "maxLength": 1000, "type": "string" },
+                              { "type": "null" }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ddi-sources/import": {
+      "post": {
+        "operationId": "importDdiSource",
+        "tags": ["administration", "ddi"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["schemaVersion", "manifest", "artifactBase64"],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "manifest": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "drugIdentity",
+                      "title",
+                      "url",
+                      "publisher",
+                      "retrievedAt",
+                      "contentDate",
+                      "sha256",
+                      "parserVersion",
+                      "transformVersion",
+                      "reviewerId",
+                      "reviewedAt",
+                      "reviewReference",
+                      "permission",
+                      "lifecycle"
+                    ],
+                    "properties": {
+                      "drugIdentity": {
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "title": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                      "url": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                      "publisher": { "minLength": 1, "maxLength": 500, "type": "string" },
+                      "retrievedAt": {
+                        "title": "INSIGHT timestamp v1",
+                        "format": "date-time",
+                        "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                        "type": "string"
+                      },
+                      "contentDate": { "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "type": "string" },
+                      "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                      "parserVersion": { "minLength": 1, "maxLength": 200, "type": "string" },
+                      "transformVersion": { "minLength": 1, "maxLength": 200, "type": "string" },
+                      "reviewerId": { "minLength": 1, "maxLength": 200, "type": "string" },
+                      "reviewedAt": {
+                        "title": "INSIGHT timestamp v1",
+                        "format": "date-time",
+                        "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                        "type": "string"
+                      },
+                      "reviewReference": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                      "permission": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "status",
+                          "basis",
+                          "recordReference",
+                          "coversStorage",
+                          "coversTransformation",
+                          "coversResearchUse"
+                        ],
+                        "properties": {
+                          "status": {
+                            "anyOf": [
+                              { "type": "string", "enum": ["granted"] },
+                              { "type": "string", "enum": ["not_granted"] }
+                            ]
+                          },
+                          "basis": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                          "recordReference": {
+                            "minLength": 1,
+                            "maxLength": 1000,
+                            "type": "string"
+                          },
+                          "coversStorage": { "type": "boolean" },
+                          "coversTransformation": { "type": "boolean" },
+                          "coversResearchUse": { "type": "boolean" }
+                        }
+                      },
+                      "lifecycle": { "type": "string", "enum": ["quarantined"] }
+                    }
+                  },
+                  "artifactBase64": { "minLength": 1, "maxLength": 20000000, "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "source"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "source": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version",
+                        "manifest",
+                        "artifact",
+                        "interactions",
+                        "lifecycle",
+                        "importedByUserId",
+                        "importedAt",
+                        "legalApprovalReference",
+                        "clinicalApprovalReference"
+                      ],
+                      "properties": {
+                        "id": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "version": { "minimum": 1, "type": "integer" },
+                        "manifest": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "drugIdentity",
+                            "title",
+                            "url",
+                            "publisher",
+                            "retrievedAt",
+                            "contentDate",
+                            "sha256",
+                            "parserVersion",
+                            "transformVersion",
+                            "reviewerId",
+                            "reviewedAt",
+                            "reviewReference",
+                            "permission",
+                            "lifecycle"
+                          ],
+                          "properties": {
+                            "drugIdentity": {
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "title": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            "url": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "publisher": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "retrievedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "contentDate": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "type": "string"
+                            },
+                            "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                            "parserVersion": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "transformVersion": {
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "reviewerId": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "reviewedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "reviewReference": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "type": "string"
+                            },
+                            "permission": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "basis",
+                                "recordReference",
+                                "coversStorage",
+                                "coversTransformation",
+                                "coversResearchUse"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["granted"] },
+                                    { "type": "string", "enum": ["not_granted"] }
+                                  ]
+                                },
+                                "basis": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                                "recordReference": {
+                                  "minLength": 1,
+                                  "maxLength": 1000,
+                                  "type": "string"
+                                },
+                                "coversStorage": { "type": "boolean" },
+                                "coversTransformation": { "type": "boolean" },
+                                "coversResearchUse": { "type": "boolean" }
+                              }
+                            },
+                            "lifecycle": { "type": "string", "enum": ["quarantined"] }
+                          }
+                        },
+                        "artifact": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": ["path", "mediaType", "byteLength"],
+                          "properties": {
+                            "path": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            "mediaType": {
+                              "type": "string",
+                              "enum": ["text/plain; charset=utf-8"]
+                            },
+                            "byteLength": { "minimum": 1, "type": "integer" }
+                          }
+                        },
+                        "interactions": {
+                          "maxItems": 10000,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["severity", "evidenceText", "evidenceReference"],
+                            "properties": {
+                              "severity": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["contraindicated"] },
+                                  { "type": "string", "enum": ["serious"] },
+                                  { "type": "string", "enum": ["monitor_closely"] },
+                                  { "type": "string", "enum": ["minor"] }
+                                ]
+                              },
+                              "evidenceText": {
+                                "minLength": 1,
+                                "maxLength": 20000,
+                                "type": "string"
+                              },
+                              "evidenceReference": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["sourceSha256", "lineStart", "lineEnd"],
+                                "properties": {
+                                  "sourceSha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                                  "lineStart": { "minimum": 1, "type": "integer" },
+                                  "lineEnd": { "minimum": 1, "type": "integer" }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "lifecycle": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["quarantined"] },
+                            { "type": "string", "enum": ["reviewed"] },
+                            { "type": "string", "enum": ["active"] },
+                            { "type": "string", "enum": ["superseded"] },
+                            { "type": "string", "enum": ["rejected"] }
+                          ]
+                        },
+                        "importedByUserId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "importedAt": {
+                          "title": "INSIGHT timestamp v1",
+                          "format": "date-time",
+                          "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                          "type": "string"
+                        },
+                        "legalApprovalReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        },
+                        "clinicalApprovalReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ddi-sources/{sourceId}/review": {
+      "post": {
+        "operationId": "reviewDdiSource",
+        "tags": ["administration", "ddi"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["schemaVersion", "decision", "reviewReference"],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "decision": {
+                    "anyOf": [
+                      { "type": "string", "enum": ["reviewed"] },
+                      { "type": "string", "enum": ["rejected"] }
+                    ]
+                  },
+                  "reviewReference": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": { "format": "uuid", "type": "string" },
+            "in": "path",
+            "name": "sourceId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "source"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "source": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version",
+                        "manifest",
+                        "artifact",
+                        "interactions",
+                        "lifecycle",
+                        "importedByUserId",
+                        "importedAt",
+                        "legalApprovalReference",
+                        "clinicalApprovalReference"
+                      ],
+                      "properties": {
+                        "id": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "version": { "minimum": 1, "type": "integer" },
+                        "manifest": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "drugIdentity",
+                            "title",
+                            "url",
+                            "publisher",
+                            "retrievedAt",
+                            "contentDate",
+                            "sha256",
+                            "parserVersion",
+                            "transformVersion",
+                            "reviewerId",
+                            "reviewedAt",
+                            "reviewReference",
+                            "permission",
+                            "lifecycle"
+                          ],
+                          "properties": {
+                            "drugIdentity": {
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "title": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            "url": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "publisher": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "retrievedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "contentDate": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "type": "string"
+                            },
+                            "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                            "parserVersion": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "transformVersion": {
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "reviewerId": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "reviewedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "reviewReference": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "type": "string"
+                            },
+                            "permission": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "basis",
+                                "recordReference",
+                                "coversStorage",
+                                "coversTransformation",
+                                "coversResearchUse"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["granted"] },
+                                    { "type": "string", "enum": ["not_granted"] }
+                                  ]
+                                },
+                                "basis": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                                "recordReference": {
+                                  "minLength": 1,
+                                  "maxLength": 1000,
+                                  "type": "string"
+                                },
+                                "coversStorage": { "type": "boolean" },
+                                "coversTransformation": { "type": "boolean" },
+                                "coversResearchUse": { "type": "boolean" }
+                              }
+                            },
+                            "lifecycle": { "type": "string", "enum": ["quarantined"] }
+                          }
+                        },
+                        "artifact": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": ["path", "mediaType", "byteLength"],
+                          "properties": {
+                            "path": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            "mediaType": {
+                              "type": "string",
+                              "enum": ["text/plain; charset=utf-8"]
+                            },
+                            "byteLength": { "minimum": 1, "type": "integer" }
+                          }
+                        },
+                        "interactions": {
+                          "maxItems": 10000,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["severity", "evidenceText", "evidenceReference"],
+                            "properties": {
+                              "severity": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["contraindicated"] },
+                                  { "type": "string", "enum": ["serious"] },
+                                  { "type": "string", "enum": ["monitor_closely"] },
+                                  { "type": "string", "enum": ["minor"] }
+                                ]
+                              },
+                              "evidenceText": {
+                                "minLength": 1,
+                                "maxLength": 20000,
+                                "type": "string"
+                              },
+                              "evidenceReference": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["sourceSha256", "lineStart", "lineEnd"],
+                                "properties": {
+                                  "sourceSha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                                  "lineStart": { "minimum": 1, "type": "integer" },
+                                  "lineEnd": { "minimum": 1, "type": "integer" }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "lifecycle": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["quarantined"] },
+                            { "type": "string", "enum": ["reviewed"] },
+                            { "type": "string", "enum": ["active"] },
+                            { "type": "string", "enum": ["superseded"] },
+                            { "type": "string", "enum": ["rejected"] }
+                          ]
+                        },
+                        "importedByUserId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "importedAt": {
+                          "title": "INSIGHT timestamp v1",
+                          "format": "date-time",
+                          "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                          "type": "string"
+                        },
+                        "legalApprovalReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        },
+                        "clinicalApprovalReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ddi-sources/{sourceId}/activate": {
+      "post": {
+        "operationId": "activateDdiSource",
+        "tags": ["administration", "ddi"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "schemaVersion",
+                  "legalApprovalReference",
+                  "clinicalApprovalReference"
+                ],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "legalApprovalReference": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                  "clinicalApprovalReference": {
+                    "minLength": 1,
+                    "maxLength": 1000,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": { "format": "uuid", "type": "string" },
+            "in": "path",
+            "name": "sourceId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "source"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "source": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version",
+                        "manifest",
+                        "artifact",
+                        "interactions",
+                        "lifecycle",
+                        "importedByUserId",
+                        "importedAt",
+                        "legalApprovalReference",
+                        "clinicalApprovalReference"
+                      ],
+                      "properties": {
+                        "id": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "version": { "minimum": 1, "type": "integer" },
+                        "manifest": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "drugIdentity",
+                            "title",
+                            "url",
+                            "publisher",
+                            "retrievedAt",
+                            "contentDate",
+                            "sha256",
+                            "parserVersion",
+                            "transformVersion",
+                            "reviewerId",
+                            "reviewedAt",
+                            "reviewReference",
+                            "permission",
+                            "lifecycle"
+                          ],
+                          "properties": {
+                            "drugIdentity": {
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "title": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            "url": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                            "publisher": { "minLength": 1, "maxLength": 500, "type": "string" },
+                            "retrievedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "contentDate": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "type": "string"
+                            },
+                            "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                            "parserVersion": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "transformVersion": {
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "reviewerId": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "reviewedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "reviewReference": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "type": "string"
+                            },
+                            "permission": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "basis",
+                                "recordReference",
+                                "coversStorage",
+                                "coversTransformation",
+                                "coversResearchUse"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["granted"] },
+                                    { "type": "string", "enum": ["not_granted"] }
+                                  ]
+                                },
+                                "basis": { "minLength": 1, "maxLength": 2000, "type": "string" },
+                                "recordReference": {
+                                  "minLength": 1,
+                                  "maxLength": 1000,
+                                  "type": "string"
+                                },
+                                "coversStorage": { "type": "boolean" },
+                                "coversTransformation": { "type": "boolean" },
+                                "coversResearchUse": { "type": "boolean" }
+                              }
+                            },
+                            "lifecycle": { "type": "string", "enum": ["quarantined"] }
+                          }
+                        },
+                        "artifact": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": ["path", "mediaType", "byteLength"],
+                          "properties": {
+                            "path": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            "mediaType": {
+                              "type": "string",
+                              "enum": ["text/plain; charset=utf-8"]
+                            },
+                            "byteLength": { "minimum": 1, "type": "integer" }
+                          }
+                        },
+                        "interactions": {
+                          "maxItems": 10000,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["severity", "evidenceText", "evidenceReference"],
+                            "properties": {
+                              "severity": {
+                                "anyOf": [
+                                  { "type": "string", "enum": ["contraindicated"] },
+                                  { "type": "string", "enum": ["serious"] },
+                                  { "type": "string", "enum": ["monitor_closely"] },
+                                  { "type": "string", "enum": ["minor"] }
+                                ]
+                              },
+                              "evidenceText": {
+                                "minLength": 1,
+                                "maxLength": 20000,
+                                "type": "string"
+                              },
+                              "evidenceReference": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["sourceSha256", "lineStart", "lineEnd"],
+                                "properties": {
+                                  "sourceSha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                                  "lineStart": { "minimum": 1, "type": "integer" },
+                                  "lineEnd": { "minimum": 1, "type": "integer" }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "lifecycle": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["quarantined"] },
+                            { "type": "string", "enum": ["reviewed"] },
+                            { "type": "string", "enum": ["active"] },
+                            { "type": "string", "enum": ["superseded"] },
+                            { "type": "string", "enum": ["rejected"] }
+                          ]
+                        },
+                        "importedByUserId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "importedAt": {
+                          "title": "INSIGHT timestamp v1",
+                          "format": "date-time",
+                          "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                          "type": "string"
+                        },
+                        "legalApprovalReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        },
+                        "clinicalApprovalReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 1000, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/medication-catalog": {
       "get": {
         "operationId": "getMedicationCatalogHistory",

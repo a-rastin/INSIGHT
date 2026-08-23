@@ -1260,6 +1260,112 @@ export const ComorbidityKnowledgeHistoryResponseSchema = Type.Object(
   { $id: "insight.comorbidity-knowledge-history-response.v1", additionalProperties: false },
 );
 
+export const DDI_SOURCE_LIFECYCLES = [
+  "quarantined",
+  "reviewed",
+  "active",
+  "superseded",
+  "rejected",
+] as const;
+
+export const DdiPermissionRecordSchema = Type.Object(
+  {
+    status: Type.Union([Type.Literal("granted"), Type.Literal("not_granted")]),
+    basis: Type.String({ minLength: 1, maxLength: 2000 }),
+    recordReference: Type.String({ minLength: 1, maxLength: 1000 }),
+    coversStorage: Type.Boolean(),
+    coversTransformation: Type.Boolean(),
+    coversResearchUse: Type.Boolean(),
+  },
+  { $id: "insight.ddi-permission-record.v1", additionalProperties: false },
+);
+export type DdiPermissionRecord = Static<typeof DdiPermissionRecordSchema>;
+
+export const DdiSourceManifestSchema = Type.Object(
+  {
+    drugIdentity: governedIdSchema,
+    title: Type.String({ minLength: 1, maxLength: 1000 }),
+    url: Type.String({ minLength: 1, maxLength: 2000 }),
+    publisher: Type.String({ minLength: 1, maxLength: 500 }),
+    retrievedAt: TimestampSchema,
+    contentDate: Type.String({ pattern: "^\\d{4}-\\d{2}-\\d{2}$" }),
+    sha256: Type.String({ pattern: "^[0-9a-f]{64}$" }),
+    parserVersion: Type.String({ minLength: 1, maxLength: 200 }),
+    transformVersion: Type.String({ minLength: 1, maxLength: 200 }),
+    reviewerId: Type.String({ minLength: 1, maxLength: 200 }),
+    reviewedAt: TimestampSchema,
+    reviewReference: Type.String({ minLength: 1, maxLength: 1000 }),
+    permission: DdiPermissionRecordSchema,
+    lifecycle: Type.Literal("quarantined"),
+  },
+  { $id: "insight.ddi-source-manifest.v1", additionalProperties: false },
+);
+export type DdiSourceManifest = Static<typeof DdiSourceManifestSchema>;
+
+export const DdiEvidenceReferenceSchema = Type.Object(
+  {
+    sourceSha256: Type.String({ pattern: "^[0-9a-f]{64}$" }),
+    lineStart: Type.Integer({ minimum: 1 }),
+    lineEnd: Type.Integer({ minimum: 1 }),
+  },
+  { additionalProperties: false },
+);
+
+export const DdiExtractedInteractionSchema = Type.Object(
+  {
+    severity: Type.Union([
+      Type.Literal("contraindicated"),
+      Type.Literal("serious"),
+      Type.Literal("monitor_closely"),
+      Type.Literal("minor"),
+    ]),
+    evidenceText: Type.String({ minLength: 1, maxLength: 20_000 }),
+    evidenceReference: DdiEvidenceReferenceSchema,
+  },
+  { additionalProperties: false },
+);
+export type DdiExtractedInteraction = Static<typeof DdiExtractedInteractionSchema>;
+
+export const DdiSourceVersionSchema = Type.Object(
+  {
+    id: UuidSchema,
+    version: Type.Integer({ minimum: 1 }),
+    manifest: DdiSourceManifestSchema,
+    artifact: Type.Object(
+      {
+        path: Type.String({ minLength: 1, maxLength: 1000 }),
+        mediaType: Type.Literal("text/plain; charset=utf-8"),
+        byteLength: Type.Integer({ minimum: 1 }),
+      },
+      { additionalProperties: false },
+    ),
+    interactions: Type.Array(DdiExtractedInteractionSchema, { maxItems: 10_000 }),
+    lifecycle: Type.Union(DDI_SOURCE_LIFECYCLES.map((value) => Type.Literal(value))),
+    importedByUserId: UuidSchema,
+    importedAt: TimestampSchema,
+    legalApprovalReference: Type.Union([
+      Type.String({ minLength: 1, maxLength: 1000 }),
+      Type.Null(),
+    ]),
+    clinicalApprovalReference: Type.Union([
+      Type.String({ minLength: 1, maxLength: 1000 }),
+      Type.Null(),
+    ]),
+  },
+  { $id: "insight.ddi-source-version.v1", additionalProperties: false },
+);
+export type DdiSourceVersion = Static<typeof DdiSourceVersionSchema>;
+
+export const DdiSourceResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, source: DdiSourceVersionSchema },
+  { $id: "insight.ddi-source-response.v1", additionalProperties: false },
+);
+
+export const DdiSourceHistoryResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, sources: Type.Array(DdiSourceVersionSchema) },
+  { $id: "insight.ddi-source-history-response.v1", additionalProperties: false },
+);
+
 const catalogReferenceSchema = Type.Object(
   {
     catalogVersionId: Type.String({ minLength: 1, maxLength: 200 }),

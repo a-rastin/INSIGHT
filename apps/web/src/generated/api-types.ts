@@ -388,6 +388,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/ddi-sources/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getActiveDdiSources"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/ddi-sources": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getDdiSourceHistory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/ddi-sources/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["importDdiSource"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/ddi-sources/{sourceId}/review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["reviewDdiSource"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/ddi-sources/{sourceId}/activate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["activateDdiSource"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/admin/medication-catalog": {
     parameters: {
       query?: never;
@@ -2849,6 +2929,690 @@ export interface operations {
               createdAt: string;
               active: boolean;
             } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getActiveDdiSources: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            sources: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              /** insight.ddi-source-manifest.v1 */
+              manifest: {
+                drugIdentity: string;
+                title: string;
+                url: string;
+                publisher: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                retrievedAt: string;
+                contentDate: string;
+                sha256: string;
+                parserVersion: string;
+                transformVersion: string;
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                reviewReference: string;
+                /** insight.ddi-permission-record.v1 */
+                permission: {
+                  status: "granted" | "not_granted";
+                  basis: string;
+                  recordReference: string;
+                  coversStorage: boolean;
+                  coversTransformation: boolean;
+                  coversResearchUse: boolean;
+                };
+                /** @enum {string} */
+                lifecycle: "quarantined";
+              };
+              artifact: {
+                path: string;
+                /** @enum {string} */
+                mediaType: "text/plain; charset=utf-8";
+                byteLength: number;
+              };
+              interactions: {
+                severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
+                evidenceText: string;
+                evidenceReference: {
+                  sourceSha256: string;
+                  lineStart: number;
+                  lineEnd: number;
+                };
+              }[];
+              lifecycle: "quarantined" | "reviewed" | "active" | "superseded" | "rejected";
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              importedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              importedAt: string;
+              legalApprovalReference: string | null;
+              clinicalApprovalReference: string | null;
+            }[];
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getDdiSourceHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            sources: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              manifest: {
+                drugIdentity: string;
+                title: string;
+                url: string;
+                publisher: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                retrievedAt: string;
+                contentDate: string;
+                sha256: string;
+                parserVersion: string;
+                transformVersion: string;
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                reviewReference: string;
+                permission: {
+                  status: "granted" | "not_granted";
+                  basis: string;
+                  recordReference: string;
+                  coversStorage: boolean;
+                  coversTransformation: boolean;
+                  coversResearchUse: boolean;
+                };
+                /** @enum {string} */
+                lifecycle: "quarantined";
+              };
+              artifact: {
+                path: string;
+                /** @enum {string} */
+                mediaType: "text/plain; charset=utf-8";
+                byteLength: number;
+              };
+              interactions: {
+                severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
+                evidenceText: string;
+                evidenceReference: {
+                  sourceSha256: string;
+                  lineStart: number;
+                  lineEnd: number;
+                };
+              }[];
+              lifecycle: "quarantined" | "reviewed" | "active" | "superseded" | "rejected";
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              importedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              importedAt: string;
+              legalApprovalReference: string | null;
+              clinicalApprovalReference: string | null;
+            }[];
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  importDdiSource: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          manifest: {
+            drugIdentity: string;
+            title: string;
+            url: string;
+            publisher: string;
+            /**
+             * INSIGHT timestamp v1
+             * Format: date-time
+             */
+            retrievedAt: string;
+            contentDate: string;
+            sha256: string;
+            parserVersion: string;
+            transformVersion: string;
+            reviewerId: string;
+            /**
+             * INSIGHT timestamp v1
+             * Format: date-time
+             */
+            reviewedAt: string;
+            reviewReference: string;
+            permission: {
+              status: "granted" | "not_granted";
+              basis: string;
+              recordReference: string;
+              coversStorage: boolean;
+              coversTransformation: boolean;
+              coversResearchUse: boolean;
+            };
+            /** @enum {string} */
+            lifecycle: "quarantined";
+          };
+          artifactBase64: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            source: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              manifest: {
+                drugIdentity: string;
+                title: string;
+                url: string;
+                publisher: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                retrievedAt: string;
+                contentDate: string;
+                sha256: string;
+                parserVersion: string;
+                transformVersion: string;
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                reviewReference: string;
+                permission: {
+                  status: "granted" | "not_granted";
+                  basis: string;
+                  recordReference: string;
+                  coversStorage: boolean;
+                  coversTransformation: boolean;
+                  coversResearchUse: boolean;
+                };
+                /** @enum {string} */
+                lifecycle: "quarantined";
+              };
+              artifact: {
+                path: string;
+                /** @enum {string} */
+                mediaType: "text/plain; charset=utf-8";
+                byteLength: number;
+              };
+              interactions: {
+                severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
+                evidenceText: string;
+                evidenceReference: {
+                  sourceSha256: string;
+                  lineStart: number;
+                  lineEnd: number;
+                };
+              }[];
+              lifecycle: "quarantined" | "reviewed" | "active" | "superseded" | "rejected";
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              importedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              importedAt: string;
+              legalApprovalReference: string | null;
+              clinicalApprovalReference: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  reviewDdiSource: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          decision: "reviewed" | "rejected";
+          reviewReference: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            source: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              manifest: {
+                drugIdentity: string;
+                title: string;
+                url: string;
+                publisher: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                retrievedAt: string;
+                contentDate: string;
+                sha256: string;
+                parserVersion: string;
+                transformVersion: string;
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                reviewReference: string;
+                permission: {
+                  status: "granted" | "not_granted";
+                  basis: string;
+                  recordReference: string;
+                  coversStorage: boolean;
+                  coversTransformation: boolean;
+                  coversResearchUse: boolean;
+                };
+                /** @enum {string} */
+                lifecycle: "quarantined";
+              };
+              artifact: {
+                path: string;
+                /** @enum {string} */
+                mediaType: "text/plain; charset=utf-8";
+                byteLength: number;
+              };
+              interactions: {
+                severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
+                evidenceText: string;
+                evidenceReference: {
+                  sourceSha256: string;
+                  lineStart: number;
+                  lineEnd: number;
+                };
+              }[];
+              lifecycle: "quarantined" | "reviewed" | "active" | "superseded" | "rejected";
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              importedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              importedAt: string;
+              legalApprovalReference: string | null;
+              clinicalApprovalReference: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  activateDdiSource: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          legalApprovalReference: string;
+          clinicalApprovalReference: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            source: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              manifest: {
+                drugIdentity: string;
+                title: string;
+                url: string;
+                publisher: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                retrievedAt: string;
+                contentDate: string;
+                sha256: string;
+                parserVersion: string;
+                transformVersion: string;
+                reviewerId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                reviewedAt: string;
+                reviewReference: string;
+                permission: {
+                  status: "granted" | "not_granted";
+                  basis: string;
+                  recordReference: string;
+                  coversStorage: boolean;
+                  coversTransformation: boolean;
+                  coversResearchUse: boolean;
+                };
+                /** @enum {string} */
+                lifecycle: "quarantined";
+              };
+              artifact: {
+                path: string;
+                /** @enum {string} */
+                mediaType: "text/plain; charset=utf-8";
+                byteLength: number;
+              };
+              interactions: {
+                severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
+                evidenceText: string;
+                evidenceReference: {
+                  sourceSha256: string;
+                  lineStart: number;
+                  lineEnd: number;
+                };
+              }[];
+              lifecycle: "quarantined" | "reviewed" | "active" | "superseded" | "rejected";
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              importedByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              importedAt: string;
+              legalApprovalReference: string | null;
+              clinicalApprovalReference: string | null;
+            };
           };
         };
       };

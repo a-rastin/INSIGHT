@@ -23,6 +23,7 @@ import type { Pool } from "pg";
 import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
 import { assessmentRoutes } from "./assessment/http.js";
 import { comorbidityKnowledgeRoutes } from "./comorbidity-knowledge/http.js";
+import { ddiSourceRoutes } from "./ddi-source/http.js";
 import {
   IdentifiedResearchModeDisabledError,
   assertIdentifiedPatientCreationAllowed,
@@ -63,6 +64,7 @@ interface ValidationDetail {
 
 export interface AppOptions {
   readonly staticRoot?: string;
+  readonly artifactRoot?: string;
   readonly registerApiRoutes?: FastifyPluginAsync;
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
@@ -291,6 +293,14 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     void app.register(
       comorbidityKnowledgeRoutes(options.authentication.pool, (request) =>
         requestSessions.get(request),
+      ),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      ddiSourceRoutes(
+        options.authentication.pool,
+        (request) => requestSessions.get(request),
+        options.artifactRoot ?? resolve("artifacts"),
       ),
       { prefix: API_PREFIX },
     );

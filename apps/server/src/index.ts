@@ -13,6 +13,7 @@ export * from "./assessment/index.js";
 export * from "./comorbidity-knowledge/index.js";
 export * from "./audit/index.js";
 export * from "./deployment/index.js";
+export * from "./ddi-source/index.js";
 export * from "./deidentification/index.js";
 export * from "./identity/index.js";
 export * from "./jobs/index.js";
@@ -26,6 +27,7 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
   const pool = createPostgresPool(databaseConfigFromEnv(env));
   const host = env.HOST ?? "127.0.0.1";
   const app = buildApp({
+    artifactRoot: resolve(env.INSIGHT_ARTIFACT_ROOT ?? "artifacts"),
     staticRoot:
       env.NODE_ENV === "production"
         ? resolve(env.INSIGHT_STATIC_ROOT ?? "apps/web/dist")
