@@ -7,6 +7,10 @@ import {
   MAX_XMLBIF_NESTING_DEPTH,
   MAX_XMLBIF_SOURCE_BYTES,
   REPOSITORY_BN_CANDIDATES,
+  addOutcome,
+  addParent,
+  addVariable,
+  deleteVariable,
   edgesOf,
   expectedTableLength,
   hashXmlBifSemantics,
@@ -16,7 +20,12 @@ import {
   permuteAxes,
   permuteAxisStates,
   removeAxisIfLossless,
+  removeParent,
+  reorderOutcomes,
   serializeXmlBif,
+  setCptDistribution,
+  setRawTableRow,
+  setVariablePosition,
   validateFile,
   validateProbabilities,
   validateStructure,
@@ -106,6 +115,90 @@ test("tensor transforms preserve exact row-major arrays", () => {
     removeAxisIfLossless([10, 11, 10, 11, 10, 11, 20, 21, 20, 21, 20, 21], [2, 3, 2], 1),
     [10, 11, 20, 21],
   );
+});
+
+test("graph mutations preserve IDs, dimensions, DAG rules, and utility restrictions", () => {
+  const network = parse(source).networks[0];
+  const added = addVariable(network, "decision", "Decision1", { x: 12, y: 34 });
+  assert.equal(added.ok, true);
+  assert.deepEqual(
+    added.value.variables.map(({ name }) => name),
+    ["A", "B", "Decision1"],
+  );
+  assert.deepEqual(added.value.definitions[2].table, [0, 0]);
+
+  const utility = addVariable(added.value, "utility", "Utility1");
+  assert.equal(utility.ok, true);
+  assert.equal(
+    addParent(utility.value, "A", "Utility1").diagnostics[0].code,
+    "UTILITY_CANNOT_BE_PARENT",
+  );
+  assert.equal(addParent(network, "A", "B").diagnostics[0].code, "GRAPH_CYCLE");
+
+  const moved = setVariablePosition(utility.value, "A", { x: -5, y: 8 });
+  assert.equal(moved.ok, true);
+  assert.ok(moved.value.variables[0].properties.some(({ text }) => text === "position = (-5, 8)"));
+  assert.deepEqual(
+    network.variables.map(({ name }) => name),
+    ["A", "B"],
+  );
+});
+
+test("graph removals transform dimensions and require confirmation for lossy raw tables", () => {
+  const network = parse(source).networks[0];
+  const removed = removeParent(network, "B", "A");
+  assert.equal(removed.ok, true);
+  assert.deepEqual(removed.value.definitions[1], {
+    for: "B",
+    given: [],
+    table: [0.5, 0.5],
+    properties: [],
+  });
+  assert.equal(removed.warnings[0].code, "CPT_RESET_PARENT_REMOVAL");
+
+  const decision = addVariable(network, "decision", "Decision1");
+  assert.equal(decision.ok, true);
+  const connected = addParent(decision.value, "Decision1", "A");
+  assert.equal(connected.ok, true);
+  connected.value.definitions.find(({ for: name }) => name === "Decision1").table = [1, 2, 3, 4];
+  const before = clone(connected.value);
+  assert.equal(
+    deleteVariable(connected.value, "A").diagnostics[0].code,
+    "RAW_TABLE_RESET_CONFIRMATION_REQUIRED",
+  );
+  assert.deepEqual(connected.value, before);
+  const confirmed = deleteVariable(connected.value, "A", { allowDataLoss: true });
+  assert.equal(confirmed.ok, true);
+  assert.deepEqual(
+    confirmed.value.definitions.find(({ for: name }) => name === "Decision1").table,
+    [0, 0],
+  );
+});
+
+test("outcome and table edits preserve parent axes and validate values", () => {
+  const network = parse(source).networks[0];
+  const reordered = reorderOutcomes(network, "A", [1, 0]);
+  assert.equal(reordered.ok, true);
+  assert.deepEqual(reordered.value.definitions[0].table, [0.75, 0.25]);
+  assert.deepEqual(reordered.value.definitions[1].given, ["A"]);
+  assert.deepEqual(reordered.value.definitions[1].table, [0.8, 0.2, 0.1, 0.9]);
+
+  const expanded = addOutcome(network, "A", "unknown", 1);
+  assert.equal(expanded.ok, true);
+  assert.deepEqual(expanded.value.definitions[0].table, [0.25, 0, 0.75]);
+  assert.deepEqual(expanded.value.definitions[1].table, [0.1, 0.9, 0.5, 0.5, 0.8, 0.2]);
+
+  const cpt = setCptDistribution(network, "B", [1], [0.3, 0.7]);
+  assert.equal(cpt.ok, true);
+  assert.deepEqual(cpt.value.definitions[1].table, [0.1, 0.9, 0.3, 0.7]);
+  assert.equal(setCptDistribution(network, "B", [1], [0.3, 0.6]).ok, false);
+
+  const decision = addVariable(network, "decision", "Decision1");
+  assert.equal(decision.ok, true);
+  const raw = setRawTableRow(decision.value, "Decision1", [], [-3.5, 8]);
+  assert.equal(raw.ok, true);
+  assert.deepEqual(raw.value.definitions.at(-1).table, [-3.5, 8]);
+  assert.equal(setRawTableRow(decision.value, "Decision1", [], [Infinity, 8]).ok, false);
 });
 
 test("safe XML accepts harmless DTD but rejects entity use", () => {

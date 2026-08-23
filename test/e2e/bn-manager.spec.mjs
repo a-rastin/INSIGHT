@@ -12,6 +12,13 @@ const session = {
   expiresAt: "2026-08-24T12:00:00.000Z",
 };
 
+const editableSource = `<BIF VERSION="0.3"><NETWORK><NAME>MedicationChoice</NAME>
+  <VARIABLE TYPE="nature"><NAME>Input</NAME><OUTCOME>yes</OUTCOME><OUTCOME>no</OUTCOME></VARIABLE>
+  <VARIABLE TYPE="nature"><NAME>Choice</NAME><OUTCOME>first</OUTCOME><OUTCOME>second</OUTCOME></VARIABLE>
+  <DEFINITION><FOR>Input</FOR><TABLE>0.5 0.5</TABLE></DEFINITION>
+  <DEFINITION><FOR>Choice</FOR><GIVEN>Input</GIVEN><TABLE>0.1 0.9 0.8 0.2</TABLE></DEFINITION>
+</NETWORK></BIF>`;
+
 function model({ id, version, valid, fileName }) {
   return {
     id,
@@ -106,12 +113,36 @@ test("Administrator uploads immutable models and inspects invalid diagnostics at
       const valid = body.fileName === "valid.xml";
       const uploaded = model({
         id: `20000000-0000-4000-8000-00000000000${valid ? "1" : "2"}`,
-        version: valid ? 1 : 2,
+        version: valid ? 1 : 3,
         valid,
         fileName: body.fileName,
       });
       models.unshift(uploaded);
       return route.fulfill({ status: 201, json: { schemaVersion: "1", model: uploaded } });
+    }
+    if (path.endsWith("/source")) {
+      return route.fulfill({
+        json: { schemaVersion: "1", modelId: models[0].id, sourceXml: editableSource },
+      });
+    }
+    if (path.endsWith("/candidates")) {
+      const body = request.postDataJSON();
+      expect(body.sourceXml).toContain("<NAME>ExpectedUtility</NAME>");
+      const candidate = {
+        ...model({
+          id: "20000000-0000-4000-8000-000000000003",
+          version: 2,
+          valid: true,
+          fileName: "pharmacotherapy-edit-v1.xml",
+        }),
+        lifecycle: "IMPORTED",
+        source: {
+          ...model({ id: "x", version: 2, valid: true, fileName: "edit.xml" }).source,
+          contentSha256: "e".repeat(64),
+        },
+      };
+      models.unshift(candidate);
+      return route.fulfill({ status: 201, json: { schemaVersion: "1", model: candidate } });
     }
     return route.fulfill({ status: 404 });
   });
@@ -131,6 +162,30 @@ test("Administrator uploads immutable models and inspects invalid diagnostics at
   }
   await upload("valid.xml", '<BIF VERSION="0.3" />');
   await expect(page.getByText("Software valid", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Edit structure" }).click();
+  await expect(page.getByRole("region", { name: "Editable network graph" })).toBeVisible();
+  await page.getByRole("button", { name: /Choice nature/ }).click();
+  await page.getByLabel("yes P(first)").fill("0.3");
+  await page.getByLabel("yes P(second)").fill("0.7");
+  await page.getByRole("button", { name: "Apply row" }).first().click();
+  await expect(page.getByLabel("XMLBIF source")).toHaveValue(
+    /<TABLE>0\.3 0\.7 0\.8 0\.2<\/TABLE>/,
+  );
+  await page.getByLabel("XMLBIF source").fill("<BIF><NETWORK>");
+  await expect(page.getByText("Draft invalid")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Choice nature/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save as candidate version" })).toBeDisabled();
+  await page
+    .getByLabel("XMLBIF source")
+    .fill(editableSource.replace("0.1 0.9 0.8 0.2", "0.3 0.7 0.8 0.2"));
+  await expect(page.getByText("Synchronized")).toBeVisible();
+  await page.getByLabel("Node type").selectOption("utility");
+  await page.getByLabel("Node ID (optional)").fill("ExpectedUtility");
+  await page.getByRole("button", { name: "Add node" }).click();
+  await page.getByRole("button", { name: "Save as candidate version" }).click();
+  await expect(
+    page.getByRole("button", { name: /PHARMACOTHERAPY Version 2 IMPORTED/ }),
+  ).toBeVisible();
   await upload("invalid.xml", '<BIF VERSION="0.3">invalid</BIF>');
 
   await expect(page.getByText("CPT_DISTRIBUTION_NOT_NORMALIZED")).toBeVisible();

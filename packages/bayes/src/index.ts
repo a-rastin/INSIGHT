@@ -3,6 +3,7 @@ export * from "./diagnostics.js";
 export * from "./hash.js";
 export * from "./inputLimits.js";
 export * from "./model.js";
+export * from "./mutations.js";
 export * from "./parser.js";
 export * from "./registry.js";
 export * from "./serializer.js";

@@ -3,6 +3,7 @@ import {
   BnGovernanceMetadataSchema,
   BnModelHistoryResponseSchema,
   BnModelResponseSchema,
+  BnModelSourceResponseSchema,
   CURRENT_SCHEMA_VERSION,
   type ApiError,
   type BnGovernanceMetadata,
@@ -15,7 +16,9 @@ import type { SessionContext } from "../identity/sessions.js";
 import {
   BnModelAuthorizationError,
   BnModelInputError,
+  createBnModelCandidate,
   getBnModelHistory,
+  getBnModelSource,
   importAndRegisterBnModel,
 } from "./registry.js";
 
@@ -32,6 +35,14 @@ const importSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const candidateSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+    sourceXml: Type.String({ minLength: 1, maxLength: 20_000_000 }),
+  },
+  { additionalProperties: false },
+);
+
 interface ImportBody {
   readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
   readonly pathwayIdentity: string;
@@ -40,6 +51,11 @@ interface ImportBody {
   readonly evidence?: BnGovernanceMetadata;
   readonly calibration?: BnGovernanceMetadata;
   readonly clinicalReview?: BnGovernanceMetadata;
+}
+
+interface CandidateBody {
+  readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
+  readonly sourceXml: string;
 }
 
 export const bnModelRoutes =
@@ -62,6 +78,63 @@ export const bnModelRoutes =
         try {
           const models = await getBnModelHistory(pool, actor(getSession(request)!), artifactRoot);
           return reply.send({ schemaVersion: CURRENT_SCHEMA_VERSION, models });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
+    api.get<{ Params: { modelId: string } }>(
+      "/admin/bn-models/:modelId/source",
+      {
+        schema: {
+          operationId: "getBnModelSource",
+          tags: ["administration", "bayesian-models"],
+          params: Type.Object({ modelId: Type.String({ format: "uuid" }) }),
+          response: { 200: BnModelSourceResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const sourceXml = await getBnModelSource(
+            pool,
+            actor(getSession(request)!),
+            request.params.modelId,
+            artifactRoot,
+          );
+          return reply.send({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            modelId: request.params.modelId,
+            sourceXml,
+          });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
+    api.post<{ Params: { modelId: string }; Body: CandidateBody }>(
+      "/admin/bn-models/:modelId/candidates",
+      {
+        bodyLimit: 30_000_000,
+        schema: {
+          operationId: "createBnModelCandidate",
+          tags: ["administration", "bayesian-models"],
+          params: Type.Object({ modelId: Type.String({ format: "uuid" }) }),
+          body: candidateSchema,
+          response: { 201: BnModelResponseSchema, default: ApiErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const model = await createBnModelCandidate(
+            pool,
+            actor(getSession(request)!),
+            request.params.modelId,
+            request.body.sourceXml,
+            { artifactRoot },
+          );
+          return reply.status(201).send({ schemaVersion: CURRENT_SCHEMA_VERSION, model });
         } catch (error) {
           return sendError(error, request, reply);
         }

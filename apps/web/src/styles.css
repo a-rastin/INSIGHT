@@ -1322,6 +1322,107 @@ tbody tr:last-child td {
   gap: var(--space-4);
 }
 
+.bn-graph-actions,
+.bn-edit-group,
+.bn-node-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.bn-edit-panel,
+.bn-node-actions {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bn-subeditor,
+.bn-xml-editor {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.bn-outcome-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.bn-outcome-list li,
+.bn-inline-editor {
+  display: flex;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.bn-outcome-list input,
+.bn-inline-editor label {
+  flex: 1;
+}
+
+.bn-table-scroll {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.bn-table-scroll table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+}
+
+.bn-table-scroll th,
+.bn-table-scroll td {
+  border: 1px solid var(--border);
+  padding: var(--space-2);
+  text-align: left;
+}
+
+.bn-table-scroll input {
+  min-width: 7rem;
+  width: 100%;
+}
+
+.bn-xml-editor textarea {
+  min-height: 18rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.bn-edit-group label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bn-edit-group select {
+  min-width: 130px;
+  min-height: 40px;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.bn-edit-diagnostics {
+  margin: 0;
+  color: var(--urgent);
+}
+
+.bn-node-actions {
+  margin-bottom: 0;
+}
+
 .bn-graph-region {
   min-width: 0;
   overflow: auto;

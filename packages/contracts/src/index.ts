@@ -1499,6 +1499,15 @@ export const BnModelHistoryResponseSchema = Type.Object(
   { $id: "insight.bn-model-history-response.v1", additionalProperties: false },
 );
 
+export const BnModelSourceResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    modelId: UuidSchema,
+    sourceXml: Type.String({ minLength: 1, maxLength: 20_000_000 }),
+  },
+  { $id: "insight.bn-model-source-response.v1", additionalProperties: false },
+);
+
 const catalogReferenceSchema = Type.Object(
   {
     catalogVersionId: Type.String({ minLength: 1, maxLength: 200 }),

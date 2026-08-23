@@ -61,7 +61,11 @@ export async function importAndRegisterBnModel(
   pool: Pool,
   actor: BnModelActor,
   input: BnModelImport,
-  options: { readonly now?: Date; readonly artifactRoot?: string } = {},
+  options: {
+    readonly now?: Date;
+    readonly artifactRoot?: string;
+    readonly candidateOnly?: boolean;
+  } = {},
 ): Promise<BnModelVersion> {
   requireAdministrator(actor);
   if (!/^[A-Z][A-Z0-9_]{0,127}$/.test(input.candidate.pathwayIdentity)) {
@@ -75,6 +79,9 @@ export async function importAndRegisterBnModel(
   }
 
   const imported = await importBnModel(input);
+  if (options.candidateOnly && !imported.validationReport.softwareCompatible) {
+    throw new BnModelInputError("Edited model must pass all software validation checks.");
+  }
   const now = options.now ?? new Date();
   const artifactRoot = options.artifactRoot ?? resolve("artifacts");
   const artifactPath = await storeArtifact(
@@ -90,7 +97,12 @@ export async function importAndRegisterBnModel(
        WHERE model.pathway_identity = $1 AND artifact.content_sha256 = $2`,
       [imported.pathwayIdentity, imported.artifact.contentSha256],
     );
-    if (existing.rows[0]) return existing.rows[0].id;
+    if (existing.rows[0]) {
+      if (options.candidateOnly) {
+        throw new BnModelInputError("Edited model must differ from every existing version.");
+      }
+      return existing.rows[0].id;
+    }
 
     const next = await client.query<{ version: number }>(
       `SELECT coalesce(max(version), 0)::integer + 1 AS version
@@ -112,6 +124,8 @@ export async function importAndRegisterBnModel(
         now,
       ],
     );
+    const lifecycle =
+      options.candidateOnly && imported.lifecycle === "ACTIVE" ? "IMPORTED" : imported.lifecycle;
     const inserted = await client.query<{ id: string }>(
       `INSERT INTO insight.bn_model_versions (
          pathway_identity, version, artifact_id, registry_schema_version, importer_version,
@@ -128,7 +142,7 @@ export async function importAndRegisterBnModel(
         JSON.stringify(imported.evidence),
         JSON.stringify(imported.calibration),
         JSON.stringify(imported.clinicalReview),
-        imported.lifecycle,
+        lifecycle,
         imported.quarantineReason,
         actor.id,
         now,
@@ -138,9 +152,9 @@ export async function importAndRegisterBnModel(
       `INSERT INTO insight.bn_model_lifecycle_events
          (model_version_id, lifecycle, actor_user_id, occurred_at, event_reference)
        VALUES ($1,$2,$3,$4,$5)`,
-      [inserted.rows[0]!.id, imported.lifecycle, actor.id, now, sourceReference],
+      [inserted.rows[0]!.id, lifecycle, actor.id, now, sourceReference],
     );
-    if (imported.lifecycle === "ACTIVE") {
+    if (lifecycle === "ACTIVE") {
       await activateImportedModel(
         client,
         imported.pathwayIdentity,
@@ -152,6 +166,51 @@ export async function importAndRegisterBnModel(
     return inserted.rows[0]!.id;
   });
   return (await loadModels(pool, artifactRoot, modelId))[0]!;
+}
+
+export async function getBnModelSource(
+  pool: Pool,
+  actor: BnModelActor,
+  modelId: string,
+  artifactRoot = resolve("artifacts"),
+): Promise<string> {
+  requireAdministrator(actor);
+  const result = await pool.query<{ artifact_path: string }>(
+    `SELECT artifact.artifact_path FROM insight.bn_model_versions model
+     JOIN insight.bn_model_artifacts artifact ON artifact.id = model.artifact_id
+     WHERE model.id = $1`,
+    [modelId],
+  );
+  if (!result.rows[0]) throw new BnModelInputError("Bayesian model version does not exist.");
+  return readFile(resolve(artifactRoot, result.rows[0].artifact_path), "utf8");
+}
+
+export async function createBnModelCandidate(
+  pool: Pool,
+  actor: BnModelActor,
+  sourceModelId: string,
+  source: string,
+  options: { readonly now?: Date; readonly artifactRoot?: string } = {},
+): Promise<BnModelVersion> {
+  requireAdministrator(actor);
+  const base = await pool.query<{ pathway_identity: string; version: number }>(
+    `SELECT pathway_identity, version FROM insight.bn_model_versions WHERE id = $1`,
+    [sourceModelId],
+  );
+  if (!base.rows[0]) throw new BnModelInputError("Bayesian model version does not exist.");
+  return importAndRegisterBnModel(
+    pool,
+    actor,
+    {
+      candidate: {
+        pathwayIdentity: base.rows[0].pathway_identity,
+        artifactPath: `${base.rows[0].pathway_identity.toLowerCase()}-edit-v${base.rows[0].version}.xml`,
+        version: base.rows[0].version + 1,
+      },
+      source,
+    },
+    { ...options, candidateOnly: true },
+  );
 }
 
 export async function getBnModelHistory(

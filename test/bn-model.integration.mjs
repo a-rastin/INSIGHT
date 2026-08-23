@@ -6,8 +6,10 @@ import test from "node:test";
 
 import {
   BnModelAuthorizationError,
+  createBnModelCandidate,
   createUser,
   getBnModelHistory,
+  getBnModelSource,
   importAndRegisterBnModel,
 } from "../.tsbuild/server/index.js";
 import {
@@ -62,6 +64,26 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
           input(source("0.1 0.9 0.8 0.2"), "renamed.xml"),
           { artifactRoot },
         );
+        const editedSource = source("0.1 0.9 0.8 0.2").replace(
+          "</VARIABLE>",
+          "<PROPERTY>position = (120, 80)</PROPERTY></VARIABLE>",
+        );
+        const formattingCandidate = await createBnModelCandidate(
+          pool,
+          actor,
+          valid.id,
+          `\n${source("0.1 0.9 0.8 0.2")}`,
+          { artifactRoot },
+        );
+        const candidate = await createBnModelCandidate(pool, actor, valid.id, editedSource, {
+          artifactRoot,
+        });
+        await assert.rejects(
+          createBnModelCandidate(pool, actor, valid.id, source("0.2 0.2 0.8 0.2"), {
+            artifactRoot,
+          }),
+          /must pass all software validation checks/,
+        );
         const invalid = await importAndRegisterBnModel(
           pool,
           actor,
@@ -72,7 +94,18 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
         assert.equal(valid.version, 1);
         assert.equal(valid.lifecycle, "ACTIVE");
         assert.equal(duplicate.id, valid.id);
-        assert.equal(invalid.version, 2);
+        assert.equal(formattingCandidate.version, 2);
+        assert.equal(formattingCandidate.source.semanticSha256, valid.source.semanticSha256);
+        assert.equal(candidate.version, 3);
+        assert.equal(candidate.lifecycle, "IMPORTED");
+        assert.notEqual(candidate.source.contentSha256, valid.source.contentSha256);
+        assert.equal(await getBnModelSource(pool, actor, candidate.id, artifactRoot), editedSource);
+        const active = await pool.query(
+          "SELECT model_version_id FROM insight.bn_active_models WHERE pathway_identity = $1",
+          ["PHARMACOTHERAPY"],
+        );
+        assert.equal(active.rows[0].model_version_id, valid.id);
+        assert.equal(invalid.version, 4);
         assert.equal(invalid.lifecycle, "REJECTED");
         assert.equal(invalid.validation.softwareCompatible, false);
         assert.ok(
@@ -87,10 +120,10 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
         const history = await getBnModelHistory(pool, actor, artifactRoot);
         assert.deepEqual(
           history.map(({ version }) => version),
-          [2, 1],
+          [4, 3, 2, 1],
         );
         await assert.rejects(
-          pool.query("UPDATE insight.bn_model_versions SET version = 3 WHERE id = $1", [valid.id]),
+          pool.query("UPDATE insight.bn_model_versions SET version = 4 WHERE id = $1", [valid.id]),
           /immutable/,
         );
         await assert.rejects(

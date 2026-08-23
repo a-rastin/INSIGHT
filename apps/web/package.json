@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@insight/bayes": "0.1.0",
     "@insight/contracts": "0.1.0",
     "openapi-fetch": "0.17.0",
     "react": "18.3.1",
