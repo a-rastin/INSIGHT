@@ -88,7 +88,8 @@ export class ModelEndpointNotConfiguredError extends Error {}
 export async function getActiveModelEndpointForExecution(
   database: Pick<Pool, "query">,
 ): Promise<ActiveModelEndpoint> {
-  const result = await database.query<ConfigurationRow>(`
+  const result = await database.query<ConfigurationRow>(
+    `
     SELECT configuration.*, state.status, state.failure_category, state.returned_model,
            state.last_checked_at, key.key_material
     FROM insight.model_endpoint_state state
@@ -99,9 +100,64 @@ export async function getActiveModelEndpointForExecution(
     WHERE state.singleton = true AND state.status = 'COMPATIBLE'
       AND configuration.compatibility_test_version = $1
       AND configuration.credential_ciphertext IS NOT NULL
-  `, [MODEL_COMPATIBILITY_TEST_VERSION]);
+  `,
+    [MODEL_COMPATIBILITY_TEST_VERSION],
+  );
   const row = result.rows[0];
-  if (!row?.key_material || !row.credential_ciphertext || !row.credential_iv || !row.credential_tag) {
+  if (
+    !row?.key_material ||
+    !row.credential_ciphertext ||
+    !row.credential_iv ||
+    !row.credential_tag
+  ) {
+    throw new ModelEndpointNotConfiguredError();
+  }
+  return {
+    configurationId: row.id,
+    configurationVersion: row.version,
+    configurationFingerprint: row.configuration_fingerprint,
+    baseUrl: row.base_url,
+    model: row.model,
+    credential: decrypt(
+      row.credential_ciphertext,
+      row.credential_iv,
+      row.credential_tag,
+      row.key_material,
+      row.id,
+    ),
+  };
+}
+
+export async function getPinnedModelEndpointForExecution(
+  database: Pick<Pool, "query">,
+  configurationId: string,
+  configurationVersion: number,
+  configurationFingerprint: string,
+): Promise<ActiveModelEndpoint> {
+  const result = await database.query<ConfigurationRow>(
+    `SELECT configuration.*, 'COMPATIBLE' AS status, NULL AS failure_category,
+            NULL AS returned_model, NULL AS last_checked_at, key.key_material
+     FROM insight.model_endpoint_configurations configuration
+     JOIN insight.application_encryption_keys key
+       ON key.version = configuration.encryption_key_version
+     WHERE configuration.id = $1 AND configuration.version = $2
+       AND configuration.configuration_fingerprint = $3
+       AND configuration.compatibility_test_version = $4
+       AND configuration.credential_ciphertext IS NOT NULL`,
+    [
+      configurationId,
+      configurationVersion,
+      configurationFingerprint,
+      MODEL_COMPATIBILITY_TEST_VERSION,
+    ],
+  );
+  const row = result.rows[0];
+  if (
+    !row?.key_material ||
+    !row.credential_ciphertext ||
+    !row.credential_iv ||
+    !row.credential_tag
+  ) {
     throw new ModelEndpointNotConfiguredError();
   }
   return {

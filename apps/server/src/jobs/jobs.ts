@@ -56,6 +56,7 @@ interface EventRow extends Record<string, unknown> {
 }
 
 export interface EnqueueJobCommand {
+  readonly jobId?: string;
   readonly jobType: string;
   readonly researchCaseId: string;
   readonly requestedByUserId: string;
@@ -191,14 +192,15 @@ export async function enqueueJob(pool: Pool, command: EnqueueJobCommand): Promis
 
     const inserted = await client.query<JobRow>(
       `INSERT INTO insight.jobs
-         (job_type, research_case_id, requested_by_user_id, requested_workflow_state,
-          input_fingerprint, dependency_fingerprint, command_fingerprint, payload_reference,
-          idempotency_key, max_attempts)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (id, job_type, research_case_id, requested_by_user_id, requested_workflow_state,
+           input_fingerprint, dependency_fingerprint, command_fingerprint, payload_reference,
+           idempotency_key, max_attempts)
+        VALUES (coalesce($1, gen_random_uuid()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (requested_by_user_id, research_case_id, job_type, idempotency_key)
        DO NOTHING
        RETURNING *`,
       [
+        command.jobId ?? null,
         command.jobType,
         command.researchCaseId,
         command.requestedByUserId,
@@ -237,6 +239,18 @@ export async function getOwnedJob(
   const result = await database.query<JobRow>(
     `SELECT * FROM insight.jobs WHERE id = $1 AND requested_by_user_id = $2`,
     [jobId, userId],
+  );
+  return result.rows[0] ? toJob(result.rows[0]) : null;
+}
+
+export async function getResearchCaseJob(
+  database: Queryable,
+  jobId: string,
+  researchCaseId: string,
+): Promise<JobRecord | null> {
+  const result = await database.query<JobRow>(
+    `SELECT * FROM insight.jobs WHERE id=$1 AND research_case_id=$2`,
+    [jobId, researchCaseId],
   );
   return result.rows[0] ? toJob(result.rows[0]) : null;
 }

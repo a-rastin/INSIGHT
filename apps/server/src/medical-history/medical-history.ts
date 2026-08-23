@@ -37,10 +37,12 @@ interface HistoryRow extends QueryResultRow {
 
 interface TrialRow extends QueryResultRow {
   medication: string;
-  normalization_state: AntipsychoticTrialInput["normalizationState"] | null;
+  normalization_state: "NORMALIZED" | "UNKNOWN" | null;
   canonical_medication_id: string | null;
   dose: string | null;
   dose_unit: string | null;
+  route: string | null;
+  frequency: string | null;
   treatment_start: string | null;
   treatment_end: string | null;
   approximate_period: string | null;
@@ -53,7 +55,7 @@ interface TrialRow extends QueryResultRow {
 
 interface CurrentMedicationRow extends QueryResultRow {
   raw_medication: string;
-  normalization_state: CurrentMedicationInput["normalizationState"] | null;
+  normalization_state: "NORMALIZED" | "UNKNOWN" | null;
   canonical_medication_id: string | null;
   dose: string | null;
   dose_unit: string | null;
@@ -268,11 +270,8 @@ export async function saveMedicalHistory(
 }
 
 function validateCurrentMedication(input: CurrentMedicationInput): CurrentMedicationInput {
-  validateNormalization(input.normalizationState, input.canonicalMedicationId);
   return compact({
     rawMedication: requiredText(input.rawMedication, "Current medication"),
-    normalizationState: input.normalizationState,
-    canonicalMedicationId: optionalText(input.canonicalMedicationId, "Canonical medication"),
     dose: optionalText(input.dose, "Dose"),
     doseUnit: optionalText(input.doseUnit, "Dose unit"),
     route: optionalText(input.route, "Route"),
@@ -281,7 +280,6 @@ function validateCurrentMedication(input: CurrentMedicationInput): CurrentMedica
 }
 
 function validateTrial(input: AntipsychoticTrialInput): AntipsychoticTrialInput {
-  validateNormalization(input.normalizationState, input.canonicalMedicationId);
   if (input.treatmentStart) validateDate(input.treatmentStart, "Treatment start");
   if (input.treatmentEnd) validateDate(input.treatmentEnd, "Treatment end");
   if (input.treatmentStart && input.treatmentEnd && input.treatmentEnd < input.treatmentStart) {
@@ -299,10 +297,10 @@ function validateTrial(input: AntipsychoticTrialInput): AntipsychoticTrialInput 
   }
   return compact({
     medication: requiredText(input.medication, "Trial medication"),
-    normalizationState: input.normalizationState,
-    canonicalMedicationId: optionalText(input.canonicalMedicationId, "Canonical medication"),
     dose: optionalText(input.dose, "Dose"),
     doseUnit: optionalText(input.doseUnit, "Dose unit"),
+    route: optionalText(input.route, "Route"),
+    frequency: optionalText(input.frequency, "Frequency"),
     treatmentStart: input.treatmentStart,
     treatmentEnd: input.treatmentEnd,
     approximatePeriod: optionalText(input.approximatePeriod, "Approximate period"),
@@ -320,17 +318,6 @@ function validateComorbidity(input: ComorbiditySelectionInput): ComorbiditySelec
     termId: requiredText(input.termId, "Comorbidity term"),
     supplementalText: optionalText(input.supplementalText, "Comorbidity supplemental text"),
   });
-}
-
-function validateNormalization(
-  state: CurrentMedicationInput["normalizationState"],
-  canonicalId: string | undefined,
-): void {
-  if ((state === "NORMALIZED") !== (canonicalId !== undefined)) {
-    throw new MedicalHistoryInputError(
-      "Canonical medication is required only for NORMALIZED medication entries.",
-    );
-  }
 }
 
 function validateDate(value: string, label: string): void {
@@ -441,17 +428,17 @@ async function insertTrials(
     await client.query(
       `INSERT INTO insight.prior_antipsychotic_trials (
          research_case_id, position, medication, normalization_state, canonical_medication_id,
-         dose, dose_unit, treatment_start, treatment_end, approximate_period, response,
-         adverse_effects, other_adverse_effect_detail, discontinuation_reason, notes
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          dose, dose_unit, route, frequency, treatment_start, treatment_end, approximate_period,
+          response, adverse_effects, other_adverse_effect_detail, discontinuation_reason, notes
+        ) VALUES ($1, $2, $3, NULL, NULL, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         researchCaseId,
         position,
         trial.medication,
-        trial.normalizationState ?? null,
-        trial.canonicalMedicationId ?? null,
         trial.dose ?? null,
         trial.doseUnit ?? null,
+        trial.route ?? null,
+        trial.frequency ?? null,
         trial.treatmentStart ?? null,
         trial.treatmentEnd ?? null,
         trial.approximatePeriod ?? null,
@@ -474,14 +461,12 @@ async function insertCurrentMedications(
     await client.query(
       `INSERT INTO insight.current_medication_entries (
          research_case_id, position, raw_medication, normalization_state,
-         canonical_medication_id, dose, dose_unit, route, frequency
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          canonical_medication_id, dose, dose_unit, route, frequency
+        ) VALUES ($1, $2, $3, NULL, NULL, $4, $5, $6, $7)`,
       [
         researchCaseId,
         position,
         medication.rawMedication,
-        medication.normalizationState ?? null,
-        medication.canonicalMedicationId ?? null,
         medication.dose ?? null,
         medication.doseUnit ?? null,
         medication.route ?? null,
@@ -720,6 +705,8 @@ function materializeTrial(
     canonicalMedicationId: row.canonical_medication_id ?? undefined,
     dose: row.dose ?? undefined,
     doseUnit: row.dose_unit ?? undefined,
+    route: row.route ?? undefined,
+    frequency: row.frequency ?? undefined,
     treatmentStart: row.treatment_start ?? undefined,
     treatmentEnd: row.treatment_end ?? undefined,
     approximatePeriod: row.approximate_period ?? undefined,

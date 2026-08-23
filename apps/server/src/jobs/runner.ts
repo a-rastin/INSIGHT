@@ -48,9 +48,13 @@ export async function runJobWorker(options: RunWorkerOptions): Promise<void> {
     let leaseLost = false;
     const heartbeat = setInterval(
       () => {
-        void renewJobLease(options.pool, claim, leaseMilliseconds).then((renewed) => {
-          if (!renewed) leaseLost = true;
-        });
+        void renewJobLease(options.pool, claim, leaseMilliseconds)
+          .then((renewed) => {
+            if (!renewed) leaseLost = true;
+          })
+          .catch(() => {
+            leaseLost = true;
+          });
       },
       Math.max(100, Math.floor(leaseMilliseconds / 3)),
     );

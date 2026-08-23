@@ -532,6 +532,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/medication-normalization": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getMedicationNormalization"];
+    put?: never;
+    post: operations["startMedicationNormalization"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4679,10 +4695,10 @@ export interface operations {
               previouslyTreated?: boolean;
               priorTrials?: {
                 medication: string;
-                normalizationState?: "NORMALIZED" | "UNKNOWN";
-                canonicalMedicationId?: string;
                 dose?: string;
                 doseUnit?: string;
+                route?: string;
+                frequency?: string;
                 treatmentStart?: string;
                 treatmentEnd?: string;
                 approximatePeriod?: string;
@@ -4700,15 +4716,17 @@ export interface operations {
                 otherAdverseEffectDetail?: string;
                 discontinuationReason?: string;
                 notes?: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
               }[];
               currentMedications: {
                 rawMedication: string;
-                normalizationState?: "NORMALIZED" | "UNKNOWN";
-                canonicalMedicationId?: string;
                 dose?: string;
                 doseUnit?: string;
                 route?: string;
                 frequency?: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
               }[];
               comorbidities: {
                 catalogVersionId: string;
@@ -4826,10 +4844,10 @@ export interface operations {
             previouslyTreated?: boolean;
             priorTrials?: {
               medication: string;
-              normalizationState?: "NORMALIZED" | "UNKNOWN";
-              canonicalMedicationId?: string;
               dose?: string;
               doseUnit?: string;
+              route?: string;
+              frequency?: string;
               treatmentStart?: string;
               treatmentEnd?: string;
               approximatePeriod?: string;
@@ -4849,8 +4867,6 @@ export interface operations {
             }[];
             currentMedications: {
               rawMedication: string;
-              normalizationState?: "NORMALIZED" | "UNKNOWN";
-              canonicalMedicationId?: string;
               dose?: string;
               doseUnit?: string;
               route?: string;
@@ -4881,10 +4897,10 @@ export interface operations {
               previouslyTreated?: boolean;
               priorTrials?: {
                 medication: string;
-                normalizationState?: "NORMALIZED" | "UNKNOWN";
-                canonicalMedicationId?: string;
                 dose?: string;
                 doseUnit?: string;
+                route?: string;
+                frequency?: string;
                 treatmentStart?: string;
                 treatmentEnd?: string;
                 approximatePeriod?: string;
@@ -4902,15 +4918,17 @@ export interface operations {
                 otherAdverseEffectDetail?: string;
                 discontinuationReason?: string;
                 notes?: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
               }[];
               currentMedications: {
                 rawMedication: string;
-                normalizationState?: "NORMALIZED" | "UNKNOWN";
-                canonicalMedicationId?: string;
                 dose?: string;
                 doseUnit?: string;
                 route?: string;
                 frequency?: string;
+                normalizationState?: "NORMALIZED" | "UNKNOWN";
+                canonicalMedicationId?: string;
               }[];
               comorbidities: {
                 catalogVersionId: string;
@@ -4972,6 +4990,194 @@ export interface operations {
                */
               updatedAt: string;
             } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getMedicationNormalization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            job: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              jobType: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              researchCaseId: string;
+              status: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+              attemptCount: number;
+              maxAttempts: number;
+              resultReference: string | null;
+              provenanceReference: string | null;
+              error: {
+                code: string;
+                message: string;
+              } | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              startedAt: string | null;
+              completedAt: string | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              updatedAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  startMedicationNormalization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            job: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              jobType: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              researchCaseId: string;
+              status: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+              attemptCount: number;
+              maxAttempts: number;
+              resultReference: string | null;
+              provenanceReference: string | null;
+              error: {
+                code: string;
+                message: string;
+              } | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              startedAt: string | null;
+              completedAt: string | null;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              updatedAt: string;
+            };
           };
         };
       };

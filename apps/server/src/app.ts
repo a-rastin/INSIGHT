@@ -38,6 +38,7 @@ import {
 import { jobRoutes } from "./jobs/http.js";
 import { medicalHistoryRoutes } from "./medical-history/http.js";
 import { medicationCatalogRoutes } from "./medication/http.js";
+import { medicationNormalizationRoutes } from "./medication/normalization-http.js";
 import { modelEndpointRoutes, type ModelEndpointHttpOptions } from "./model-endpoint/http.js";
 import { patientRoutes } from "./patient/http.js";
 import type { OfficialIdentifierConfiguration } from "./patient/patients.js";
@@ -319,6 +320,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       );
       void app.register(
         medicalHistoryRoutes(options.authentication.pool, (request) =>
+          requestSessions.get(request),
+        ),
+        { prefix: API_PREFIX },
+      );
+      void app.register(
+        medicationNormalizationRoutes(options.authentication.pool, (request) =>
           requestSessions.get(request),
         ),
         { prefix: API_PREFIX },

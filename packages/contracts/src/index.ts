@@ -1271,10 +1271,6 @@ const catalogReferenceSchema = Type.Object(
 export const CurrentMedicationInputSchema = Type.Object(
   {
     rawMedication: Type.String({ minLength: 1, maxLength: 500 }),
-    normalizationState: Type.Optional(
-      Type.Union([Type.Literal("NORMALIZED"), Type.Literal("UNKNOWN")]),
-    ),
-    canonicalMedicationId: optionalClinicalText(200),
     dose: optionalClinicalText(100),
     doseUnit: optionalClinicalText(100),
     route: optionalClinicalText(100),
@@ -1287,12 +1283,10 @@ export type CurrentMedicationInput = Static<typeof CurrentMedicationInputSchema>
 export const AntipsychoticTrialInputSchema = Type.Object(
   {
     medication: Type.String({ minLength: 1, maxLength: 500 }),
-    normalizationState: Type.Optional(
-      Type.Union([Type.Literal("NORMALIZED"), Type.Literal("UNKNOWN")]),
-    ),
-    canonicalMedicationId: optionalClinicalText(200),
     dose: optionalClinicalText(100),
     doseUnit: optionalClinicalText(100),
+    route: optionalClinicalText(100),
+    frequency: optionalClinicalText(200),
     treatmentStart: Type.Optional(Type.String({ pattern: "^\\d{4}-\\d{2}-\\d{2}$" })),
     treatmentEnd: Type.Optional(Type.String({ pattern: "^\\d{4}-\\d{2}-\\d{2}$" })),
     approximatePeriod: optionalClinicalText(500),
@@ -1364,6 +1358,10 @@ export type MedicalHistoryInput = Static<typeof MedicalHistoryInputSchema>;
 const AntipsychoticTrialRecordSchema = Type.Object(
   {
     ...AntipsychoticTrialInputSchema.properties,
+    normalizationState: Type.Optional(
+      Type.Union([Type.Literal("NORMALIZED"), Type.Literal("UNKNOWN")]),
+    ),
+    canonicalMedicationId: optionalClinicalText(200),
     adverseEffects: Type.Optional(
       Type.Array(
         Type.Object(
@@ -1380,10 +1378,22 @@ const AntipsychoticTrialRecordSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const CurrentMedicationRecordSchema = Type.Object(
+  {
+    ...CurrentMedicationInputSchema.properties,
+    normalizationState: Type.Optional(
+      Type.Union([Type.Literal("NORMALIZED"), Type.Literal("UNKNOWN")]),
+    ),
+    canonicalMedicationId: optionalClinicalText(200),
+  },
+  { additionalProperties: false },
+);
+
 export const MedicalHistoryRecordSchema = Type.Object(
   {
     ...MedicalHistoryInputSchema.properties,
     priorTrials: Type.Optional(Type.Array(AntipsychoticTrialRecordSchema, { maxItems: 100 })),
+    currentMedications: Type.Array(CurrentMedicationRecordSchema, { maxItems: 100 }),
     comorbidities: Type.Array(ComorbiditySelectionRecordSchema, { maxItems: 100 }),
     ruleEvaluation: Type.Union([ComorbidityRuleEvaluationSchema, Type.Null()]),
     researchCaseId: UuidSchema,
@@ -1458,6 +1468,17 @@ export const JobResponseSchema = Type.Object(
   { $id: "insight.job-response.v1", additionalProperties: false },
 );
 export type JobResponse = Static<typeof JobResponseSchema>;
+
+export const MedicationNormalizationStatusResponseSchema = Type.Object(
+  {
+    schemaVersion: SchemaVersionSchema,
+    job: Type.Union([JobRecordSchema, Type.Null()]),
+  },
+  { $id: "insight.medication-normalization-status-response.v1", additionalProperties: false },
+);
+export type MedicationNormalizationStatusResponse = Static<
+  typeof MedicationNormalizationStatusResponseSchema
+>;
 
 export const JobEventSchema = Type.Object(
   {

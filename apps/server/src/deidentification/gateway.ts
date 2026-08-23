@@ -39,6 +39,8 @@ export interface TrustedToolContext {
   readonly actorRole: "PSYCHIATRIST";
   readonly allowedToolNames: readonly string[];
   readonly idempotencyKey: string;
+  readonly leaseOwner?: string;
+  readonly attempt?: number;
 }
 
 export type ModelToolResult<T> =

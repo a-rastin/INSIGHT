@@ -77,16 +77,19 @@ test("trial omissions remain distinct from explicit UNKNOWN and current medicine
   assert.equal(omitted.priorTrials[0].medication, "haloperidol");
 });
 
-test("normalization and catalog duplicates fail before persistence", () => {
-  assert.throws(
-    () =>
-      validateMedicalHistoryInput({
-        presentationStatus: "FIRST_PRESENTATION",
-        currentMedications: [{ rawMedication: "haloperidol", normalizationState: "NORMALIZED" }],
-        comorbidities: [],
-      }),
-    MedicalHistoryInputError,
-  );
+test("client normalization fields are discarded and catalog duplicates fail", () => {
+  const validated = validateMedicalHistoryInput({
+    presentationStatus: "FIRST_PRESENTATION",
+    currentMedications: [
+      {
+        rawMedication: "haloperidol",
+        normalizationState: "NORMALIZED",
+        canonicalMedicationId: "forged-id",
+      },
+    ],
+    comorbidities: [],
+  });
+  assert.deepEqual(validated.currentMedications, [{ rawMedication: "haloperidol" }]);
   assert.throws(
     () =>
       validateMedicalHistoryInput({

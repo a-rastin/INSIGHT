@@ -118,7 +118,7 @@ test("candidate commits validate exact returned set, pin versions, persist prove
       assert.equal(secondSearch.ok, true);
       assert.deepEqual(
         secondSearch.data.candidates.map(({ canonicalId }) => canonicalId),
-        ["RX-RISPERIDONE"],
+        ["RX-HALOPERIDOL"],
       );
 
       for (const input of [
@@ -213,6 +213,52 @@ test("candidate commits validate exact returned set, pin versions, persist prove
       assert.equal(stored.rows[0].canonical_medication_id, "RX-HALOPERIDOL");
       assert.equal(stored.rows[0].medication_catalog_version_id, v1.id);
       assert.notEqual(stored.rows[0].medication_catalog_version_id, v2.id);
+
+      const staleExecution = { ...execution1, executionId: "medication-execution-stale" };
+      const staleGateway = new InternalMcpGateway(
+        createMedicationToolHandlers(pool, async () => staleExecution),
+      );
+      const staleContext = toolContext(staleExecution.executionId);
+      const staleSearch = await staleGateway.invoke(staleContext, {
+        name: "medication.search_candidates",
+        input: { medicationEntryRef: "current-1", query: "Haldol" },
+      });
+      await saveMedicalHistory(
+        pool,
+        { id: psychiatrist.id, role: psychiatrist.role },
+        created.patient.id,
+        {
+          presentationStatus: "KNOWN_SCHIZOPHRENIA",
+          previouslyTreated: true,
+          priorTrials: [{ medication: "unlisted medicine" }],
+          currentMedications: [{ rawMedication: "Risperdal", route: "oral", frequency: "daily" }],
+          comorbidities: [],
+        },
+        2,
+        "00000000-0000-4000-8000-000000000949",
+      );
+      const staleCommit = await staleGateway.invoke(staleContext, {
+        name: "medication.commit_mapping",
+        input: {
+          medicationEntryRef: "current-1",
+          catalogVersion: staleSearch.data.catalogVersion,
+          selectedCanonicalId: "RX-HALOPERIDOL",
+        },
+      });
+      assert.equal(staleCommit.ok, false);
+      assert.equal(staleCommit.error.code, "STALE_RESEARCH_CASE_REVISION");
+      const replaced = await pool.query(
+        `SELECT raw_medication,normalization_state,canonical_medication_id,route,frequency
+         FROM insight.current_medication_entries WHERE research_case_id=$1`,
+        [caseId],
+      );
+      assert.deepEqual(replaced.rows[0], {
+        raw_medication: "Risperdal",
+        normalization_state: null,
+        canonical_medication_id: null,
+        route: "oral",
+        frequency: "daily",
+      });
 
       await assert.rejects(
         () =>

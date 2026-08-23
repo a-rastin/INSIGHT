@@ -41,6 +41,13 @@ export class ModelAgentError extends Error {
   }
 }
 
+class ModelAgentClaimLostError extends Error {}
+
+interface ModelAgentClaimFence {
+  readonly leaseOwner: string;
+  readonly attempt: number;
+}
+
 export interface ModelAgentSettings {
   readonly maxModelCalls: number;
   readonly maxToolCalls: number;
@@ -466,6 +473,7 @@ interface ExecutionRow extends QueryResultRow {
   model_call_count?: number;
   tool_call_count?: number;
   consumed_tokens?: number;
+  output?: JsonValue;
 }
 
 export async function persistModelAgentPin(pool: Pool, pin: ModelAgentPin): Promise<string> {
@@ -501,8 +509,7 @@ export async function persistModelAgentPin(pool: Pool, pin: ModelAgentPin): Prom
        AND input_revision=$5 AND workflow_state=$6 AND endpoint_configuration_id=$7
        AND endpoint_configuration_version=$8 AND endpoint_fingerprint=$9
        AND prompt_version=$10 AND prompt=$11 AND input_schema=$12 AND output_schema=$13
-       AND input_payload=$14 AND tool_manifest=$15 AND settings=$16 AND trusted_context=$17
-       AND status IN ('PENDING','RUNNING')`,
+        AND input_payload=$14 AND tool_manifest=$15 AND settings=$16 AND trusted_context=$17`,
     values.slice(0, 17),
   );
   if (existing.rows[0]) return existing.rows[0].id;
@@ -516,16 +523,13 @@ export async function persistModelAgentPin(pool: Pool, pin: ModelAgentPin): Prom
        WHERE EXISTS (
          SELECT 1 FROM insight.research_cases
          WHERE id=$3 AND workflow_revision=$4 AND input_revision=$5 AND workflow_state=$6
-       ) AND EXISTS (
-         SELECT 1
-         FROM insight.model_endpoint_state state
-         JOIN insight.model_endpoint_configurations configuration
-           ON configuration.id=state.current_configuration_id
-         WHERE state.singleton=true AND state.status='COMPATIBLE'
-           AND configuration.id=$7 AND configuration.version=$8
-           AND configuration.configuration_fingerprint=$9
-           AND configuration.compatibility_test_version=$18
-       )
+        ) AND EXISTS (
+          SELECT 1 FROM insight.model_endpoint_configurations configuration
+          WHERE configuration.id=$7 AND configuration.version=$8
+            AND configuration.configuration_fingerprint=$9
+            AND configuration.compatibility_test_version=$18
+            AND configuration.credential_ciphertext IS NOT NULL
+        )
        RETURNING id,status`,
     values,
   );
@@ -556,8 +560,11 @@ export async function runDurableModelAgent(
   pin: ModelAgentPin,
   gateway: InternalMcpGateway,
   request: typeof fetch = fetch,
+  claim?: ModelAgentClaimFence,
 ): Promise<ModelAgentSuccess> {
   await persistModelAgentPin(pool, pin);
+  const terminal = await resumeModelAgentExecution(pool, pin, claim);
+  if (terminal) return terminal;
   let initialCheckpoint = await loadModelAgentCheckpoint(pool, pin);
   if (initialCheckpoint.messages.length === 0) {
     const messages: ModelProtocolMessage[] = [
@@ -568,7 +575,7 @@ export async function runDurableModelAgent(
       ...initialCheckpoint,
       messages,
     };
-    await checkpointModelAgentExecution(pool, pin.executionId, initialCheckpoint);
+    await checkpointModelAgentExecution(pool, pin.executionId, initialCheckpoint, claim);
   }
   let result: ModelAgentSuccess;
   try {
@@ -577,16 +584,68 @@ export async function runDurableModelAgent(
       gateway,
       fetch: request,
       initialCheckpoint,
-      assertCurrentRevision: () => isPinnedResearchCaseRevisionCurrent(pool, pin),
-      checkpoint: (checkpoint) => checkpointModelAgentExecution(pool, pin.executionId, checkpoint),
+      assertCurrentRevision: async () => {
+        if (!(await isPinnedResearchCaseRevisionCurrent(pool, pin))) return false;
+        if (claim && !(await isModelAgentClaimCurrent(pool, pin.executionId, claim))) {
+          throw new ModelAgentClaimLostError();
+        }
+        return true;
+      },
+      checkpoint: (checkpoint) =>
+        checkpointModelAgentExecution(pool, pin.executionId, checkpoint, claim),
     });
   } catch (error) {
     if (!(error instanceof ModelAgentError)) throw error;
-    await settleModelAgentExecution(pool, pin.executionId, { failure: error.code });
+    await settleModelAgentExecution(pool, pin.executionId, { failure: error.code }, claim);
     throw error;
   }
-  await settleModelAgentExecution(pool, pin.executionId, { output: result.output });
+  await settleModelAgentExecution(pool, pin.executionId, { output: result.output }, claim);
   return result;
+}
+
+async function resumeModelAgentExecution(
+  pool: Pool,
+  pin: ModelAgentPin,
+  claim?: ModelAgentClaimFence,
+): Promise<ModelAgentSuccess | null> {
+  const result = await pool.query<ExecutionRow>(
+    `SELECT status,messages,model_call_count,tool_call_count,consumed_tokens,output
+     FROM insight.model_agent_executions WHERE id=$1`,
+    [pin.executionId],
+  );
+  const row = result.rows[0];
+  if (!row) throw new ModelAgentError("TOOL_CALL_REJECTED");
+  if (row.status === "FAILED") {
+    const reset = await pool.query(
+      `UPDATE insight.model_agent_executions
+       SET status='PENDING',failure_code=NULL,completed_at=NULL,updated_at=clock_timestamp()
+       WHERE id=$1 AND status='FAILED'
+         AND ($2::text IS NULL OR EXISTS (
+           SELECT 1 FROM insight.jobs job
+           WHERE job.id=model_agent_executions.job_id AND job.status='RUNNING'
+             AND job.lease_owner=$2 AND job.attempt_count=$3
+             AND job.lease_expires_at>clock_timestamp()
+         ))`,
+      [pin.executionId, claim?.leaseOwner ?? null, claim?.attempt ?? null],
+    );
+    if (reset.rowCount !== 1) throw new ModelAgentClaimLostError();
+    return null;
+  }
+  if (row.status === "CANCELLED") {
+    throw new ModelAgentError("STALE_RESEARCH_CASE_REVISION");
+  }
+  if (row.status !== "SUCCEEDED") return null;
+  const checkpoint = {
+    messages: row.messages ?? [],
+    modelCallCount: row.model_call_count ?? -1,
+    toolCallCount: row.tool_call_count ?? -1,
+    consumedTokens: row.consumed_tokens ?? -1,
+  };
+  validateCheckpoint(checkpoint);
+  if (!isJsonValue(row.output) || !Value.Check(pin.outputSchema, row.output)) {
+    throw new ModelAgentError("FINAL_SCHEMA_INVALID");
+  }
+  return { ...checkpoint, output: row.output };
 }
 
 async function loadModelAgentCheckpoint(
@@ -621,33 +680,52 @@ export async function checkpointModelAgentExecution(
   pool: Pool,
   executionId: string,
   checkpoint: ModelAgentCheckpoint,
+  claim?: ModelAgentClaimFence,
 ): Promise<void> {
   const result = await pool.query(
     `UPDATE insight.model_agent_executions
      SET status='RUNNING', messages=$2, model_call_count=$3, tool_call_count=$4,
          consumed_tokens=$5, updated_at=clock_timestamp()
-     WHERE id=$1 AND status IN ('PENDING','RUNNING')`,
+      WHERE id=$1 AND status IN ('PENDING','RUNNING')
+        AND ($6::text IS NULL OR EXISTS (
+          SELECT 1 FROM insight.jobs job
+          WHERE job.id=model_agent_executions.job_id AND job.status='RUNNING'
+            AND job.lease_owner=$6 AND job.attempt_count=$7
+            AND job.lease_expires_at>clock_timestamp()
+        ))`,
     [
       executionId,
       checkpoint.messages,
       checkpoint.modelCallCount,
       checkpoint.toolCallCount,
       checkpoint.consumedTokens,
+      claim?.leaseOwner ?? null,
+      claim?.attempt ?? null,
     ],
   );
-  if (result.rowCount !== 1) throw new ModelAgentError("STALE_RESEARCH_CASE_REVISION");
+  if (result.rowCount !== 1) {
+    if (claim) throw new ModelAgentClaimLostError();
+    throw new ModelAgentError("STALE_RESEARCH_CASE_REVISION");
+  }
 }
 
 export async function settleModelAgentExecution(
   pool: Pool,
   executionId: string,
   outcome: { readonly output: JsonValue } | { readonly failure: ModelAgentFailureCode },
+  claim?: ModelAgentClaimFence,
 ): Promise<void> {
   const result = await pool.query(
     `UPDATE insight.model_agent_executions
      SET status=$2, output=$3, failure_code=$4, completed_at=clock_timestamp(),
          updated_at=clock_timestamp()
-     WHERE id=$1 AND status IN ('PENDING','RUNNING')`,
+      WHERE id=$1 AND status IN ('PENDING','RUNNING')
+        AND ($5::text IS NULL OR EXISTS (
+          SELECT 1 FROM insight.jobs job
+          WHERE job.id=model_agent_executions.job_id AND job.status='RUNNING'
+            AND job.lease_owner=$5 AND job.attempt_count=$6
+            AND job.lease_expires_at>clock_timestamp()
+        ))`,
     [
       executionId,
       "output" in outcome
@@ -657,7 +735,24 @@ export async function settleModelAgentExecution(
           : "FAILED",
       "output" in outcome ? outcome.output : null,
       "failure" in outcome ? outcome.failure : null,
+      claim?.leaseOwner ?? null,
+      claim?.attempt ?? null,
     ],
   );
   if (result.rowCount !== 1) throw new Error("Model agent execution could not be settled.");
+}
+
+async function isModelAgentClaimCurrent(
+  pool: Pool,
+  executionId: string,
+  claim: ModelAgentClaimFence,
+): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT 1 FROM insight.model_agent_executions execution
+     JOIN insight.jobs job ON job.id=execution.job_id
+     WHERE execution.id=$1 AND job.status='RUNNING' AND job.lease_owner=$2
+       AND job.attempt_count=$3 AND job.lease_expires_at>clock_timestamp()`,
+    [executionId, claim.leaseOwner, claim.attempt],
+  );
+  return result.rowCount === 1;
 }

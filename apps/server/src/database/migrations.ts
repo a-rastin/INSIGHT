@@ -1798,6 +1798,46 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
     `,
   },
+  {
+    version: 22,
+    name: "medication_normalization_jobs",
+    sql: `
+      ALTER TABLE insight.prior_antipsychotic_trials
+        ADD COLUMN route text,
+        ADD COLUMN frequency text;
+
+      CREATE TABLE insight.medication_normalization_runs (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        job_id uuid UNIQUE REFERENCES insight.jobs(id) ON DELETE CASCADE,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        requested_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        workflow_revision bigint NOT NULL CHECK (workflow_revision > 0),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        medical_history_revision bigint NOT NULL CHECK (medical_history_revision > 0),
+        execution_id uuid NOT NULL UNIQUE,
+        endpoint_configuration_id uuid REFERENCES insight.model_endpoint_configurations(id),
+        endpoint_configuration_version integer CHECK (endpoint_configuration_version > 0),
+        endpoint_fingerprint text CHECK (endpoint_fingerprint ~ '^[0-9a-f]{64}$'),
+        catalog_version_id uuid REFERENCES insight.medication_catalog_versions(id),
+        catalog_version integer CHECK (catalog_version > 0),
+        projection jsonb NOT NULL CHECK (jsonb_typeof(projection) = 'object'),
+        input_fingerprint text NOT NULL CHECK (input_fingerprint ~ '^[0-9a-f]{64}$'),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        CHECK (
+          (endpoint_configuration_id IS NULL AND endpoint_configuration_version IS NULL
+            AND endpoint_fingerprint IS NULL AND catalog_version_id IS NULL
+            AND catalog_version IS NULL)
+          OR
+          (endpoint_configuration_id IS NOT NULL AND endpoint_configuration_version IS NOT NULL
+            AND endpoint_fingerprint IS NOT NULL AND catalog_version_id IS NOT NULL
+            AND catalog_version IS NOT NULL)
+        )
+      );
+      CREATE INDEX medication_normalization_runs_case_idx
+        ON insight.medication_normalization_runs
+          (research_case_id, input_revision, medical_history_revision, created_at DESC);
+    `,
+  },
 ]);
 
 export function prepareMigrations(

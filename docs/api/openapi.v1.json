@@ -8132,21 +8132,16 @@
                                     "maxLength": 500,
                                     "type": "string"
                                   },
-                                  "normalizationState": {
-                                    "anyOf": [
-                                      { "type": "string", "enum": ["NORMALIZED"] },
-                                      { "type": "string", "enum": ["UNKNOWN"] }
-                                    ]
-                                  },
-                                  "canonicalMedicationId": {
-                                    "minLength": 1,
-                                    "maxLength": 200,
-                                    "type": "string"
-                                  },
                                   "dose": { "minLength": 1, "maxLength": 100, "type": "string" },
                                   "doseUnit": {
                                     "minLength": 1,
                                     "maxLength": 100,
+                                    "type": "string"
+                                  },
+                                  "route": { "minLength": 1, "maxLength": 100, "type": "string" },
+                                  "frequency": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
                                     "type": "string"
                                   },
                                   "treatmentStart": {
@@ -8206,7 +8201,18 @@
                                     "maxLength": 2000,
                                     "type": "string"
                                   },
-                                  "notes": { "minLength": 1, "maxLength": 5000, "type": "string" }
+                                  "notes": { "minLength": 1, "maxLength": 5000, "type": "string" },
+                                  "normalizationState": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["NORMALIZED"] },
+                                      { "type": "string", "enum": ["UNKNOWN"] }
+                                    ]
+                                  },
+                                  "canonicalMedicationId": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "type": "string"
+                                  }
                                 }
                               }
                             },
@@ -8223,17 +8229,6 @@
                                     "maxLength": 500,
                                     "type": "string"
                                   },
-                                  "normalizationState": {
-                                    "anyOf": [
-                                      { "type": "string", "enum": ["NORMALIZED"] },
-                                      { "type": "string", "enum": ["UNKNOWN"] }
-                                    ]
-                                  },
-                                  "canonicalMedicationId": {
-                                    "minLength": 1,
-                                    "maxLength": 200,
-                                    "type": "string"
-                                  },
                                   "dose": { "minLength": 1, "maxLength": 100, "type": "string" },
                                   "doseUnit": {
                                     "minLength": 1,
@@ -8242,6 +8237,17 @@
                                   },
                                   "route": { "minLength": 1, "maxLength": 100, "type": "string" },
                                   "frequency": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "type": "string"
+                                  },
+                                  "normalizationState": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["NORMALIZED"] },
+                                      { "type": "string", "enum": ["UNKNOWN"] }
+                                    ]
+                                  },
+                                  "canonicalMedicationId": {
                                     "minLength": 1,
                                     "maxLength": 200,
                                     "type": "string"
@@ -8500,19 +8506,10 @@
                           "required": ["medication"],
                           "properties": {
                             "medication": { "minLength": 1, "maxLength": 500, "type": "string" },
-                            "normalizationState": {
-                              "anyOf": [
-                                { "type": "string", "enum": ["NORMALIZED"] },
-                                { "type": "string", "enum": ["UNKNOWN"] }
-                              ]
-                            },
-                            "canonicalMedicationId": {
-                              "minLength": 1,
-                              "maxLength": 200,
-                              "type": "string"
-                            },
                             "dose": { "minLength": 1, "maxLength": 100, "type": "string" },
                             "doseUnit": { "minLength": 1, "maxLength": 100, "type": "string" },
+                            "route": { "minLength": 1, "maxLength": 100, "type": "string" },
+                            "frequency": { "minLength": 1, "maxLength": 200, "type": "string" },
                             "treatmentStart": {
                               "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
                               "type": "string"
@@ -8571,17 +8568,6 @@
                           "required": ["rawMedication"],
                           "properties": {
                             "rawMedication": { "minLength": 1, "maxLength": 500, "type": "string" },
-                            "normalizationState": {
-                              "anyOf": [
-                                { "type": "string", "enum": ["NORMALIZED"] },
-                                { "type": "string", "enum": ["UNKNOWN"] }
-                              ]
-                            },
-                            "canonicalMedicationId": {
-                              "minLength": 1,
-                              "maxLength": 200,
-                              "type": "string"
-                            },
                             "dose": { "minLength": 1, "maxLength": 100, "type": "string" },
                             "doseUnit": { "minLength": 1, "maxLength": 100, "type": "string" },
                             "route": { "minLength": 1, "maxLength": 100, "type": "string" },
@@ -8680,21 +8666,16 @@
                                     "maxLength": 500,
                                     "type": "string"
                                   },
-                                  "normalizationState": {
-                                    "anyOf": [
-                                      { "type": "string", "enum": ["NORMALIZED"] },
-                                      { "type": "string", "enum": ["UNKNOWN"] }
-                                    ]
-                                  },
-                                  "canonicalMedicationId": {
-                                    "minLength": 1,
-                                    "maxLength": 200,
-                                    "type": "string"
-                                  },
                                   "dose": { "minLength": 1, "maxLength": 100, "type": "string" },
                                   "doseUnit": {
                                     "minLength": 1,
                                     "maxLength": 100,
+                                    "type": "string"
+                                  },
+                                  "route": { "minLength": 1, "maxLength": 100, "type": "string" },
+                                  "frequency": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
                                     "type": "string"
                                   },
                                   "treatmentStart": {
@@ -8754,7 +8735,18 @@
                                     "maxLength": 2000,
                                     "type": "string"
                                   },
-                                  "notes": { "minLength": 1, "maxLength": 5000, "type": "string" }
+                                  "notes": { "minLength": 1, "maxLength": 5000, "type": "string" },
+                                  "normalizationState": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["NORMALIZED"] },
+                                      { "type": "string", "enum": ["UNKNOWN"] }
+                                    ]
+                                  },
+                                  "canonicalMedicationId": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "type": "string"
+                                  }
                                 }
                               }
                             },
@@ -8771,17 +8763,6 @@
                                     "maxLength": 500,
                                     "type": "string"
                                   },
-                                  "normalizationState": {
-                                    "anyOf": [
-                                      { "type": "string", "enum": ["NORMALIZED"] },
-                                      { "type": "string", "enum": ["UNKNOWN"] }
-                                    ]
-                                  },
-                                  "canonicalMedicationId": {
-                                    "minLength": 1,
-                                    "maxLength": 200,
-                                    "type": "string"
-                                  },
                                   "dose": { "minLength": 1, "maxLength": 100, "type": "string" },
                                   "doseUnit": {
                                     "minLength": 1,
@@ -8790,6 +8771,17 @@
                                   },
                                   "route": { "minLength": 1, "maxLength": 100, "type": "string" },
                                   "frequency": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "type": "string"
+                                  },
+                                  "normalizationState": {
+                                    "anyOf": [
+                                      { "type": "string", "enum": ["NORMALIZED"] },
+                                      { "type": "string", "enum": ["UNKNOWN"] }
+                                    ]
+                                  },
+                                  "canonicalMedicationId": {
                                     "minLength": 1,
                                     "maxLength": 200,
                                     "type": "string"
@@ -8947,6 +8939,433 @@
                         },
                         { "type": "null" }
                       ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/patients/{patientId}/research-case/medication-normalization": {
+      "get": {
+        "operationId": "getMedicationNormalization",
+        "tags": ["medication"],
+        "parameters": [
+          {
+            "schema": {
+              "title": "INSIGHT UUID v1",
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "job"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "job": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "jobType",
+                            "researchCaseId",
+                            "status",
+                            "attemptCount",
+                            "maxAttempts",
+                            "resultReference",
+                            "provenanceReference",
+                            "error",
+                            "createdAt",
+                            "startedAt",
+                            "completedAt",
+                            "updatedAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "title": "INSIGHT UUID v1",
+                              "format": "uuid",
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            "jobType": { "pattern": "^[A-Z][A-Z0-9_]{0,99}$", "type": "string" },
+                            "researchCaseId": {
+                              "title": "INSIGHT UUID v1",
+                              "format": "uuid",
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            "status": {
+                              "anyOf": [
+                                { "type": "string", "enum": ["QUEUED"] },
+                                { "type": "string", "enum": ["RUNNING"] },
+                                { "type": "string", "enum": ["SUCCEEDED"] },
+                                { "type": "string", "enum": ["FAILED"] },
+                                { "type": "string", "enum": ["CANCELLED"] }
+                              ]
+                            },
+                            "attemptCount": { "minimum": 0, "maximum": 10, "type": "integer" },
+                            "maxAttempts": { "minimum": 1, "maximum": 10, "type": "integer" },
+                            "resultReference": {
+                              "anyOf": [
+                                { "minLength": 1, "maxLength": 500, "type": "string" },
+                                { "type": "null" }
+                              ]
+                            },
+                            "provenanceReference": {
+                              "anyOf": [
+                                { "minLength": 1, "maxLength": 500, "type": "string" },
+                                { "type": "null" }
+                              ]
+                            },
+                            "error": {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": ["code", "message"],
+                                  "properties": {
+                                    "code": {
+                                      "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                      "maxLength": 100,
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "minLength": 1,
+                                      "maxLength": 500,
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "createdAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            "startedAt": {
+                              "anyOf": [
+                                {
+                                  "title": "INSIGHT timestamp v1",
+                                  "format": "date-time",
+                                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                  "type": "string"
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "completedAt": {
+                              "anyOf": [
+                                {
+                                  "title": "INSIGHT timestamp v1",
+                                  "format": "date-time",
+                                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                                  "type": "string"
+                                },
+                                { "type": "null" }
+                              ]
+                            },
+                            "updatedAt": {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startMedicationNormalization",
+        "tags": ["medication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "additionalProperties": false, "type": "object", "properties": {} }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "title": "INSIGHT UUID v1",
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "job"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "job": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "jobType",
+                        "researchCaseId",
+                        "status",
+                        "attemptCount",
+                        "maxAttempts",
+                        "resultReference",
+                        "provenanceReference",
+                        "error",
+                        "createdAt",
+                        "startedAt",
+                        "completedAt",
+                        "updatedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "jobType": { "pattern": "^[A-Z][A-Z0-9_]{0,99}$", "type": "string" },
+                        "researchCaseId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["QUEUED"] },
+                            { "type": "string", "enum": ["RUNNING"] },
+                            { "type": "string", "enum": ["SUCCEEDED"] },
+                            { "type": "string", "enum": ["FAILED"] },
+                            { "type": "string", "enum": ["CANCELLED"] }
+                          ]
+                        },
+                        "attemptCount": { "minimum": 0, "maximum": 10, "type": "integer" },
+                        "maxAttempts": { "minimum": 1, "maximum": 10, "type": "integer" },
+                        "resultReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 500, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        },
+                        "provenanceReference": {
+                          "anyOf": [
+                            { "minLength": 1, "maxLength": 500, "type": "string" },
+                            { "type": "null" }
+                          ]
+                        },
+                        "error": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["code", "message"],
+                              "properties": {
+                                "code": {
+                                  "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                  "maxLength": 100,
+                                  "type": "string"
+                                },
+                                "message": { "minLength": 1, "maxLength": 500, "type": "string" }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "createdAt": {
+                          "title": "INSIGHT timestamp v1",
+                          "format": "date-time",
+                          "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                          "type": "string"
+                        },
+                        "startedAt": {
+                          "anyOf": [
+                            {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "completedAt": {
+                          "anyOf": [
+                            {
+                              "title": "INSIGHT timestamp v1",
+                              "format": "date-time",
+                              "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                              "type": "string"
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "updatedAt": {
+                          "title": "INSIGHT timestamp v1",
+                          "format": "date-time",
+                          "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }

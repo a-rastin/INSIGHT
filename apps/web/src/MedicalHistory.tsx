@@ -11,6 +11,13 @@ type HistoryRecord = NonNullable<
 >;
 type TrialInput = NonNullable<HistoryInput["priorTrials"]>[number];
 type MedicationInput = HistoryInput["currentMedications"][number];
+type Normalization = {
+  normalizationState?: "NORMALIZED" | "UNKNOWN";
+  canonicalMedicationId?: string;
+};
+type DraftMedication = MedicationInput & Normalization;
+type NormalizationJob =
+  operations["getJob"]["responses"][200]["content"]["application/json"]["job"];
 type ComorbidityInput = HistoryInput["comorbidities"][number];
 type AdverseCatalog = NonNullable<
   operations["getActiveAdverseEffectCatalog"]["responses"][200]["content"]["application/json"]["catalog"]
@@ -21,10 +28,11 @@ type ComorbidityKnowledge = NonNullable<
 type PresentationStatus = HistoryInput["presentationStatus"];
 type ResponseValue = NonNullable<TrialInput["response"]>;
 
-type DraftTrial = Omit<TrialInput, "adverseEffects"> & {
-  adverseEffects: NonNullable<TrialInput["adverseEffects"]>;
-  adverseEffectLabels: Record<string, string>;
-};
+type DraftTrial = Omit<TrialInput, "adverseEffects"> &
+  Normalization & {
+    adverseEffects: NonNullable<TrialInput["adverseEffects"]>;
+    adverseEffectLabels: Record<string, string>;
+  };
 type DraftComorbidity = ComorbidityInput & { label: string };
 
 const RESPONSES: readonly [ResponseValue, string][] = [
@@ -40,7 +48,7 @@ const emptyTrial = (): DraftTrial => ({
   adverseEffects: [],
   adverseEffectLabels: {},
 });
-const emptyMedication = (): MedicationInput => ({ rawMedication: "" });
+const emptyMedication = (): DraftMedication => ({ rawMedication: "" });
 const pinKey = (catalogVersionId: string, termId: string) => `${catalogVersionId}\0${termId}`;
 const optional = (value: string | undefined) => value?.trim() || undefined;
 
@@ -56,7 +64,11 @@ export function MedicalHistory({ patientId, csrfToken }: { patientId: string; cs
   const [presentationStatus, setPresentationStatus] = useState<PresentationStatus | "">("");
   const [previouslyTreated, setPreviouslyTreated] = useState<boolean | null>(null);
   const [trials, setTrials] = useState<DraftTrial[]>([]);
-  const [medications, setMedications] = useState<MedicationInput[]>([]);
+  const [medications, setMedications] = useState<DraftMedication[]>([]);
+  const [normalizationJob, setNormalizationJob] = useState<NormalizationJob | null>(null);
+  const [normalizationStarting, setNormalizationStarting] = useState(false);
+  const [normalizationStartError, setNormalizationStartError] = useState(false);
+  const [workflowState, setWorkflowState] = useState<string>("DATA_COLLECTION");
   const [comorbidities, setComorbidities] = useState<DraftComorbidity[]>([]);
   const [supplementalNotes, setSupplementalNotes] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -76,21 +88,48 @@ export function MedicalHistory({ patientId, csrfToken }: { patientId: string; cs
       }),
       apiClient.GET("/api/v1/adverse-effect-catalog"),
       apiClient.GET("/api/v1/comorbidity-knowledge"),
+      apiClient.GET("/api/v1/patients/{patientId}/research-case/medication-normalization", {
+        params: { path: { patientId } },
+      }),
     ])
-      .then(([historyResult, workflowResult, adverseResult, comorbidityResult]) => {
-        if (!active) return;
-        if (!historyResult.data || !workflowResult.data) {
-          setLoadFailed(true);
-          return;
-        }
-        const history = historyResult.data.medicalHistory;
-        setRecord(history);
-        setWorkflowRevision(workflowResult.data.researchCase.revision);
-        setAdverseCatalog(adverseResult.data?.catalog ?? null);
-        setComorbidityKnowledge(comorbidityResult.data?.knowledge ?? null);
-        if (history) hydrate(history);
-        setLoaded(true);
-      })
+      .then(
+        async ([
+          historyResult,
+          workflowResult,
+          adverseResult,
+          comorbidityResult,
+          normalizationResult,
+        ]) => {
+          if (!active) return;
+          if (!historyResult.data || !workflowResult.data) {
+            setLoadFailed(true);
+            return;
+          }
+          let history = historyResult.data.medicalHistory;
+          if (
+            normalizationResult.data?.job &&
+            ["SUCCEEDED", "FAILED", "CANCELLED"].includes(normalizationResult.data.job.status)
+          ) {
+            const reconciled = await apiClient.GET(
+              "/api/v1/patients/{patientId}/research-case/medical-history",
+              { params: { path: { patientId } } },
+            );
+            if (!reconciled.data) {
+              setLoadFailed(true);
+              return;
+            }
+            history = reconciled.data.medicalHistory;
+          }
+          setRecord(history);
+          setWorkflowRevision(workflowResult.data.researchCase.revision);
+          setWorkflowState(workflowResult.data.researchCase.state);
+          setNormalizationJob(normalizationResult.data?.job ?? null);
+          setAdverseCatalog(adverseResult.data?.catalog ?? null);
+          setComorbidityKnowledge(comorbidityResult.data?.knowledge ?? null);
+          if (history) hydrate(history);
+          setLoaded(true);
+        },
+      )
       .catch(() => {
         if (active) setLoadFailed(true);
       });
@@ -98,6 +137,34 @@ export function MedicalHistory({ patientId, csrfToken }: { patientId: string; cs
       active = false;
     };
   }, [patientId, reload]);
+
+  useEffect(() => {
+    if (!normalizationJob || !["QUEUED", "RUNNING"].includes(normalizationJob.status)) return;
+    const timer = window.setInterval(() => {
+      void apiClient
+        .GET("/api/v1/patients/{patientId}/research-case/medication-normalization", {
+          params: { path: { patientId } },
+        })
+        .then(async (statusResult) => {
+          const job = statusResult.data?.job;
+          if (!job) return;
+          if (!["SUCCEEDED", "FAILED", "CANCELLED"].includes(job.status)) {
+            setNormalizationJob(job);
+            return;
+          }
+          const historyResult = await apiClient.GET(
+            "/api/v1/patients/{patientId}/research-case/medical-history",
+            { params: { path: { patientId } } },
+          );
+          if (historyResult.data?.medicalHistory) {
+            setRecord(historyResult.data.medicalHistory);
+            hydrate(historyResult.data.medicalHistory);
+            setNormalizationJob(job);
+          }
+        });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [normalizationJob?.id, normalizationJob?.status, patientId]);
 
   function hydrate(history: HistoryRecord) {
     setPresentationStatus(history.presentationStatus);
@@ -167,7 +234,7 @@ export function MedicalHistory({ patientId, csrfToken }: { patientId: string; cs
     );
   }
 
-  function updateMedication(index: number, patch: Partial<MedicationInput>) {
+  function updateMedication(index: number, patch: Partial<DraftMedication>) {
     setMedications((current) =>
       current.map((medication, position) =>
         position === index ? { ...medication, ...patch } : medication,
@@ -240,12 +307,35 @@ export function MedicalHistory({ patientId, csrfToken }: { patientId: string; cs
       );
       if (!result.data) throw new Error("Medical history save failed");
       setRecord(result.data.medicalHistory);
+      setNormalizationJob(null);
+      setWorkflowState("DATA_COLLECTION");
       setWorkflowRevision((revision) => (revision === null ? null : revision + 1));
       hydrate(result.data.medicalHistory!);
       setSaveState("saved");
       setShowErrors(false);
     } catch {
       setSaveState("error");
+    }
+  }
+
+  async function startNormalization() {
+    setNormalizationStarting(true);
+    setNormalizationStartError(false);
+    try {
+      const result = await apiClient.POST(
+        "/api/v1/patients/{patientId}/research-case/medication-normalization",
+        {
+          params: { path: { patientId } },
+          headers: { "x-csrf-token": csrfToken },
+          body: {},
+        },
+      );
+      if (!result.data) throw new Error("Medication normalization could not start.");
+      setNormalizationJob(result.data.job);
+    } catch {
+      setNormalizationStartError(true);
+    } finally {
+      setNormalizationStarting(false);
     }
   }
 
@@ -278,6 +368,28 @@ export function MedicalHistory({ patientId, csrfToken }: { patientId: string; cs
         Record available history. Optional fields may remain blank; cautions below are deterministic
         catalog results, not clinical orders.
       </Banner>
+      {record ? (
+        <section className="validation-panel" aria-live="polite">
+          <h3>Medication normalization</h3>
+          <p>{normalizationMessage(normalizationJob, record)}</p>
+          {normalizationJob ? (
+            <Badge tone={jobTone(normalizationJob.status)}>{normalizationJob.status}</Badge>
+          ) : null}
+          {normalizationJob?.status === "FAILED" ||
+          normalizationJob?.status === "CANCELLED" ||
+          (!normalizationJob && workflowState === "NORMALIZING_MEDICATIONS") ? (
+            <Button type="button" loading={normalizationStarting} onClick={startNormalization}>
+              {normalizationJob ? "Retry normalization" : "Normalize medications"}
+            </Button>
+          ) : null}
+          {normalizationStartError ? (
+            <p className="field-error" role="alert">
+              Medication normalization could not start. Check workflow and model availability, then
+              retry.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <form className="medical-history__form" onSubmit={submit} noValidate>
         {showErrors && errors.length ? (
@@ -497,9 +609,16 @@ function TrialEditor({
             className="text-input"
             required
             value={trial.medication}
-            onChange={(event) => onChange({ medication: event.target.value })}
+            onChange={(event) =>
+              onChange({
+                medication: event.target.value,
+                normalizationState: undefined,
+                canonicalMedicationId: undefined,
+              })
+            }
           />
         </label>
+        <NormalizationLabel entry={trial} />
         <label className="history-field">
           Dose (optional)
           <input
@@ -514,6 +633,22 @@ function TrialEditor({
             className="text-input"
             value={trial.doseUnit ?? ""}
             onChange={(event) => onChange({ doseUnit: event.target.value })}
+          />
+        </label>
+        <label className="history-field">
+          Route (optional)
+          <input
+            className="text-input"
+            value={trial.route ?? ""}
+            onChange={(event) => onChange({ route: event.target.value })}
+          />
+        </label>
+        <label className="history-field">
+          Frequency (optional)
+          <input
+            className="text-input"
+            value={trial.frequency ?? ""}
+            onChange={(event) => onChange({ frequency: event.target.value })}
           />
         </label>
         <label className="history-field">
@@ -629,9 +764,9 @@ function RepeatingMedicationSection({
   onChange,
   onRemove,
 }: {
-  medications: MedicationInput[];
+  medications: DraftMedication[];
   onAdd: () => void;
-  onChange: (index: number, patch: Partial<MedicationInput>) => void;
+  onChange: (index: number, patch: Partial<DraftMedication>) => void;
   onRemove: (index: number) => void;
 }) {
   return (
@@ -656,9 +791,16 @@ function RepeatingMedicationSection({
                   className="text-input"
                   required
                   value={medication.rawMedication}
-                  onChange={(event) => onChange(index, { rawMedication: event.target.value })}
+                  onChange={(event) =>
+                    onChange(index, {
+                      rawMedication: event.target.value,
+                      normalizationState: undefined,
+                      canonicalMedicationId: undefined,
+                    })
+                  }
                 />
               </label>
+              <NormalizationLabel entry={medication} />
               <label className="history-field">
                 Dose (optional)
                 <input
@@ -747,12 +889,10 @@ function CautionSummary({ record }: { record: HistoryRecord }) {
 function materializeTrial(trial: DraftTrial): TrialInput {
   return {
     medication: trial.medication.trim(),
-    ...(trial.normalizationState ? { normalizationState: trial.normalizationState } : {}),
-    ...(optional(trial.canonicalMedicationId)
-      ? { canonicalMedicationId: optional(trial.canonicalMedicationId) }
-      : {}),
     ...(optional(trial.dose) ? { dose: optional(trial.dose) } : {}),
     ...(optional(trial.doseUnit) ? { doseUnit: optional(trial.doseUnit) } : {}),
+    ...(optional(trial.route) ? { route: optional(trial.route) } : {}),
+    ...(optional(trial.frequency) ? { frequency: optional(trial.frequency) } : {}),
     ...(optional(trial.treatmentStart) ? { treatmentStart: optional(trial.treatmentStart) } : {}),
     ...(optional(trial.treatmentEnd) ? { treatmentEnd: optional(trial.treatmentEnd) } : {}),
     ...(optional(trial.approximatePeriod)
@@ -770,18 +910,46 @@ function materializeTrial(trial: DraftTrial): TrialInput {
   };
 }
 
-function materializeMedication(medication: MedicationInput): MedicationInput {
+function materializeMedication(medication: DraftMedication): MedicationInput {
   return {
     rawMedication: medication.rawMedication.trim(),
-    ...(medication.normalizationState ? { normalizationState: medication.normalizationState } : {}),
-    ...(optional(medication.canonicalMedicationId)
-      ? { canonicalMedicationId: optional(medication.canonicalMedicationId) }
-      : {}),
     ...(optional(medication.dose) ? { dose: optional(medication.dose) } : {}),
     ...(optional(medication.doseUnit) ? { doseUnit: optional(medication.doseUnit) } : {}),
     ...(optional(medication.route) ? { route: optional(medication.route) } : {}),
     ...(optional(medication.frequency) ? { frequency: optional(medication.frequency) } : {}),
   };
+}
+
+function NormalizationLabel({ entry }: { entry: Normalization }) {
+  if (entry.normalizationState === "NORMALIZED") {
+    return <small>Canonical identity: {entry.canonicalMedicationId}</small>;
+  }
+  if (entry.normalizationState === "UNKNOWN") return <small>Canonical identity: Unknown</small>;
+  return <small>Canonical identity: Pending normalization</small>;
+}
+
+function normalizationMessage(job: NormalizationJob | null, record: HistoryRecord) {
+  if (job?.status === "RUNNING")
+    return "Canonical identities are being selected and committed automatically.";
+  if (job?.status === "QUEUED")
+    return "Normalization is queued and continues if this page is closed.";
+  if (job?.status === "FAILED" || job?.status === "CANCELLED")
+    return job.error?.message ?? "Normalization stopped safely.";
+  if (medicationEntries(record).every((entry) => entry.normalizationState))
+    return "Every medication has a canonical identity or UNKNOWN state.";
+  return "Normalization starts when the Research Case reaches medication normalization.";
+}
+
+function medicationEntries(record: HistoryRecord) {
+  return [...record.currentMedications, ...(record.priorTrials ?? [])];
+}
+
+function jobTone(status: NormalizationJob["status"]): "normal" | "warning" | "info" {
+  return status === "SUCCEEDED"
+    ? "normal"
+    : status === "FAILED" || status === "CANCELLED"
+      ? "warning"
+      : "info";
 }
 
 function mergeAdverseOptions(trial: DraftTrial, catalog: AdverseCatalog | null) {

@@ -22,6 +22,12 @@ export interface MedicationExecution {
   readonly model: string;
   readonly promptVersion: string;
   readonly schemaVersion: string;
+  readonly catalogVersion?: number;
+  readonly researchCaseRevision?: number;
+  readonly inputRevision?: number;
+  readonly leaseOwner?: string;
+  readonly attempt?: number;
+  readonly jobId?: string;
 }
 
 interface VersionRow extends QueryResultRow {
@@ -189,16 +195,22 @@ export async function searchMedicationCandidates(
   query: string,
   now = new Date(),
 ): Promise<{ catalogVersion: string; candidates: MedicationCandidate[] }> {
-  const normalizedQuery = normalizeMedicationSearch(query);
-  if (!normalizedQuery) throw new McpToolError("INVALID_TOOL_INPUT");
+  void query;
   return withTransaction(pool, async (client) => {
     const rawText = await medicationRawText(client, execution.researchCaseId, medicationEntryRef);
-    const version = await client.query<VersionRow>(
-      `SELECT version.id,version.version,version.created_by_user_id,version.created_at,true AS active
-       FROM insight.medication_catalog_state state
-       JOIN insight.medication_catalog_versions version ON version.id=state.active_version_id
-       WHERE state.singleton=true`,
-    );
+    const normalizedQuery = normalizeMedicationSearch(rawText) || "unsearchable";
+    const version = execution.catalogVersion
+      ? await client.query<VersionRow>(
+          `SELECT id,version,created_by_user_id,created_at,false AS active
+           FROM insight.medication_catalog_versions WHERE version=$1`,
+          [execution.catalogVersion],
+        )
+      : await client.query<VersionRow>(
+          `SELECT version.id,version.version,version.created_by_user_id,version.created_at,true AS active
+           FROM insight.medication_catalog_state state
+           JOIN insight.medication_catalog_versions version ON version.id=state.active_version_id
+           WHERE state.singleton=true`,
+        );
     if (!version.rows[0]) throw new McpToolError("KNOWLEDGE_VERSION_INACTIVE");
     const entries = await client.query<EntryRow>(
       `SELECT catalog_version_id,canonical_id,preferred_name,synonyms,normalized_terms
@@ -223,11 +235,16 @@ export async function searchMedicationCandidates(
         preferredName: entry.preferred_name,
         synonyms: entry.synonyms,
       }));
-    await client.query(
+    const inserted = await client.query(
       `INSERT INTO insight.medication_candidate_sets
          (execution_id,research_case_id,medication_entry_ref,catalog_version_id,catalog_version,
-          raw_text,normalized_text,candidates,model,prompt_version,schema_version,searched_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+           raw_text,normalized_text,candidates,model,prompt_version,schema_version,searched_at)
+        SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12
+        WHERE $13::text IS NULL OR EXISTS (
+          SELECT 1 FROM insight.jobs job
+          WHERE job.id=$14 AND job.status='RUNNING' AND job.lease_owner=$13
+            AND job.attempt_count=$15 AND job.lease_expires_at>clock_timestamp()
+        )`,
       [
         execution.executionId,
         execution.researchCaseId,
@@ -241,8 +258,12 @@ export async function searchMedicationCandidates(
         execution.promptVersion,
         execution.schemaVersion,
         now,
+        execution.leaseOwner ?? null,
+        execution.jobId ?? null,
+        execution.attempt ?? null,
       ],
     );
+    if (inserted.rowCount !== 1) throw new McpToolError("STALE_RESEARCH_CASE_REVISION");
     return { catalogVersion: catalogRef(version.rows[0].version), candidates };
   });
 }
@@ -327,7 +348,18 @@ export async function commitMedicationMapping(
       `UPDATE insight.${target.table}
        SET normalization_state=$1,canonical_medication_id=$2,medication_mapping_id=$3,
            medication_catalog_version_id=$4
-       WHERE research_case_id=$5 AND position=$6 AND ${target.rawColumn}=$7`,
+         WHERE research_case_id=$5 AND position=$6 AND ${target.rawColumn}=$7
+           AND normalization_state IS NULL
+           AND ($8::bigint IS NULL OR EXISTS (
+            SELECT 1 FROM insight.research_cases research_case
+            WHERE research_case.id=$5 AND research_case.workflow_state='NORMALIZING_MEDICATIONS'
+              AND research_case.workflow_revision=$8 AND research_case.input_revision=$9
+          ))
+          AND ($10::text IS NULL OR EXISTS (
+            SELECT 1 FROM insight.jobs job
+            WHERE job.id=$11 AND job.status='RUNNING' AND job.lease_owner=$10
+              AND job.attempt_count=$12 AND job.lease_expires_at>clock_timestamp()
+          ))`,
       [
         state,
         candidate?.canonicalId ?? null,
@@ -336,6 +368,11 @@ export async function commitMedicationMapping(
         execution.researchCaseId,
         target.position,
         candidateSet.raw_text,
+        execution.researchCaseRevision ?? null,
+        execution.inputRevision ?? null,
+        execution.leaseOwner ?? null,
+        execution.jobId ?? null,
+        execution.attempt ?? null,
       ],
     );
     if (updated.rowCount !== 1) throw new McpToolError("STALE_RESEARCH_CASE_REVISION");
@@ -393,20 +430,37 @@ async function loadExecution(
     research_case_id: string;
     model: string;
     prompt_version: string;
+    catalog_version: number;
+    research_case_revision: string;
+    input_revision: string;
+    lease_owner: string;
+    attempt_count: number;
+    job_id: string;
   }>(
     `SELECT execution.id AS execution_id,execution.research_case_id,configuration.model,
-            execution.prompt_version
+            execution.prompt_version,run.catalog_version,execution.research_case_revision,
+            execution.input_revision,job.lease_owner,job.attempt_count,job.id AS job_id
      FROM insight.model_agent_executions execution
      JOIN insight.model_endpoint_configurations configuration
        ON configuration.id=execution.endpoint_configuration_id
      JOIN insight.research_cases research_case ON research_case.id=execution.research_case_id
+     JOIN insight.medication_normalization_runs run ON run.execution_id=execution.id
+     JOIN insight.jobs job ON job.id=execution.job_id
      WHERE execution.id=$1 AND execution.job_id=$2 AND execution.research_case_revision=$3
        AND execution.workflow_state='NORMALIZING_MEDICATIONS'
        AND execution.status IN ('PENDING','RUNNING')
        AND research_case.workflow_state=execution.workflow_state
        AND research_case.workflow_revision=execution.research_case_revision
-       AND research_case.input_revision=execution.input_revision`,
-    [context.executionId, context.jobId, context.researchCaseRevision],
+       AND research_case.input_revision=execution.input_revision
+       AND ($4::text IS NULL OR (job.status='RUNNING' AND job.lease_owner=$4
+         AND job.attempt_count=$5 AND job.lease_expires_at>clock_timestamp()))`,
+    [
+      context.executionId,
+      context.jobId,
+      context.researchCaseRevision,
+      context.leaseOwner ?? null,
+      context.attempt ?? null,
+    ],
   );
   if (!result.rows[0]) throw new McpToolError("STALE_RESEARCH_CASE_REVISION");
   return {
@@ -414,6 +468,12 @@ async function loadExecution(
     executionId: result.rows[0].execution_id,
     researchCaseId: result.rows[0].research_case_id,
     schemaVersion: "medication-tools-1.0.0",
+    catalogVersion: result.rows[0].catalog_version,
+    researchCaseRevision: Number(result.rows[0].research_case_revision),
+    inputRevision: Number(result.rows[0].input_revision),
+    leaseOwner: context.leaseOwner,
+    attempt: context.attempt,
+    jobId: context.jobId,
     promptVersion: result.rows[0].prompt_version,
   };
 }

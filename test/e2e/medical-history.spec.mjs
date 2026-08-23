@@ -93,8 +93,47 @@ test("known-untreated persisted choice keeps prior trials absent", async ({ page
   expect(state.lastInput).not.toHaveProperty("priorTrials");
 });
 
+test("normalization progress survives refresh and resumes without candidate confirmation", async ({
+  page,
+}) => {
+  const initial = historyRecord({
+    currentMedications: [{ rawMedication: "Haldol", normalizationState: undefined }],
+  });
+  const state = await installMedicalHistoryApi(page, initial);
+  state.workflowState = "NORMALIZING_MEDICATIONS";
+  state.normalizationJob = job("RUNNING");
+  await page.goto(`/patients/${patientId}`);
+
+  await expect(
+    page.getByText("Canonical identities are being selected and committed automatically."),
+  ).toBeVisible();
+  await expect(page.getByText("RUNNING", { exact: true })).toBeVisible();
+  await expect(page.getByText(/candidate/i)).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText("RUNNING", { exact: true })).toBeVisible();
+
+  state.history = historyRecord({
+    currentMedications: [
+      {
+        rawMedication: "Haldol",
+        normalizationState: "NORMALIZED",
+        canonicalMedicationId: "RX-HALOPERIDOL",
+      },
+    ],
+  });
+  state.normalizationJob = job("SUCCEEDED");
+  await expect(page.getByText("Canonical identity: RX-HALOPERIDOL")).toBeVisible({ timeout: 3000 });
+  await expect(page.getByText("SUCCEEDED", { exact: true })).toBeVisible();
+});
+
 async function installMedicalHistoryApi(page, initialHistory) {
-  const state = { history: initialHistory, lastInput: null, workflowRevision: 1 };
+  const state = {
+    history: initialHistory,
+    lastInput: null,
+    workflowRevision: 1,
+    workflowState: "DATA_COLLECTION",
+    normalizationJob: null,
+  };
   await page.addInitScript(
     ({ id }) => globalThis.localStorage.setItem(`insight.research-use.${id}.v1`, "acknowledged"),
     { id: userId },
@@ -112,8 +151,23 @@ async function installMedicalHistoryApi(page, initialHistory) {
     }
     if (path === `/api/v1/patients/${patientId}/research-case`) {
       await route.fulfill({
-        json: { schemaVersion: "1", researchCase: { revision: state.workflowRevision } },
+        json: {
+          schemaVersion: "1",
+          researchCase: { revision: state.workflowRevision, state: state.workflowState },
+        },
       });
+      return;
+    }
+    if (path.endsWith("/medication-normalization")) {
+      if (request.method() === "POST") state.normalizationJob = job("QUEUED");
+      await route.fulfill({
+        status: request.method() === "POST" ? 202 : 200,
+        json: { schemaVersion: "1", job: state.normalizationJob },
+      });
+      return;
+    }
+    if (path === `/api/v1/jobs/${state.normalizationJob?.id}`) {
+      await route.fulfill({ json: { schemaVersion: "1", job: state.normalizationJob } });
       return;
     }
     if (path.endsWith("/medical-history")) {
@@ -198,6 +252,24 @@ async function installMedicalHistoryApi(page, initialHistory) {
     await route.fulfill({ status: 404, json: { schemaVersion: "1", error: {} } });
   });
   return state;
+}
+
+function job(status) {
+  return {
+    id: "60000000-0000-4000-8000-000000000009",
+    jobType: "MEDICATION_NORMALIZATION",
+    researchCaseId,
+    status,
+    attemptCount: 1,
+    maxAttempts: 3,
+    resultReference: status === "SUCCEEDED" ? "domain-result:normalized" : null,
+    provenanceReference: status === "SUCCEEDED" ? "model-execution:normalized" : null,
+    error: null,
+    createdAt: "2026-08-22T10:00:00.000Z",
+    startedAt: "2026-08-22T10:00:01.000Z",
+    completedAt: status === "SUCCEEDED" ? "2026-08-22T10:00:02.000Z" : null,
+    updatedAt: "2026-08-22T10:00:02.000Z",
+  };
 }
 
 function historyRecord(overrides) {
