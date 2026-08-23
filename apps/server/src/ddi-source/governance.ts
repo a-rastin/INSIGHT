@@ -155,9 +155,30 @@ export function extractMedscapeInteractions(
       continue;
     }
     if (severity && /^[•*-]\s+\S/.test(line)) {
+      const evidence = line.replace(/^[•*-]\s+/, "");
+      const separator = evidence.indexOf(":");
+      if (separator < 1) {
+        throw new DdiSourceInputError("Interaction evidence must identify the interacting drug.");
+      }
+      const interactingDrugIdentity = evidence.slice(0, separator).trim();
+      const detail = evidence.slice(separator + 1).trim();
+      if (!interactingDrugIdentity || !detail) {
+        throw new DdiSourceInputError("Interaction evidence must identify the interacting drug.");
+      }
+      const fields = Object.fromEntries(
+        detail
+          .split(";")
+          .map((part) => /^\s*(mechanism|effect|action)\s*:\s*(.+)\s*$/i.exec(part))
+          .filter((match): match is RegExpExecArray => match !== null)
+          .map((match) => [match[1]!.toLowerCase(), match[2]!.trim()]),
+      );
       interactions.push({
+        interactingDrugIdentity,
         severity,
         evidenceText: line,
+        ...(fields.mechanism ? { mechanism: fields.mechanism } : {}),
+        ...(fields.effect ? { clinicalEffect: fields.effect } : { clinicalEffect: detail }),
+        ...(fields.action ? { recommendedAction: fields.action } : {}),
         evidenceReference: { sourceSha256, lineStart: index + 1, lineEnd: index + 1 },
       });
     }

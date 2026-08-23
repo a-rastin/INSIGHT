@@ -1313,6 +1313,7 @@ export const DdiEvidenceReferenceSchema = Type.Object(
 
 export const DdiExtractedInteractionSchema = Type.Object(
   {
+    interactingDrugIdentity: Type.Optional(Type.String({ minLength: 1, maxLength: 200 })),
     severity: Type.Union([
       Type.Literal("contraindicated"),
       Type.Literal("serious"),
@@ -1320,6 +1321,9 @@ export const DdiExtractedInteractionSchema = Type.Object(
       Type.Literal("minor"),
     ]),
     evidenceText: Type.String({ minLength: 1, maxLength: 20_000 }),
+    mechanism: Type.Optional(Type.String({ minLength: 1, maxLength: 4000 })),
+    clinicalEffect: Type.Optional(Type.String({ minLength: 1, maxLength: 4000 })),
+    recommendedAction: Type.Optional(Type.String({ minLength: 1, maxLength: 4000 })),
     evidenceReference: DdiEvidenceReferenceSchema,
   },
   { additionalProperties: false },

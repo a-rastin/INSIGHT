@@ -3033,8 +3033,12 @@ export interface operations {
                 byteLength: number;
               };
               interactions: {
+                interactingDrugIdentity?: string;
                 severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
                 evidenceText: string;
+                mechanism?: string;
+                clinicalEffect?: string;
+                recommendedAction?: string;
                 evidenceReference: {
                   sourceSha256: string;
                   lineStart: number;
@@ -3157,8 +3161,12 @@ export interface operations {
                 byteLength: number;
               };
               interactions: {
+                interactingDrugIdentity?: string;
                 severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
                 evidenceText: string;
+                mechanism?: string;
+                clinicalEffect?: string;
+                recommendedAction?: string;
                 evidenceReference: {
                   sourceSha256: string;
                   lineStart: number;
@@ -3321,8 +3329,12 @@ export interface operations {
                 byteLength: number;
               };
               interactions: {
+                interactingDrugIdentity?: string;
                 severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
                 evidenceText: string;
+                mechanism?: string;
+                clinicalEffect?: string;
+                recommendedAction?: string;
                 evidenceReference: {
                   sourceSha256: string;
                   lineStart: number;
@@ -3456,8 +3468,12 @@ export interface operations {
                 byteLength: number;
               };
               interactions: {
+                interactingDrugIdentity?: string;
                 severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
                 evidenceText: string;
+                mechanism?: string;
+                clinicalEffect?: string;
+                recommendedAction?: string;
                 evidenceReference: {
                   sourceSha256: string;
                   lineStart: number;
@@ -3591,8 +3607,12 @@ export interface operations {
                 byteLength: number;
               };
               interactions: {
+                interactingDrugIdentity?: string;
                 severity: "contraindicated" | "serious" | "monitor_closely" | "minor";
                 evidenceText: string;
+                mechanism?: string;
+                clinicalEffect?: string;
+                recommendedAction?: string;
                 evidenceReference: {
                   sourceSha256: string;
                   lineStart: number;

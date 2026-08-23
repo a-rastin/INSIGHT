@@ -1931,6 +1931,54 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_ddi_source_mutation();
     `,
   },
+  {
+    version: 24,
+    name: "ddi_regimen_evaluation",
+    sql: `
+      CREATE TABLE insight.ddi_executions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        execution_ref text NOT NULL UNIQUE CHECK (
+          execution_ref ~ '^ddi-execution-[0-9a-f]{64}$'
+        ),
+        tool_execution_id text NOT NULL,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        requested_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        purpose text NOT NULL CHECK (purpose IN ('PRIMARY_FILTER', 'FINAL_RECHECK')),
+        workflow_revision bigint NOT NULL CHECK (workflow_revision > 0),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        exact_regimen jsonb NOT NULL CHECK (jsonb_typeof(exact_regimen) = 'array'),
+        evaluated_pairs jsonb NOT NULL CHECK (jsonb_typeof(evaluated_pairs) = 'array'),
+        source_versions jsonb NOT NULL CHECK (
+          jsonb_typeof(source_versions) = 'array'
+        ),
+        source_version text NOT NULL,
+        unknown_medication_entry_refs jsonb NOT NULL CHECK (
+          jsonb_typeof(unknown_medication_entry_refs) = 'array'
+        ),
+        omitted_pair_count integer NOT NULL CHECK (omitted_pair_count >= 0),
+        findings jsonb NOT NULL CHECK (jsonb_typeof(findings) = 'array'),
+        excluded_canonical_ids jsonb NOT NULL CHECK (
+          jsonb_typeof(excluded_canonical_ids) = 'array'
+        ),
+        executed_at timestamptz NOT NULL,
+        UNIQUE (tool_execution_id, purpose)
+      );
+
+      CREATE INDEX ddi_executions_case_idx
+        ON insight.ddi_executions (research_case_id, executed_at DESC);
+      CREATE FUNCTION insight.reject_ddi_execution_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'DDI executions are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER ddi_executions_immutable
+      BEFORE UPDATE OR DELETE ON insight.ddi_executions
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_ddi_execution_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

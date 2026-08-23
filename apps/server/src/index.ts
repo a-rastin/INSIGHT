@@ -14,6 +14,7 @@ export * from "./comorbidity-knowledge/index.js";
 export * from "./audit/index.js";
 export * from "./deployment/index.js";
 export * from "./ddi-source/index.js";
+export * from "./ddi/index.js";
 export * from "./deidentification/index.js";
 export * from "./identity/index.js";
 export * from "./jobs/index.js";

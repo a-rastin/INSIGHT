@@ -185,6 +185,7 @@ const TOOL_DEFINITIONS = {
         evaluatedCanonicalIds: Type.Array(ref, { maxItems: 200, uniqueItems: true }),
         unknownMedicationEntryRefs: Type.Array(ref, { maxItems: 200, uniqueItems: true }),
         omittedPairCount: Type.Integer({ minimum: 0 }),
+        excludedCanonicalIds: Type.Array(ref, { maxItems: 200, uniqueItems: true }),
         findings: Type.Array(
           Type.Object(
             {

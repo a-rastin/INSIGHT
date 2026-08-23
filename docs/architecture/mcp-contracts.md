@@ -220,6 +220,7 @@ type EvaluateRegimenOutput = {
   evaluatedCanonicalIds: string[];
   unknownMedicationEntryRefs: string[];
   omittedPairCount: number;
+  excludedCanonicalIds: string[]; // populated only for PRIMARY_FILTER
   findings: Array<{
     leftCanonicalId: string;
     rightCanonicalId: string;
@@ -232,7 +233,7 @@ type EvaluateRegimenOutput = {
 };
 ```
 
-For `PRIMARY_FILTER`, every drug participating in any finding is unavailable to automatic plan generation. For `FINAL_RECHECK`, every finding is warning-only. An `UNKNOWN` medicine is omitted from pairs and does not fail the execution. Missing/disabled source, timeout, or invalid provenance fails the tool and blocks finalization.
+For `PRIMARY_FILTER`, current/current and current/proposed pairs are evaluated, and every drug participating in any finding is unavailable to automatic plan generation. For `FINAL_RECHECK`, every unordered pair in the exact final regimen is evaluated and every finding is warning-only. An `UNKNOWN` medicine is omitted from pairs, contributes to `omittedPairCount`, and does not fail the execution. Missing, disabled, unproven, parser/transform-incompatible, or provenance-invalid source data fails the tool and blocks finalization.
 
 ### `bn.get_routed_contracts`
 
