@@ -6,9 +6,11 @@ import {
   MAX_XMLBIF_ELEMENTS,
   MAX_XMLBIF_NESTING_DEPTH,
   MAX_XMLBIF_SOURCE_BYTES,
+  REPOSITORY_BN_CANDIDATES,
   edgesOf,
   expectedTableLength,
   hashXmlBifSemantics,
+  importBnModel,
   insertAxis,
   parseXmlBif,
   permuteAxes,
@@ -146,23 +148,48 @@ test("semantic SHA-256 is stable and excludes formatting and chance alias metada
 });
 
 const fixtureDiagnostics = {
-  "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml": ["CPT_TABLE_LENGTH"],
+  "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml": [],
   "11 - Acute Dystonia & anticholinergic therapy/gemini-code-1783438905589.xml": [],
   "12 - Treatments for Parkinsonism/gemini-code-1783423778176.xml": [],
   "13 - Treatments for Akathesia/gemini-code-1783423969512.xml": [],
-  "14 - VMAT2 Medications for Tardive Dyskinesia/vmat2_tardive_dyskinesia_bn.xml": Array(7).fill(
-    "CPT_DISTRIBUTION_NOT_NORMALIZED",
-  ),
-  "5 - Continuing Medications/gemini-code-1783421787562.xml": ["CPT_TABLE_LENGTH"],
+  "14 - VMAT2 Medications for Tardive Dyskinesia/vmat2_tardive_dyskinesia_bn.xml": [],
+  "5 - Continuing Medications/gemini-code-1783421787562.xml": [],
   "6 - Continuing the Same Medication/gemini-code-1783439886327.xml": [],
-  "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml":
-    Array(3).fill("CPT_TABLE_LENGTH"),
+  "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml": [],
   "9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml": [],
   "Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml": [],
-  "Involuntary-Treatment-Considerations/BN-Involuntary-Treatment-Considerations.xml":
-    Array(2).fill("CPT_TABLE_LENGTH"),
+  "Involuntary-Treatment-Considerations/BN-Involuntary-Treatment-Considerations.xml": [],
   "Pharmacotherapy/BN-Pharmacotherapy.xml": [],
-  "Treatment-Setting/BN-Treatment-Setting.xml": Array(4).fill("CPT_TABLE_LENGTH"),
+  "Treatment-Setting/BN-Treatment-Setting.xml": [],
+};
+
+const expectedArtifactHashes = {
+  "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml":
+    "2e9cef62653f687b81cbad7d5c4f6f390a8f3c1824ae5c7bf5671e4b88b3ed2d",
+  "11 - Acute Dystonia & anticholinergic therapy/gemini-code-1783438905589.xml":
+    "67b5c1a0c6187d7b1e5e256ea3a7b8a93ee84e80291d1791b4f9cb558824a63a",
+  "12 - Treatments for Parkinsonism/gemini-code-1783423778176.xml":
+    "2313b9561e87284821cb3700db243876049519d80f916820c4f9959f2ba0a6c5",
+  "13 - Treatments for Akathesia/gemini-code-1783423969512.xml":
+    "7a84bdfe6314c16c10f4fb7503b067acada790f9e7feb369ab5bcf9925196022",
+  "14 - VMAT2 Medications for Tardive Dyskinesia/vmat2_tardive_dyskinesia_bn.xml":
+    "af3de1e584286de039a34b3ff452bfbb7557211133f393f80c4eb039e550b8a9",
+  "5 - Continuing Medications/gemini-code-1783421787562.xml":
+    "9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355",
+  "6 - Continuing the Same Medication/gemini-code-1783439886327.xml":
+    "751bdd8c082c68befa3e91c8edc345586b3833d44721665e0c5456c8135f1b86",
+  "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml":
+    "faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb",
+  "9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml":
+    "424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416",
+  "Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml":
+    "90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a",
+  "Involuntary-Treatment-Considerations/BN-Involuntary-Treatment-Considerations.xml":
+    "cd6064e1e60fe57ca11790d6b4e0a3026e9d13e916d3ec8e82b8310b0272d09e",
+  "Pharmacotherapy/BN-Pharmacotherapy.xml":
+    "ead00b30d6c832c91d3085ffdc58aea68073bf98786e177a4c05bbd878fecfd3",
+  "Treatment-Setting/BN-Treatment-Setting.xml":
+    "2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91",
 };
 
 test("all 13 repository XML fixtures parse with deterministic honest parity", async () => {
@@ -181,8 +208,64 @@ test("all 13 repository XML fixtures parse with deterministic honest parity", as
       fixtureDiagnostics[name],
       name,
     );
-    if (parsed.file.version === "0.3") {
-      assert.deepEqual(semantic(parse(serializeXmlBif(parsed.file))), semantic(parsed.file), name);
-    } else assert.equal(parsed.file.version, "1.0", name);
+    assert.equal(parsed.file.version, "0.3", name);
+    assert.deepEqual(semantic(parse(serializeXmlBif(parsed.file))), semantic(parsed.file), name);
+  }
+});
+
+test("repository registry imports every candidate with pinned artifacts and expected quarantine", async () => {
+  const root = new URL("../../../BNs/", import.meta.url);
+  const names = (await readdir(root, { recursive: true }))
+    .filter((name) => name.endsWith(".xml"))
+    .sort();
+  assert.deepEqual(REPOSITORY_BN_CANDIDATES.map(({ artifactPath }) => artifactPath).sort(), names);
+
+  const records = await Promise.all(
+    REPOSITORY_BN_CANDIDATES.map(async (candidate) =>
+      importBnModel({
+        candidate,
+        source: await readFile(new URL(candidate.artifactPath, root), "utf8"),
+      }),
+    ),
+  );
+  assert.deepEqual(
+    records.map(({ pathwayIdentity, lifecycle }) => ({ pathwayIdentity, lifecycle })),
+    REPOSITORY_BN_CANDIDATES.map(({ pathwayIdentity }) => ({
+      pathwayIdentity,
+      lifecycle: pathwayIdentity === "AKATHISIA" ? "QUARANTINED" : "ACTIVE",
+    })),
+  );
+  assert.deepEqual(
+    Object.fromEntries(records.map(({ artifact }) => [artifact.path, artifact.contentSha256])),
+    expectedArtifactHashes,
+  );
+  for (const record of records) {
+    assert.equal(record.validationReport.softwareCompatible, true, record.artifact.path);
+    assert.equal(record.validationReport.clinicalValidity, "NOT_ESTABLISHED");
+    assert.equal(record.calibration.status, "UNCALIBRATED");
+    assert.ok(record.artifact.semanticSha256);
+    assert.ok(record.artifact.topologySha256);
+    assert.equal(Object.isFrozen(record), true);
+    assert.equal(Object.isFrozen(record.validationReport.checks), true);
+  }
+  assert.match(
+    records.find(({ pathwayIdentity }) => pathwayIdentity === "AKATHISIA").quarantineReason,
+    /rather than an Akathisia pathway/,
+  );
+});
+
+test("registry rejects unsupported and malformed candidates", async () => {
+  const candidate = { pathwayIdentity: "TEST", artifactPath: "test.xml", version: 1 };
+  for (const invalid of [
+    source.replace('VERSION="0.3"', 'VERSION="1.0"'),
+    source.replace("0.1 0.9 0.8 0.2", "0.1 0.9 0.8"),
+    source.replace("0.25 0.75", "0.2 0.7"),
+    source.replace("<GIVEN>A</GIVEN>", "<GIVEN>Missing</GIVEN>"),
+    source.replace("<FOR>A</FOR>", "<FOR>A</FOR><GIVEN>B</GIVEN>"),
+    source.replace('<VARIABLE TYPE="chance">', '<VARIABLE TYPE="utility">'),
+  ]) {
+    const record = await importBnModel({ candidate, source: invalid });
+    assert.equal(record.lifecycle, "REJECTED");
+    assert.equal(record.validationReport.softwareCompatible, false);
   }
 });

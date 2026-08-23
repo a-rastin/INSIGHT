@@ -1979,6 +1979,117 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_ddi_execution_mutation();
     `,
   },
+  {
+    version: 25,
+    name: "bn_model_registry",
+    sql: `
+      CREATE TABLE insight.bn_model_artifacts (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        artifact_path text NOT NULL CHECK (
+          artifact_path = btrim(artifact_path) AND artifact_path <> ''
+          AND artifact_path !~ '(^/|(^|/)\\.\\.(/|$))'
+        ),
+        media_type text NOT NULL CHECK (media_type = 'application/xml'),
+        byte_length bigint NOT NULL CHECK (byte_length > 0),
+        content_sha256 text NOT NULL UNIQUE CHECK (content_sha256 ~ '^[0-9a-f]{64}$'),
+        semantic_sha256 text CHECK (semantic_sha256 ~ '^[0-9a-f]{64}$'),
+        topology_sha256 text CHECK (topology_sha256 ~ '^[0-9a-f]{64}$'),
+        stored_at timestamptz NOT NULL,
+        CHECK (
+          (semantic_sha256 IS NULL AND topology_sha256 IS NULL)
+          OR (semantic_sha256 IS NOT NULL AND topology_sha256 IS NOT NULL)
+        )
+      );
+
+      CREATE TABLE insight.bn_model_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        pathway_identity text NOT NULL CHECK (
+          pathway_identity ~ '^[A-Z][A-Z0-9_]{0,127}$'
+        ),
+        version integer NOT NULL CHECK (version > 0),
+        artifact_id uuid NOT NULL UNIQUE REFERENCES insight.bn_model_artifacts(id),
+        registry_schema_version integer NOT NULL CHECK (registry_schema_version = 1),
+        importer_version text NOT NULL CHECK (
+          importer_version = btrim(importer_version) AND importer_version <> ''
+        ),
+        validation_report jsonb NOT NULL CHECK (
+          jsonb_typeof(validation_report) = 'object'
+          AND validation_report->>'clinicalValidity' = 'NOT_ESTABLISHED'
+          AND validation_report ? 'softwareCompatible'
+          AND jsonb_typeof(validation_report->'checks') = 'array'
+          AND jsonb_typeof(validation_report->'diagnostics') = 'array'
+        ),
+        evidence_metadata jsonb NOT NULL CHECK (jsonb_typeof(evidence_metadata) = 'object'),
+        calibration_metadata jsonb NOT NULL CHECK (
+          jsonb_typeof(calibration_metadata) = 'object'
+        ),
+        clinical_review_metadata jsonb NOT NULL CHECK (
+          jsonb_typeof(clinical_review_metadata) = 'object'
+        ),
+        initial_lifecycle text NOT NULL CHECK (
+          initial_lifecycle IN ('IMPORTED', 'REJECTED', 'QUARANTINED', 'ACTIVE')
+        ),
+        quarantine_reason text CHECK (
+          quarantine_reason IS NULL OR
+          (quarantine_reason = btrim(quarantine_reason) AND quarantine_reason <> '')
+        ),
+        imported_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        imported_at timestamptz NOT NULL,
+        UNIQUE (pathway_identity, version),
+        UNIQUE (pathway_identity, artifact_id),
+        CHECK (
+          (initial_lifecycle = 'QUARANTINED' AND quarantine_reason IS NOT NULL)
+          OR (initial_lifecycle <> 'QUARANTINED' AND quarantine_reason IS NULL)
+        ),
+        CHECK (
+          (initial_lifecycle = 'ACTIVE'
+            AND (validation_report->>'softwareCompatible')::boolean)
+          OR initial_lifecycle <> 'ACTIVE'
+        )
+      );
+
+      CREATE TABLE insight.bn_model_lifecycle_events (
+        model_version_id uuid NOT NULL REFERENCES insight.bn_model_versions(id),
+        sequence bigint GENERATED ALWAYS AS IDENTITY,
+        lifecycle text NOT NULL CHECK (
+          lifecycle IN ('IMPORTED', 'REJECTED', 'QUARANTINED', 'ACTIVE', 'SUPERSEDED')
+        ),
+        actor_user_id uuid NOT NULL REFERENCES insight.users(id),
+        occurred_at timestamptz NOT NULL,
+        event_reference text CHECK (
+          event_reference IS NULL OR
+          (event_reference = btrim(event_reference) AND event_reference <> '')
+        ),
+        PRIMARY KEY (model_version_id, sequence)
+      );
+
+      CREATE TABLE insight.bn_active_models (
+        pathway_identity text PRIMARY KEY CHECK (
+          pathway_identity ~ '^[A-Z][A-Z0-9_]{0,127}$'
+        ),
+        model_version_id uuid NOT NULL UNIQUE REFERENCES insight.bn_model_versions(id),
+        activated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        activated_at timestamptz NOT NULL
+      );
+
+      CREATE FUNCTION insight.reject_bn_registry_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        RAISE EXCEPTION 'BN model artifacts, versions, and lifecycle events are immutable'
+          USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER bn_model_artifacts_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_model_artifacts
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_registry_mutation();
+      CREATE TRIGGER bn_model_versions_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_model_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_registry_mutation();
+      CREATE TRIGGER bn_model_lifecycle_events_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_model_lifecycle_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_registry_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

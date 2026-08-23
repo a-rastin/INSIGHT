@@ -66,6 +66,7 @@ INSIGHT is a research-only, clinician-facing decision-support prototype for schi
 - **Treatment Plan schema:** plans are structured objects containing regimen medication, dose, route, frequency, titration, monitoring, rationale, warnings, and full provenance; unrestricted free text is not the system of record.
 - **Comorbidity rules:** comorbidities and contraindications use governed, versioned database catalogs and deterministic rules rather than frontend constants or LLM-only interpretation.
 - **Model activation:** a Bayesian-model version activates immediately in Psychiatrist workflows after all required software checks pass; clinical approval is not an activation gate.
+- **BN model registry:** XMLBIF artifacts and immutable model versions retain pathway identity, source/semantic/topology hashes, reproducible software-validation reports, and separate evidence, calibration, and clinical-review metadata. All 13 repository candidates are audited; 12 corrected XMLBIF 0.3 artifacts are software-active, while the content-mismatched Akathisia artifact remains explicitly quarantined.
 - **DDI freshness:** active DDI content has no time-based expiry and remains usable until an Administrator retires or supersedes it.
 - **Failure behavior:** required DDI, BN, or MCP failures block treatment-plan finalization.
 - **Clinical authority:** generated plans are explainable drafts; the psychiatrist remains the final decision-maker.

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<BIF VERSION="1.0">
+<BIF VERSION="0.3">
   <NETWORK>
     <NAME>Management_of_Acute_Dystonia</NAME>
-    
     <VARIABLE TYPE="nature">
       <NAME>Acute_Dystonia</NAME>
       <OUTCOME>Present</OUTCOME>
@@ -10,7 +9,6 @@
       <OUTCOME>Unknown_State</OUTCOME>
       <PROPERTY>Patient State Node</PROPERTY>
     </VARIABLE>
-    
     <VARIABLE TYPE="nature">
       <NAME>Glaucoma_Status</NAME>
       <OUTCOME>Untreated_Angle_Closure</OUTCOME>
@@ -18,7 +16,6 @@
       <OUTCOME>Unknown_State</OUTCOME>
       <PROPERTY>Patient State Node: Assesses Hard Contraindication Gate</PROPERTY>
     </VARIABLE>
-    
     <VARIABLE TYPE="nature">
       <NAME>Vulnerability_Factors</NAME>
       <OUTCOME>Yes</OUTCOME>
@@ -26,7 +23,6 @@
       <OUTCOME>Unknown_State</OUTCOME>
       <PROPERTY>Patient State Node: Captures Older Age or Concomitant Anticholinergics as Relative Risks</PROPERTY>
     </VARIABLE>
-    
     <VARIABLE TYPE="nature">
       <NAME>Eligibility_Anticholinergic</NAME>
       <OUTCOME>Eligible</OUTCOME>
@@ -34,7 +30,6 @@
       <OUTCOME>Contraindicated</OUTCOME>
       <PROPERTY>Intervention Eligibility Node</PROPERTY>
     </VARIABLE>
-    
     <VARIABLE TYPE="nature">
       <NAME>Priority_Anticholinergic</NAME>
       <OUTCOME>High</OUTCOME>
@@ -42,7 +37,6 @@
       <OUTCOME>Unknown_State</OUTCOME>
       <PROPERTY>Intervention Priority Node</PROPERTY>
     </VARIABLE>
-    
     <VARIABLE TYPE="decision">
       <NAME>Recommendation_Anticholinergic</NAME>
       <OUTCOME>Preferred</OUTCOME>
@@ -50,48 +44,34 @@
       <OUTCOME>Contraindicated</OUTCOME>
       <PROPERTY>Management Recommendation</PROPERTY>
     </VARIABLE>
-
     <DEFINITION>
       <FOR>Acute_Dystonia</FOR>
       <TABLE>0.33 0.33 0.34</TABLE>
     </DEFINITION>
-    
     <DEFINITION>
       <FOR>Glaucoma_Status</FOR>
       <TABLE>0.33 0.33 0.34</TABLE>
     </DEFINITION>
-    
     <DEFINITION>
       <FOR>Vulnerability_Factors</FOR>
       <TABLE>0.33 0.33 0.34</TABLE>
     </DEFINITION>
-    
     <DEFINITION>
       <FOR>Priority_Anticholinergic</FOR>
       <GIVEN>Acute_Dystonia</GIVEN>
-      <TABLE>1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0</TABLE>
+      <TABLE>1 0 0 0 1 0 0 0 1</TABLE>
     </DEFINITION>
-    
     <DEFINITION>
       <FOR>Eligibility_Anticholinergic</FOR>
       <GIVEN>Glaucoma_Status</GIVEN>
       <GIVEN>Vulnerability_Factors</GIVEN>
-      <TABLE>
-        0.0 0.0 1.0  0.0 0.0 1.0  0.0 0.0 1.0  
-        0.0 1.0 0.0  1.0 0.0 0.0  0.0 1.0 0.0  
-        0.0 1.0 0.0  1.0 0.0 0.0  0.0 1.0 0.0
-      </TABLE>
+      <TABLE>0 0 1 0 0 1 0 0 1 0 1 0 1 0 0 0 1 0 0 1 0 1 0 0 0 1 0</TABLE>
     </DEFINITION>
-    
     <DEFINITION>
       <FOR>Recommendation_Anticholinergic</FOR>
       <GIVEN>Priority_Anticholinergic</GIVEN>
       <GIVEN>Eligibility_Anticholinergic</GIVEN>
-      <TABLE>
-        1.0 0.0 0.0  0.0 1.0 0.0  0.0 0.0 1.0  
-        0.0 1.0 0.0  0.0 1.0 0.0  0.0 0.0 1.0  
-        0.0 1.0 0.0  0.0 1.0 0.0  0.0 0.0 1.0
-      </TABLE>
+      <TABLE>1 0 0 0 1 0 0 0 1 0 1 0 0 1 0 0 0 1 0 1 0 0 1 0 0 0 1</TABLE>
     </DEFINITION>
   </NETWORK>
 </BIF>
