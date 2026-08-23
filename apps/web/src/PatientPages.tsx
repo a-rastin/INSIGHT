@@ -19,6 +19,7 @@ import {
 } from "./components/primitives";
 import { Dsm5trAssessment } from "./Dsm5trAssessment";
 import { CssrsAssessment } from "./CssrsAssessment";
+import { DdiResults } from "./DdiResults";
 import { MedicalHistory } from "./MedicalHistory";
 import { PanssAssessment } from "./PanssAssessment";
 import { apiClient } from "./generated/api-client";
@@ -464,6 +465,7 @@ export function PatientProfilePage({
       <PanssAssessment patientId={patientId} csrfToken={csrfToken} />
       <CssrsAssessment patientId={patientId} csrfToken={csrfToken} />
       <MedicalHistory patientId={patientId} csrfToken={csrfToken} />
+      <DdiResults patientId={patientId} csrfToken={csrfToken} />
     </div>
   );
 }

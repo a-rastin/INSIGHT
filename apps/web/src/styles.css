@@ -796,6 +796,132 @@ p {
   border-radius: var(--radius-md);
 }
 
+.ddi-results {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.ddi-heading {
+  margin-bottom: 0;
+}
+
+.ddi-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.ddi-progress h3,
+.ddi-progress p,
+.ddi-results h3 {
+  margin: 0;
+}
+
+.ddi-progress progress {
+  width: min(320px, 100%);
+  margin-top: var(--space-2);
+  accent-color: var(--primary);
+}
+
+.ddi-unknown-warning,
+.ddi-none {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+  font-size: 0.875rem;
+  background: var(--warning-bg);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+}
+
+.ddi-unknown-warning > span,
+.ddi-finding-icon {
+  display: grid;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  color: var(--warning);
+  font-weight: 800;
+  place-items: center;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-pill);
+}
+
+.ddi-regimen-list,
+.ddi-finding-list {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  list-style: none;
+}
+
+.ddi-regimen-list li {
+  display: grid;
+  grid-template-columns: minmax(80px, 0.5fr) minmax(160px, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.ddi-regimen-list li > span:first-child,
+.ddi-results time,
+.ddi-provenance,
+.ddi-evidence {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+.ddi-finding-list li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+}
+
+.ddi-finding-list li > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.ddi-finding-title,
+.ddi-provenance {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ddi-finding-list p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+}
+
+.ddi-none {
+  margin-top: var(--space-4);
+  background: var(--normal-bg);
+  border-left-color: var(--normal);
+}
+
+.ddi-none > span {
+  color: var(--normal);
+  font-weight: 800;
+}
+
+.ddi-provenance {
+  padding: var(--space-3) 0;
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
 .authentication-page {
   display: grid;
   min-height: 100vh;
@@ -1125,6 +1251,10 @@ tbody tr:last-child td {
   }
 
   .panss-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ddi-regimen-list li {
     grid-template-columns: minmax(0, 1fr);
   }
 
