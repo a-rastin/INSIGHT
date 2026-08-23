@@ -3,7 +3,7 @@ import process from "node:process";
 
 export default defineConfig({
   testDir: "test/e2e",
-  testMatch: /(?:role-navigation|panss|ddi-results|bn-manager)\.spec\.mjs/,
+  testMatch: /(?:role-navigation|panss|ddi-results|bn-manager|bn-processing)\.spec\.mjs/,
   outputDir: "test-artifacts/playwright/role-navigation",
   reporter: "line",
   use: {

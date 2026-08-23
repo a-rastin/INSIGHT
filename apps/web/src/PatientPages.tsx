@@ -17,6 +17,7 @@ import {
   LoadingState,
   TextInput,
 } from "./components/primitives";
+import { BnProcessing } from "./BnProcessing";
 import { Dsm5trAssessment } from "./Dsm5trAssessment";
 import { CssrsAssessment } from "./CssrsAssessment";
 import { DdiResults } from "./DdiResults";
@@ -465,6 +466,7 @@ export function PatientProfilePage({
       <PanssAssessment patientId={patientId} csrfToken={csrfToken} />
       <CssrsAssessment patientId={patientId} csrfToken={csrfToken} />
       <MedicalHistory patientId={patientId} csrfToken={csrfToken} />
+      <BnProcessing patientId={patientId} csrfToken={csrfToken} />
       <DdiResults patientId={patientId} csrfToken={csrfToken} />
     </div>
   );
