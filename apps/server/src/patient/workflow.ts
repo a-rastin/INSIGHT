@@ -137,7 +137,7 @@ export const WORKFLOW_TRANSITIONS: readonly TransitionDefinition[] = Object.free
   },
 ]);
 
-const MODEL_TOOLS: Readonly<Record<WorkflowState, readonly string[]>> = Object.freeze({
+export const MODEL_TOOLS_BY_STATE: Readonly<Record<WorkflowState, readonly string[]>> = Object.freeze({
   DATA_COLLECTION: [],
   NORMALIZING_MEDICATIONS: [
     "research_case.get_context",
@@ -633,7 +633,7 @@ async function materializeWorkflow(
     inputRevision: Number(row.input_revision),
     currentStep: STEP[row.workflow_state],
     allowedCommands: commands,
-    modelAllowedTools: MODEL_TOOLS[row.workflow_state],
+    modelAllowedTools: MODEL_TOOLS_BY_STATE[row.workflow_state],
     lastInputInvalidation:
       row.last_input_invalidation_at && row.last_input_invalidation_reason
         ? {
