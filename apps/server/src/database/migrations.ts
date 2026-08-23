@@ -1509,6 +1509,107 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
     `,
   },
+  {
+    version: 19,
+    name: "durable_jobs",
+    sql: `
+      CREATE TYPE insight.job_status AS ENUM (
+        'QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED', 'CANCELLED'
+      );
+
+      CREATE TABLE insight.jobs (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        job_type text NOT NULL CHECK (job_type ~ '^[A-Z][A-Z0-9_]{0,99}$'),
+        research_case_id uuid NOT NULL
+          REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        requested_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        requested_workflow_state insight.research_case_workflow_state NOT NULL,
+        input_fingerprint text NOT NULL CHECK (input_fingerprint ~ '^[0-9a-f]{64}$'),
+        dependency_fingerprint text NOT NULL CHECK (dependency_fingerprint ~ '^[0-9a-f]{64}$'),
+        command_fingerprint text NOT NULL CHECK (command_fingerprint ~ '^[0-9a-f]{64}$'),
+        payload_reference text NOT NULL CHECK (
+          payload_reference = btrim(payload_reference) AND payload_reference <> ''
+          AND char_length(payload_reference) <= 500
+        ),
+        status insight.job_status NOT NULL DEFAULT 'QUEUED',
+        max_attempts integer NOT NULL CHECK (max_attempts BETWEEN 1 AND 10),
+        attempt_count integer NOT NULL DEFAULT 0 CHECK (
+          attempt_count >= 0 AND attempt_count <= max_attempts
+        ),
+        lease_owner text CHECK (
+          lease_owner IS NULL OR (lease_owner = btrim(lease_owner) AND lease_owner <> ''
+          AND char_length(lease_owner) <= 200)
+        ),
+        lease_expires_at timestamptz,
+        retry_eligible_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        idempotency_key text NOT NULL CHECK (
+          idempotency_key = btrim(idempotency_key) AND idempotency_key <> ''
+          AND char_length(idempotency_key) <= 200
+        ),
+        result_reference text CHECK (result_reference IS NULL OR (
+          result_reference = btrim(result_reference) AND result_reference <> ''
+          AND char_length(result_reference) <= 500
+        )),
+        provenance_reference text CHECK (provenance_reference IS NULL OR (
+          provenance_reference = btrim(provenance_reference) AND provenance_reference <> ''
+          AND char_length(provenance_reference) <= 500
+        )),
+        error_code text CHECK (error_code IS NULL OR error_code ~ '^[A-Z][A-Z0-9_]{0,99}$'),
+        error_message text CHECK (
+          error_message IS NULL OR (error_message <> '' AND char_length(error_message) <= 500)
+        ),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        started_at timestamptz,
+        completed_at timestamptz,
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        UNIQUE (requested_by_user_id, research_case_id, job_type, idempotency_key),
+        CHECK (
+          (status = 'RUNNING' AND lease_owner IS NOT NULL AND lease_expires_at IS NOT NULL)
+          OR (status <> 'RUNNING' AND lease_owner IS NULL AND lease_expires_at IS NULL)
+        ),
+        CHECK (
+          (status = 'SUCCEEDED' AND result_reference IS NOT NULL
+            AND provenance_reference IS NOT NULL AND error_code IS NULL AND error_message IS NULL)
+          OR (status = 'FAILED' AND result_reference IS NULL
+            AND provenance_reference IS NULL AND error_code IS NOT NULL AND error_message IS NOT NULL)
+          OR (status IN ('QUEUED', 'RUNNING', 'CANCELLED')
+            AND result_reference IS NULL AND provenance_reference IS NULL)
+        ),
+        CHECK (
+          (status IN ('SUCCEEDED', 'FAILED', 'CANCELLED') AND completed_at IS NOT NULL)
+          OR (status IN ('QUEUED', 'RUNNING') AND completed_at IS NULL)
+        )
+      );
+
+      CREATE INDEX jobs_claim_idx
+        ON insight.jobs (retry_eligible_at, created_at, id)
+        WHERE status IN ('QUEUED', 'RUNNING');
+      CREATE INDEX jobs_owner_idx
+        ON insight.jobs (requested_by_user_id, created_at DESC, id);
+
+      CREATE TABLE insight.job_events (
+        job_id uuid NOT NULL REFERENCES insight.jobs(id) ON DELETE CASCADE,
+        sequence bigint NOT NULL CHECK (sequence > 0),
+        event_type text NOT NULL CHECK (event_type IN (
+          'QUEUED', 'RUNNING', 'PROGRESS', 'RETRY_QUEUED',
+          'SUCCEEDED', 'FAILED', 'CANCELLED'
+        )),
+        progress_code text CHECK (
+          progress_code IS NULL OR progress_code ~ '^[A-Z][A-Z0-9_]{0,99}$'
+        ),
+        completed_units integer CHECK (completed_units IS NULL OR completed_units >= 0),
+        total_units integer CHECK (total_units IS NULL OR total_units > 0),
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        PRIMARY KEY (job_id, sequence),
+        CHECK (completed_units IS NULL OR total_units IS NULL OR completed_units <= total_units),
+        CHECK (
+          (event_type = 'PROGRESS' AND progress_code IS NOT NULL)
+          OR (event_type <> 'PROGRESS' AND progress_code IS NULL
+            AND completed_units IS NULL AND total_units IS NULL)
+        )
+      );
+    `,
+  },
 ]);
 
 export function prepareMigrations(

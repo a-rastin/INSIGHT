@@ -35,6 +35,7 @@ import {
   sessionTokenFromCookie,
   type SessionContext,
 } from "./identity/sessions.js";
+import { jobRoutes } from "./jobs/http.js";
 import { medicalHistoryRoutes } from "./medical-history/http.js";
 import { modelEndpointRoutes, type ModelEndpointHttpOptions } from "./model-endpoint/http.js";
 import { patientRoutes } from "./patient/http.js";
@@ -266,6 +267,10 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     );
     void app.register(
       authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      jobRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
       { prefix: API_PREFIX },
     );
     void app.register(

@@ -1367,3 +1367,74 @@ export async function sha256Hex(input: string | Uint8Array): Promise<Sha256> {
 export function hashCanonicalJson(value: JsonValue): Promise<Sha256> {
   return sha256Hex(stableSerialize(value));
 }
+
+export const JOB_STATUSES = ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"] as const;
+export const JOB_EVENT_TYPES = [
+  "QUEUED",
+  "RUNNING",
+  "PROGRESS",
+  "RETRY_QUEUED",
+  "SUCCEEDED",
+  "FAILED",
+  "CANCELLED",
+] as const;
+
+export const JobStatusSchema = Type.Union(JOB_STATUSES.map((value) => Type.Literal(value)));
+export type JobStatus = Static<typeof JobStatusSchema>;
+
+export const JobRecordSchema = Type.Object(
+  {
+    id: UuidSchema,
+    jobType: Type.String({ pattern: "^[A-Z][A-Z0-9_]{0,99}$" }),
+    researchCaseId: UuidSchema,
+    status: JobStatusSchema,
+    attemptCount: Type.Integer({ minimum: 0, maximum: 10 }),
+    maxAttempts: Type.Integer({ minimum: 1, maximum: 10 }),
+    resultReference: Type.Union([Type.String({ minLength: 1, maxLength: 500 }), Type.Null()]),
+    provenanceReference: Type.Union([Type.String({ minLength: 1, maxLength: 500 }), Type.Null()]),
+    error: Type.Union([
+      Type.Object(
+        {
+          code: Type.String({ pattern: ERROR_CODE_PATTERN, maxLength: 100 }),
+          message: Type.String({ minLength: 1, maxLength: 500 }),
+        },
+        { additionalProperties: false },
+      ),
+      Type.Null(),
+    ]),
+    createdAt: TimestampSchema,
+    startedAt: Type.Union([TimestampSchema, Type.Null()]),
+    completedAt: Type.Union([TimestampSchema, Type.Null()]),
+    updatedAt: TimestampSchema,
+  },
+  { $id: "insight.job-record.v1", additionalProperties: false },
+);
+export type JobRecord = Static<typeof JobRecordSchema>;
+
+export const JobResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, job: JobRecordSchema },
+  { $id: "insight.job-response.v1", additionalProperties: false },
+);
+export type JobResponse = Static<typeof JobResponseSchema>;
+
+export const JobEventSchema = Type.Object(
+  {
+    id: Type.String({ pattern: "^[1-9][0-9]*$", maxLength: 20 }),
+    jobId: UuidSchema,
+    type: Type.Union(JOB_EVENT_TYPES.map((value) => Type.Literal(value))),
+    progress: Type.Union([
+      Type.Object(
+        {
+          code: Type.String({ pattern: ERROR_CODE_PATTERN, maxLength: 100 }),
+          completedUnits: Type.Union([Type.Integer({ minimum: 0 }), Type.Null()]),
+          totalUnits: Type.Union([Type.Integer({ minimum: 1 }), Type.Null()]),
+        },
+        { additionalProperties: false },
+      ),
+      Type.Null(),
+    ]),
+    occurredAt: TimestampSchema,
+  },
+  { $id: "insight.job-event.v1", additionalProperties: false },
+);
+export type JobEvent = Static<typeof JobEventSchema>;

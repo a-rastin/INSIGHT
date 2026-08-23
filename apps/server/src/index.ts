@@ -14,6 +14,7 @@ export * from "./comorbidity-knowledge/index.js";
 export * from "./audit/index.js";
 export * from "./deployment/index.js";
 export * from "./identity/index.js";
+export * from "./jobs/index.js";
 export * from "./medical-history/index.js";
 export * from "./model-endpoint/index.js";
 export * from "./patient/index.js";
