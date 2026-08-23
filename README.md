@@ -156,7 +156,7 @@ The root now contains the initial TypeScript workspace for INSIGHT:
 - `apps/server/src/comorbidity-knowledge` owns immutable comorbidity terms and deterministic rule versions. Activation requires source and reviewer records and rejects unknown terms, duplicate match sets, or conflicting result targets. Medical-history saves evaluate only governed term IDs, persist ordered contraindication, caution, monitoring, and BN-routing results with matched-rule provenance, and leave earlier results pinned when later knowledge activates. No clinical catalog values are embedded in React or seeded by application code.
 - `apps/server/src/database` owns PostgreSQL 16 pooled access, UTC sessions, transaction handling, forward-only migration locking and ledger checks, startup schema enforcement, safe diagnostics, and isolated integration-test databases.
 - `packages/contracts` owns browser-safe version 1 TypeBox runtime schemas and inferred types for UUIDs, RFC 3339 timestamps, fixed roles, API errors, pagination, provenance, and the pinned DSM-5-TR, PANSS, and C-SSRS Recent assessments. Its pure calculators are shared by browser and server; the server recalculates every persisted result. It also provides deterministic JSON serialization, Web Crypto SHA-256 helpers, and explicit unsupported-version errors; lint and contract tests prohibit server, database, secret, and Node-only imports at the browser boundary.
-- `packages/bayes` is the migration boundary for environment-independent Bayesian logic.
+- `packages/bayes` provides browser/server-safe XMLBIF parsing, deterministic serialization and hashing, structural and CPT validation, model queries, and tensor transforms. Parsing enforces documented source, nesting, and element limits without resolving DTD entities.
 - `Bayesian-Engine/` remains intact as the standalone Electron migration source and is not a root workspace.
 
 The workspace is intentionally minimal while the production vertical slice is built. The root supports clean installation plus format, lint, typecheck, test, and build checks.
@@ -200,7 +200,7 @@ In production, server startup serves `apps/web/dist` by default and falls back t
 
 The repository also contains one implemented legacy tool:
 
-- [`Bayesian-Engine/`](Bayesian-Engine/) contains a standalone Electron XMLBIF editor. Its completed checklist covers parsing, structural checks, safe CPT transforms, graph editing, XML synchronization, file lifecycle, tests, and packaging. Integration into INSIGHT has not started.
+- [`Bayesian-Engine/`](Bayesian-Engine/) contains the intact standalone Electron XMLBIF editor. Its environment-independent domain behavior has been adapted into `packages/bayes`; UI integration into BN Manager has not started.
 - [`BNs/`](BNs/) contains qualitative Bayesian-network and influence-diagram artifacts for treatment setting, pharmacotherapy, clozapine pathways, maintenance, LAI use, and adverse-effect management.
 - [`medical-documentation/`](medical-documentation/) contains source material collected for DDI and suicide-risk work.
 - [`CONTEXT/`](CONTEXT/) contains protected project context used by coding agents.
@@ -291,7 +291,6 @@ Do not add provider credentials to the image or Compose file. Provider configura
 - The C-SSRS source has no repository permission record, training evidence, governed transcription approval, or approved Persian translation.
 - DSM-5-TR schema `1.0.0` is an engineering transcription. Clinical wording/rule review and attributable reviewer sign-off remain pending; it must not be presented as clinically approved.
 - PANSS schema `1.0.0` is an engineering transcription of canonical item labels and shared anchors. Licensed item-specific rating criteria, attributable clinical reviewer sign-off, and permission confirmation remain pending; it must not be presented as clinically approved.
-- Bayes Engine dependencies are not installed in the current workspace, so this audit could not run its tests, lint, type-check, or formatting checks.
 - The root `.git` directory is empty; version-control commits are unavailable until the repository is initialized or restored.
 
 Fail closed: no model or medical source is eligible for clinical activation merely because it exists in this repository.
