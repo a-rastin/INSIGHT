@@ -16,6 +16,7 @@ import {
   importAndRegisterBnModel,
   pinBnModelForExecution,
   rollbackBnModel,
+  routeAndRecordBnModels,
 } from "../.tsbuild/server/index.js";
 import {
   createPostgresPool,
@@ -131,6 +132,51 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
         assert.equal(invalid.validation.clinicalValidity, "NOT_ESTABLISHED");
 
         const patient = await createPatient(pool, psychiatrist, 941);
+        const routing = await routeAndRecordBnModels(
+          pool,
+          { id: psychiatrist.id, role: psychiatrist.role },
+          {
+            researchCaseId: patient.patient.researchCase.id,
+            researchCaseRevision: 1,
+            facts: {
+              demographics: { age: 36, sex: "FEMALE" },
+              presentationStatus: "KNOWN_SCHIZOPHRENIA",
+              assessments: [
+                { type: "DSM5TR", state: "COMPLETED", result: "SCHIZOPHRENIA_CONFIRMED" },
+                { type: "PANSS", state: "COMPLETED", result: "TOTAL_82" },
+                { type: "CSSRS_RECENT", state: "BYPASSED" },
+              ],
+              comorbidityTermIds: [],
+              medicationHistory: [],
+              currentRegimen: [],
+            },
+          },
+        );
+        assert.deepEqual(routing.matchedRuleRefs, ["BN-ROUTE-PHARMACOTHERAPY-001"]);
+        assert.deepEqual(
+          routing.selectedModels.map(({ modelId }) => modelId),
+          [candidate.id],
+        );
+        const recordedRouting = await pool.query(
+          `SELECT matched_rule_refs, selected_models
+           FROM insight.bn_routing_evaluations WHERE id = $1`,
+          [routing.evaluationId],
+        );
+        assert.deepEqual(recordedRouting.rows[0].matched_rule_refs, routing.matchedRuleRefs);
+        assert.equal(recordedRouting.rows[0].selected_models[0].version, candidate.version);
+        const routingPin = await pool.query(
+          `SELECT model_version_id FROM insight.bn_research_case_model_pins
+           WHERE research_case_id = $1 AND pathway_identity = 'PHARMACOTHERAPY'`,
+          [patient.patient.researchCase.id],
+        );
+        assert.equal(routingPin.rows[0].model_version_id, candidate.id);
+        await assert.rejects(
+          pool.query(
+            "UPDATE insight.bn_routing_evaluations SET research_case_revision = 2 WHERE id = $1",
+            [routing.evaluationId],
+          ),
+          /immutable/,
+        );
         const originalPin = await pinBnModelForExecution(
           pool,
           patient.patient.researchCase.id,

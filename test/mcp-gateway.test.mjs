@@ -225,6 +225,28 @@ test("every backend-only command class is absent and rejected before domain exec
   }
 });
 
+test("model cannot name a Bayesian model or pathway", async () => {
+  let calls = 0;
+  const gateway = new InternalMcpGateway({
+    "bn.get_routed_contracts": () => {
+      calls += 1;
+      return { data: [] };
+    },
+  });
+  for (const input of [
+    { modelRef: "model-pharmacotherapy-v1" },
+    { pathwayIdentity: "PHARMACOTHERAPY" },
+  ]) {
+    const result = await gateway.invoke(context("GENERATING_CPTS"), {
+      name: "bn.get_routed_contracts",
+      input,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.error.code, "INVALID_TOOL_INPUT");
+  }
+  assert.equal(calls, 0);
+});
+
 test("all contract error codes map to fixed retryability and sanitized messages", async () => {
   const retryable = new Set([
     "DEPENDENCY_UNAVAILABLE",

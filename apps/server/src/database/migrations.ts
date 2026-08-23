@@ -2129,6 +2129,45 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_model_pin_mutation();
     `,
   },
+  {
+    version: 27,
+    name: "deterministic_bn_routing",
+    sql: `
+      CREATE TABLE insight.bn_routing_evaluations (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        research_case_revision integer NOT NULL CHECK (research_case_revision > 0),
+        routing_artifact_version text NOT NULL CHECK (
+          routing_artifact_version = btrim(routing_artifact_version)
+          AND routing_artifact_version <> ''
+        ),
+        routing_approval_ref text NOT NULL CHECK (
+          routing_approval_ref = btrim(routing_approval_ref) AND routing_approval_ref <> ''
+        ),
+        input_sha256 text NOT NULL CHECK (input_sha256 ~ '^[0-9a-f]{64}$'),
+        matched_rule_refs jsonb NOT NULL CHECK (
+          jsonb_typeof(matched_rule_refs) = 'array' AND jsonb_array_length(matched_rule_refs) > 0
+        ),
+        selected_models jsonb NOT NULL CHECK (
+          jsonb_typeof(selected_models) = 'array' AND jsonb_array_length(selected_models) > 0
+        ),
+        evaluated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        evaluated_at timestamptz NOT NULL
+      );
+
+      CREATE FUNCTION insight.reject_bn_routing_evaluation_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'BN routing evaluations are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER bn_routing_evaluations_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_routing_evaluations
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_routing_evaluation_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(
