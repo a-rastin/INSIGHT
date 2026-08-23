@@ -1180,6 +1180,231 @@ tbody tr:last-child td {
   width: min(100%, 680px);
 }
 
+.bn-upload-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.4fr) auto;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.bn-workspace {
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.bn-version-panel {
+  position: sticky;
+  top: var(--space-4);
+}
+
+.bn-version-list,
+.bn-diagnostics ul {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.bn-version-list button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bn-version-list button[aria-pressed="true"] {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.bn-version-list button > span:first-child,
+.bn-governance-item dd,
+.bn-diagnostic--error,
+.bn-diagnostic--warning {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.bn-version-list small,
+.bn-governance-item dd span,
+.bn-diagnostics li span {
+  color: var(--ink-muted);
+}
+
+.bn-check-list,
+.bn-governance-grid,
+.bn-inspector-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.bn-check-list > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(0, 1.3fr);
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.bn-check-list dt,
+.bn-governance-item dt,
+.bn-inspector-list dt {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bn-check-list dd {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.bn-diagnostics {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.bn-diagnostics p {
+  margin: 0;
+}
+
+.bn-diagnostics li {
+  padding: var(--space-3);
+  border-left: 4px solid;
+  border-radius: var(--radius-sm);
+}
+
+.bn-diagnostic--error {
+  background: var(--urgent-bg);
+  border-color: var(--urgent);
+}
+
+.bn-diagnostic--warning {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+}
+
+.bn-governance-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.bn-governance-item {
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bn-governance-item dd,
+.bn-inspector-list dd {
+  margin: var(--space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.bn-graph-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: var(--space-4);
+}
+
+.bn-graph-region {
+  min-width: 0;
+  overflow: auto;
+  background-color: var(--surface-1);
+  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+  background-size: 18px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bn-graph {
+  position: relative;
+}
+
+.bn-graph svg {
+  position: absolute;
+  inset: 0;
+}
+
+.bn-graph line {
+  stroke: var(--ink-muted);
+  stroke-width: 2;
+}
+
+.bn-graph marker path {
+  fill: var(--ink-muted);
+}
+
+.bn-node {
+  position: absolute;
+  display: grid;
+  width: 120px;
+  min-height: 54px;
+  padding: var(--space-2);
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  cursor: pointer;
+  background: var(--canvas);
+  border: 2px solid var(--info);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transform: translate(-50%, 0);
+}
+
+.bn-node span {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+.bn-node--decision {
+  border-color: var(--warning);
+}
+.bn-node--utility {
+  border-color: var(--follow-up);
+}
+.bn-node[aria-pressed="true"] {
+  background: var(--primary-light);
+  border-color: var(--primary-hover);
+}
+
+.bn-inspector {
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bn-network-select {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bn-network-select select {
+  min-height: 44px;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1246,8 +1471,17 @@ tbody tr:last-child td {
   .profile-grid,
   .panss-scores,
   .history-grid,
-  .choice-grid {
+  .choice-grid,
+  .bn-upload-form,
+  .bn-workspace,
+  .bn-governance-grid,
+  .bn-graph-layout,
+  .bn-check-list > div {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bn-version-panel {
+    position: static;
   }
 
   .panss-item {

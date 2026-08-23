@@ -468,6 +468,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/bn-models": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getBnModelHistory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/bn-models/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["importBnModel"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/admin/medication-catalog": {
     parameters: {
       query?: never;
@@ -3632,6 +3664,333 @@ export interface operations {
               importedAt: string;
               legalApprovalReference: string | null;
               clinicalApprovalReference: string | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getBnModelHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            models: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              pathwayIdentity: string;
+              version: number;
+              lifecycle: "IMPORTED" | "REJECTED" | "QUARANTINED" | "ACTIVE" | "SUPERSEDED";
+              quarantineReason: string | null;
+              source: {
+                fileName: string;
+                /** @enum {string} */
+                mediaType: "application/xml";
+                byteLength: number;
+                contentSha256: string;
+                semanticSha256: string | null;
+                topologySha256: string | null;
+                importerVersion: string;
+                /**
+                 * INSIGHT UUID v1
+                 * Format: uuid
+                 */
+                importedByUserId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                importedAt: string;
+              };
+              validation: {
+                softwareCompatible: boolean;
+                /** @enum {string} */
+                clinicalValidity: "NOT_ESTABLISHED";
+                checks: {
+                  code: string;
+                  passed: boolean;
+                  detail: string;
+                }[];
+                diagnostics: {
+                  code: string;
+                  severity: "error" | "warning";
+                  category:
+                    | "xml"
+                    | "structure"
+                    | "reference"
+                    | "probability"
+                    | "value"
+                    | "compatibility";
+                  message: string;
+                  networkIndex?: number;
+                  variableName?: string;
+                  definitionFor?: string;
+                  parentConfigurationIndex?: number;
+                  tableIndex?: number;
+                  path?: string;
+                  line?: number;
+                  column?: number;
+                }[];
+              };
+              evidence: {
+                status: string;
+                reference: string;
+                notes?: string;
+              };
+              calibration: {
+                status: string;
+                reference: string;
+                notes?: string;
+              };
+              clinicalReview: {
+                status: string;
+                reference: string;
+                notes?: string;
+              };
+              networks: {
+                name: string;
+                nodes: {
+                  id: string;
+                  type: "nature" | "decision" | "utility";
+                  outcomes: string[];
+                  parents: string[];
+                  properties: string[];
+                  tableValueCount: number;
+                  position: {
+                    x: number;
+                    y: number;
+                  } | null;
+                }[];
+                edges: {
+                  source: string;
+                  target: string;
+                }[];
+              }[];
+            }[];
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  importBnModel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          pathwayIdentity: string;
+          fileName: string;
+          artifactBase64: string;
+          evidence?: {
+            status: string;
+            reference: string;
+            notes?: string;
+          };
+          calibration?: {
+            status: string;
+            reference: string;
+            notes?: string;
+          };
+          clinicalReview?: {
+            status: string;
+            reference: string;
+            notes?: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            model: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              pathwayIdentity: string;
+              version: number;
+              lifecycle: "IMPORTED" | "REJECTED" | "QUARANTINED" | "ACTIVE" | "SUPERSEDED";
+              quarantineReason: string | null;
+              source: {
+                fileName: string;
+                /** @enum {string} */
+                mediaType: "application/xml";
+                byteLength: number;
+                contentSha256: string;
+                semanticSha256: string | null;
+                topologySha256: string | null;
+                importerVersion: string;
+                /**
+                 * INSIGHT UUID v1
+                 * Format: uuid
+                 */
+                importedByUserId: string;
+                /**
+                 * INSIGHT timestamp v1
+                 * Format: date-time
+                 */
+                importedAt: string;
+              };
+              validation: {
+                softwareCompatible: boolean;
+                /** @enum {string} */
+                clinicalValidity: "NOT_ESTABLISHED";
+                checks: {
+                  code: string;
+                  passed: boolean;
+                  detail: string;
+                }[];
+                diagnostics: {
+                  code: string;
+                  severity: "error" | "warning";
+                  category:
+                    | "xml"
+                    | "structure"
+                    | "reference"
+                    | "probability"
+                    | "value"
+                    | "compatibility";
+                  message: string;
+                  networkIndex?: number;
+                  variableName?: string;
+                  definitionFor?: string;
+                  parentConfigurationIndex?: number;
+                  tableIndex?: number;
+                  path?: string;
+                  line?: number;
+                  column?: number;
+                }[];
+              };
+              evidence: {
+                status: string;
+                reference: string;
+                notes?: string;
+              };
+              calibration: {
+                status: string;
+                reference: string;
+                notes?: string;
+              };
+              clinicalReview: {
+                status: string;
+                reference: string;
+                notes?: string;
+              };
+              networks: {
+                name: string;
+                nodes: {
+                  id: string;
+                  type: "nature" | "decision" | "utility";
+                  outcomes: string[];
+                  parents: string[];
+                  properties: string[];
+                  tableValueCount: number;
+                  position: {
+                    x: number;
+                    y: number;
+                  } | null;
+                }[];
+                edges: {
+                  source: string;
+                  target: string;
+                }[];
+              }[];
             };
           };
         };

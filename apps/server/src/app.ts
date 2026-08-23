@@ -22,6 +22,7 @@ import type { Pool } from "pg";
 
 import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
 import { assessmentRoutes } from "./assessment/http.js";
+import { bnModelRoutes } from "./bn-model/http.js";
 import { comorbidityKnowledgeRoutes } from "./comorbidity-knowledge/http.js";
 import { ddiSourceRoutes } from "./ddi-source/http.js";
 import {
@@ -298,6 +299,14 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     );
     void app.register(
       ddiSourceRoutes(
+        options.authentication.pool,
+        (request) => requestSessions.get(request),
+        options.artifactRoot ?? resolve("artifacts"),
+      ),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      bnModelRoutes(
         options.authentication.pool,
         (request) => requestSessions.get(request),
         options.artifactRoot ?? resolve("artifacts"),

@@ -1370,6 +1370,135 @@ export const DdiSourceHistoryResponseSchema = Type.Object(
   { $id: "insight.ddi-source-history-response.v1", additionalProperties: false },
 );
 
+export const BnGovernanceMetadataSchema = Type.Object(
+  {
+    status: Type.String({ minLength: 1, maxLength: 200 }),
+    reference: Type.String({ minLength: 1, maxLength: 1000 }),
+    notes: Type.Optional(Type.String({ minLength: 1, maxLength: 4000 })),
+  },
+  { additionalProperties: false },
+);
+export type BnGovernanceMetadata = Static<typeof BnGovernanceMetadataSchema>;
+
+export const BnDiagnosticSchema = Type.Object(
+  {
+    code: Type.String({ minLength: 1, maxLength: 200 }),
+    severity: Type.Union([Type.Literal("error"), Type.Literal("warning")]),
+    category: Type.Union(
+      ["xml", "structure", "reference", "probability", "value", "compatibility"].map((value) =>
+        Type.Literal(value),
+      ),
+    ),
+    message: Type.String({ minLength: 1 }),
+    networkIndex: Type.Optional(Type.Integer({ minimum: 0 })),
+    variableName: Type.Optional(Type.String()),
+    definitionFor: Type.Optional(Type.String()),
+    parentConfigurationIndex: Type.Optional(Type.Integer({ minimum: 0 })),
+    tableIndex: Type.Optional(Type.Integer({ minimum: 0 })),
+    path: Type.Optional(Type.String()),
+    line: Type.Optional(Type.Integer({ minimum: 1 })),
+    column: Type.Optional(Type.Integer({ minimum: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+export const BnGraphNodeSchema = Type.Object(
+  {
+    id: Type.String({ minLength: 1 }),
+    type: Type.Union([Type.Literal("nature"), Type.Literal("decision"), Type.Literal("utility")]),
+    outcomes: Type.Array(Type.String(), { maxItems: 10_000 }),
+    parents: Type.Array(Type.String(), { maxItems: 10_000 }),
+    properties: Type.Array(Type.String(), { maxItems: 10_000 }),
+    tableValueCount: Type.Integer({ minimum: 0 }),
+    position: Type.Union([
+      Type.Object({ x: Type.Number(), y: Type.Number() }, { additionalProperties: false }),
+      Type.Null(),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
+export const BnGraphNetworkSchema = Type.Object(
+  {
+    name: Type.String(),
+    nodes: Type.Array(BnGraphNodeSchema, { maxItems: 10_000 }),
+    edges: Type.Array(
+      Type.Object(
+        {
+          source: Type.String({ minLength: 1 }),
+          target: Type.String({ minLength: 1 }),
+        },
+        { additionalProperties: false },
+      ),
+      { maxItems: 100_000 },
+    ),
+  },
+  { additionalProperties: false },
+);
+
+export const BnModelVersionSchema = Type.Object(
+  {
+    id: UuidSchema,
+    pathwayIdentity: Type.String({ pattern: "^[A-Z][A-Z0-9_]{0,127}$" }),
+    version: Type.Integer({ minimum: 1 }),
+    lifecycle: Type.Union(
+      ["IMPORTED", "REJECTED", "QUARANTINED", "ACTIVE", "SUPERSEDED"].map((value) =>
+        Type.Literal(value),
+      ),
+    ),
+    quarantineReason: Type.Union([Type.String({ minLength: 1, maxLength: 4000 }), Type.Null()]),
+    source: Type.Object(
+      {
+        fileName: Type.String({ minLength: 1, maxLength: 500 }),
+        mediaType: Type.Literal("application/xml"),
+        byteLength: Type.Integer({ minimum: 1 }),
+        contentSha256: Type.String({ pattern: "^[0-9a-f]{64}$" }),
+        semanticSha256: Type.Union([Type.String({ pattern: "^[0-9a-f]{64}$" }), Type.Null()]),
+        topologySha256: Type.Union([Type.String({ pattern: "^[0-9a-f]{64}$" }), Type.Null()]),
+        importerVersion: Type.String({ minLength: 1, maxLength: 200 }),
+        importedByUserId: UuidSchema,
+        importedAt: TimestampSchema,
+      },
+      { additionalProperties: false },
+    ),
+    validation: Type.Object(
+      {
+        softwareCompatible: Type.Boolean(),
+        clinicalValidity: Type.Literal("NOT_ESTABLISHED"),
+        checks: Type.Array(
+          Type.Object(
+            {
+              code: Type.String({ minLength: 1, maxLength: 200 }),
+              passed: Type.Boolean(),
+              detail: Type.String({ minLength: 1, maxLength: 4000 }),
+            },
+            { additionalProperties: false },
+          ),
+          { maxItems: 1000 },
+        ),
+        diagnostics: Type.Array(BnDiagnosticSchema, { maxItems: 100_000 }),
+      },
+      { additionalProperties: false },
+    ),
+    evidence: BnGovernanceMetadataSchema,
+    calibration: BnGovernanceMetadataSchema,
+    clinicalReview: BnGovernanceMetadataSchema,
+    networks: Type.Array(BnGraphNetworkSchema, { maxItems: 100 }),
+  },
+  { $id: "insight.bn-model-version.v1", additionalProperties: false },
+);
+export type BnModelVersion = Static<typeof BnModelVersionSchema>;
+
+export const BnModelResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, model: BnModelVersionSchema },
+  { $id: "insight.bn-model-response.v1", additionalProperties: false },
+);
+
+export const BnModelHistoryResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, models: Type.Array(BnModelVersionSchema) },
+  { $id: "insight.bn-model-history-response.v1", additionalProperties: false },
+);
+
 const catalogReferenceSchema = Type.Object(
   {
     catalogVersionId: Type.String({ minLength: 1, maxLength: 200 }),

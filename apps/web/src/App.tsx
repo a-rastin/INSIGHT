@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { AdminUsersPage } from "./AdminUsersPage";
+import { BnManagerPage } from "./BnManagerPage";
 import { ModelEndpointPage } from "./ModelEndpointPage";
 import { CreatePatientPage, PatientProfilePage, PatientRegistryPage } from "./PatientPages";
 import {
@@ -37,6 +38,7 @@ type Route = {
     | "patient-profile"
     | "users"
     | "model-endpoint"
+    | "bn-manager"
     | "placeholder";
 };
 
@@ -135,7 +137,7 @@ const administratorRoutes: Route[] = [
     label: "BN Manager",
     title: "BN Manager",
     description: "Validate, version, activate, and roll back Bayesian models.",
-    page: "placeholder",
+    page: "bn-manager",
   },
   {
     path: "/administration/operational-audit",
@@ -380,6 +382,7 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
         {route?.page === "model-endpoint" ? (
           <ModelEndpointPage csrfToken={session.csrfToken} />
         ) : null}
+        {route?.page === "bn-manager" ? <BnManagerPage csrfToken={session.csrfToken} /> : null}
         {route?.page === "placeholder" ? <PlaceholderPage title={route.title} /> : null}
         {!route ? <NotFoundPage /> : null}
       </main>
