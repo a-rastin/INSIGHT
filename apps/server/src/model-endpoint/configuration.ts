@@ -1,6 +1,8 @@
 import { createCipheriv, createDecipheriv, createHmac, randomBytes, randomUUID } from "node:crypto";
 
 import type { Role } from "@insight/contracts";
+import { Type, type TSchema } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 import type { Pool, PoolClient, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
@@ -211,7 +213,6 @@ export async function clearModelEndpointCredential(
 export async function checkModelEndpointCompatibility(
   pool: Pool,
   actor: ModelEndpointActor,
-  fetcher: typeof fetch = fetch,
 ): Promise<ModelEndpointConfiguration> {
   await requireAdministrator(pool, actor);
   const row = await withTransaction(pool, async (client) => {
@@ -244,7 +245,7 @@ export async function checkModelEndpointCompatibility(
     row.key_material!,
     row.id,
   );
-  const result = await runCompatibilityProbe(row.base_url, row.model, credential, fetcher);
+  const result = await runModelEndpointCompatibilityProbe(row.base_url, row.model, credential);
   return withTransaction(pool, async (client) => {
     await lockState(client);
     await client.query(
@@ -265,34 +266,38 @@ export async function checkModelEndpointCompatibility(
   });
 }
 
-async function runCompatibilityProbe(
+export interface ModelEndpointProbeResult {
+  readonly compatible: boolean;
+  readonly failureCategory: ModelEndpointFailureCategory | null;
+  readonly returnedModel: string | null;
+}
+
+export async function runModelEndpointCompatibilityProbe(
   baseUrl: string,
   model: string,
   credential: string,
-  fetcher: typeof fetch,
-): Promise<{
-  compatible: boolean;
-  failureCategory: ModelEndpointFailureCategory | null;
-  returnedModel: string | null;
-}> {
+  timeoutMs = 15_000,
+): Promise<ModelEndpointProbeResult> {
   const nonce = randomBytes(18).toString("base64url");
   const firstTool = "insight_probe_echo";
   const secondTool = "insight_probe_complete";
-  const tool = (name: string) => ({
+  const firstArguments = probeArguments(nonce, 1);
+  const secondArguments = probeArguments(nonce, 2);
+  const firstSchema = probeSchema(nonce, 1);
+  const secondSchema = probeSchema(nonce, 2);
+  const tool = (name: string, schema: TSchema) => ({
     type: "function",
     function: {
       name,
       description: "INSIGHT compatibility probe",
-      parameters: {
-        type: "object",
-        additionalProperties: false,
-        required: ["nonce"],
-        properties: { nonce: { type: "string", const: nonce } },
-      },
+      parameters: schema,
     },
   });
   const firstMessages = [
-    { role: "user", content: `Call ${firstTool} with this probe nonce: ${nonce}` },
+    {
+      role: "user",
+      content: `Call ${firstTool} with exactly ${JSON.stringify(firstArguments)}.`,
+    },
   ];
   try {
     const first = await providerRequest(
@@ -301,13 +306,13 @@ async function runCompatibilityProbe(
       {
         model,
         messages: firstMessages,
-        tools: [tool(firstTool)],
+        tools: [tool(firstTool, firstSchema)],
         tool_choice: { type: "function", function: { name: firstTool } },
       },
-      fetcher,
+      timeoutMs,
     );
     if (!first.ok) return first.failure;
-    const call = toolCall(first.body, firstTool, nonce);
+    const call = toolCall(first.body, firstTool, firstSchema);
     if (!call) return { compatible: false, failureCategory: "TOOL_CALL", returnedModel: null };
     const second = await providerRequest(
       baseUrl,
@@ -317,24 +322,25 @@ async function runCompatibilityProbe(
         messages: [
           ...firstMessages,
           first.body.choices[0].message,
-          { role: "tool", tool_call_id: call.id, content: JSON.stringify({ nonce }) },
+          {
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify({ accepted: call.arguments, next: secondArguments }),
+          },
         ],
-        tools: [tool(secondTool)],
+        tools: [tool(secondTool, secondSchema)],
         tool_choice: { type: "function", function: { name: secondTool } },
       },
-      fetcher,
+      timeoutMs,
     );
     if (!second.ok) return second.failure;
-    if (!toolCall(second.body, secondTool, nonce)) {
+    if (!toolCall(second.body, secondTool, secondSchema)) {
       return { compatible: false, failureCategory: "TOOL_ROUND_TRIP", returnedModel: null };
     }
     const returnedModel =
-      typeof second.body.model === "string" ? second.body.model.slice(0, 500) : null;
-    return {
-      compatible: true,
-      failureCategory: null,
-      returnedModel: returnedModel?.includes(credential) ? null : returnedModel,
-    };
+      safeReturnedModel(second.body.model, credential) ??
+      safeReturnedModel(first.body.model, credential);
+    return { compatible: true, failureCategory: null, returnedModel };
   } catch (error) {
     return {
       compatible: false,
@@ -348,13 +354,13 @@ async function providerRequest(
   baseUrl: string,
   credential: string,
   body: object,
-  fetcher: typeof fetch,
+  timeoutMs: number,
 ) {
-  const response = await fetcher(modelChatCompletionsUrl(baseUrl), {
+  const response = await fetch(modelChatCompletionsUrl(baseUrl), {
     method: "POST",
     headers: { authorization: `Bearer ${credential}`, "content-type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     const category: ModelEndpointFailureCategory =
@@ -362,27 +368,78 @@ async function providerRequest(
         ? "AUTHENTICATION"
         : response.status === 404
           ? "ENDPOINT"
-          : response.status === 429
-            ? "RATE_LIMITED"
-            : "PROVIDER";
+          : response.status === 408
+            ? "TIMEOUT"
+            : response.status === 429
+              ? "RATE_LIMITED"
+              : "PROVIDER";
     return {
       ok: false as const,
       failure: { compatible: false as const, failureCategory: category, returnedModel: null },
     };
   }
   const parsed = (await response.json()) as Partial<ProviderResponse>;
-  if (!parsed || !Array.isArray(parsed.choices) || !parsed.choices[0]?.message)
+  if (
+    !parsed ||
+    !Array.isArray(parsed.choices) ||
+    !parsed.choices[0]?.message ||
+    typeof parsed.choices[0].message !== "object"
+  ) {
     throw new SyntaxError();
+  }
   return { ok: true as const, body: parsed as ProviderResponse };
+}
+
+function probeArguments(nonce: string, sequence: number) {
+  return {
+    nonce,
+    roundTrip: { sequence, acknowledged: true },
+    checks: [{ name: "native-chat-completions", passed: true }],
+  };
+}
+
+function probeSchema(nonce: string, sequence: number) {
+  return Type.Object(
+    {
+      nonce: Type.Literal(nonce),
+      roundTrip: Type.Object(
+        {
+          sequence: Type.Literal(sequence),
+          acknowledged: Type.Literal(true),
+        },
+        { additionalProperties: false },
+      ),
+      checks: Type.Array(
+        Type.Object(
+          {
+            name: Type.Literal("native-chat-completions"),
+            passed: Type.Literal(true),
+          },
+          { additionalProperties: false },
+        ),
+        { minItems: 1, maxItems: 1 },
+      ),
+    },
+    { additionalProperties: false },
+  );
 }
 
 function toolCall(
   body: ProviderResponse,
   expectedName: string,
-  nonce: string,
-): { id: string } | null {
-  const call = body.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call || typeof call.id !== "string" || call.function?.name !== expectedName) return null;
+  schema: TSchema,
+): { id: string; arguments: unknown } | null {
+  const calls = body.choices[0].message.tool_calls;
+  const call = calls?.[0];
+  if (
+    calls?.length !== 1 ||
+    !call ||
+    typeof call.id !== "string" ||
+    !call.id ||
+    call.function?.name !== expectedName
+  ) {
+    return null;
+  }
   let args: unknown = call.function.arguments;
   if (typeof args === "string") {
     try {
@@ -391,11 +448,12 @@ function toolCall(
       return null;
     }
   }
-  if (!args || typeof args !== "object" || Array.isArray(args)) return null;
-  const keys = Object.keys(args as object);
-  return keys.length === 1 && keys[0] === "nonce" && (args as { nonce?: unknown }).nonce === nonce
-    ? { id: call.id }
-    : null;
+  return Value.Check(schema, args) ? { id: call.id, arguments: args } : null;
+}
+
+function safeReturnedModel(value: unknown, credential: string): string | null {
+  if (typeof value !== "string" || value.length === 0 || value.includes(credential)) return null;
+  return value.slice(0, 500);
 }
 
 function currentConfigurationSql(): string {

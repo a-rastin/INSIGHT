@@ -23,7 +23,6 @@ import {
 export interface ModelEndpointHttpOptions {
   readonly pool: Pool;
   readonly allowDevelopmentLoopbackHttp?: boolean;
-  readonly fetcher?: typeof fetch;
 }
 
 export function modelEndpointRoutes(
@@ -68,11 +67,9 @@ export function modelEndpointRoutes(
             request.body,
             options.allowDevelopmentLoopbackHttp,
           );
-          void checkModelEndpointCompatibility(
-            options.pool,
-            actor(getSession(request)!),
-            options.fetcher,
-          ).catch(() => undefined);
+          void checkModelEndpointCompatibility(options.pool, actor(getSession(request)!)).catch(
+            () => undefined,
+          );
           return reply.status(201).send({ schemaVersion: CURRENT_SCHEMA_VERSION, configuration });
         }),
     );
@@ -111,7 +108,6 @@ export function modelEndpointRoutes(
           configuration: await checkModelEndpointCompatibility(
             options.pool,
             actor(getSession(request)!),
-            options.fetcher,
           ),
         })),
     );
