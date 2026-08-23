@@ -1685,6 +1685,119 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_model_agent_execution_pins();
     `,
   },
+  {
+    version: 21,
+    name: "medication_catalog_and_mapping",
+    sql: `
+      CREATE TABLE insight.medication_catalog_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        version integer NOT NULL UNIQUE CHECK (version > 0),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+
+      CREATE TABLE insight.medication_catalog_entries (
+        catalog_version_id uuid NOT NULL REFERENCES insight.medication_catalog_versions(id),
+        canonical_id text NOT NULL CHECK (
+          canonical_id ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$'
+        ),
+        preferred_name text NOT NULL CHECK (
+          preferred_name = btrim(preferred_name) AND preferred_name <> ''
+          AND char_length(preferred_name) <= 500
+        ),
+        synonyms text[] NOT NULL CHECK (cardinality(synonyms) <= 100),
+        normalized_terms text[] NOT NULL CHECK (cardinality(normalized_terms) > 0),
+        position integer NOT NULL CHECK (position >= 0),
+        PRIMARY KEY (catalog_version_id, canonical_id),
+        UNIQUE (catalog_version_id, position)
+      );
+
+      CREATE TABLE insight.medication_catalog_state (
+        singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+        active_version_id uuid REFERENCES insight.medication_catalog_versions(id),
+        activated_by_user_id uuid REFERENCES insight.users(id),
+        activated_at timestamptz,
+        CHECK (
+          (active_version_id IS NULL AND activated_by_user_id IS NULL AND activated_at IS NULL)
+          OR (active_version_id IS NOT NULL AND activated_by_user_id IS NOT NULL AND activated_at IS NOT NULL)
+        )
+      );
+      INSERT INTO insight.medication_catalog_state (singleton) VALUES (true);
+
+      CREATE TABLE insight.medication_candidate_sets (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        execution_id text NOT NULL,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        medication_entry_ref text NOT NULL CHECK (
+          medication_entry_ref ~ '^(current|prior)-[1-9][0-9]*$'
+        ),
+        catalog_version_id uuid NOT NULL REFERENCES insight.medication_catalog_versions(id),
+        catalog_version integer NOT NULL CHECK (catalog_version > 0),
+        raw_text text NOT NULL CHECK (raw_text <> '' AND char_length(raw_text) <= 500),
+        normalized_text text NOT NULL CHECK (normalized_text <> ''),
+        candidates jsonb NOT NULL CHECK (jsonb_typeof(candidates) = 'array'),
+        model text NOT NULL CHECK (model <> '' AND char_length(model) <= 500),
+        prompt_version text NOT NULL CHECK (prompt_version <> '' AND char_length(prompt_version) <= 200),
+        schema_version text NOT NULL CHECK (schema_version <> '' AND char_length(schema_version) <= 200),
+        searched_at timestamptz NOT NULL
+      );
+      CREATE INDEX medication_candidate_sets_lookup_idx ON insight.medication_candidate_sets
+        (execution_id, research_case_id, medication_entry_ref, catalog_version_id, searched_at DESC);
+
+      CREATE TABLE insight.medication_mappings (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        candidate_set_id uuid NOT NULL REFERENCES insight.medication_candidate_sets(id),
+        execution_id text NOT NULL,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        medication_entry_ref text NOT NULL,
+        catalog_version_id uuid NOT NULL REFERENCES insight.medication_catalog_versions(id),
+        catalog_version integer NOT NULL CHECK (catalog_version > 0),
+        raw_text text NOT NULL,
+        candidates jsonb NOT NULL CHECK (jsonb_typeof(candidates) = 'array'),
+        normalization_state text NOT NULL CHECK (normalization_state IN ('NORMALIZED', 'UNKNOWN')),
+        canonical_id text,
+        preferred_name text,
+        model text NOT NULL,
+        prompt_version text NOT NULL,
+        schema_version text NOT NULL,
+        selected_at timestamptz NOT NULL,
+        UNIQUE (execution_id, research_case_id, medication_entry_ref),
+        CHECK (
+          (normalization_state = 'NORMALIZED' AND canonical_id IS NOT NULL AND preferred_name IS NOT NULL)
+          OR (normalization_state = 'UNKNOWN' AND canonical_id IS NULL AND preferred_name IS NULL)
+        )
+      );
+
+      ALTER TABLE insight.current_medication_entries
+        ADD COLUMN medication_mapping_id uuid REFERENCES insight.medication_mappings(id),
+        ADD COLUMN medication_catalog_version_id uuid REFERENCES insight.medication_catalog_versions(id);
+      ALTER TABLE insight.prior_antipsychotic_trials
+        ADD COLUMN medication_mapping_id uuid REFERENCES insight.medication_mappings(id),
+        ADD COLUMN medication_catalog_version_id uuid REFERENCES insight.medication_catalog_versions(id);
+
+      CREATE FUNCTION insight.reject_medication_catalog_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'INSERT' AND current_setting('insight.medication_catalog_write', true) = 'allowed'
+        THEN RETURN NEW;
+        END IF;
+        RAISE EXCEPTION 'medication catalog versions are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER medication_catalog_versions_immutable
+      BEFORE UPDATE OR DELETE ON insight.medication_catalog_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_medication_catalog_mutation();
+      CREATE TRIGGER medication_catalog_entries_immutable
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.medication_catalog_entries
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_medication_catalog_mutation();
+      CREATE TRIGGER medication_candidate_sets_immutable
+      BEFORE UPDATE OR DELETE ON insight.medication_candidate_sets
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+      CREATE TRIGGER medication_mappings_immutable
+      BEFORE UPDATE OR DELETE ON insight.medication_mappings
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

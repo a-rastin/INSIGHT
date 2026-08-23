@@ -388,6 +388,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/medication-catalog": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getMedicationCatalogHistory"];
+    put?: never;
+    post: operations["saveMedicationCatalog"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/patients": {
     parameters: {
       query?: never;
@@ -2817,6 +2833,181 @@ export interface operations {
               createdAt: string;
               active: boolean;
             } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getMedicationCatalogHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            versions: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              entries: {
+                canonicalId: string;
+                preferredName: string;
+                synonyms: string[];
+              }[];
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              active: boolean;
+            }[];
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  saveMedicationCatalog: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          /** insight.medication-catalog-input.v1 */
+          catalog: {
+            entries: {
+              canonicalId: string;
+              preferredName: string;
+              synonyms: string[];
+            }[];
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            catalog: {
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              id: string;
+              version: number;
+              entries: {
+                canonicalId: string;
+                preferredName: string;
+                synonyms: string[];
+              }[];
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              createdByUserId: string;
+              /**
+               * INSIGHT timestamp v1
+               * Format: date-time
+               */
+              createdAt: string;
+              active: boolean;
+            };
           };
         };
       };

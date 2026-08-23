@@ -1117,6 +1117,53 @@ export const AdverseEffectCatalogVersionSchema = Type.Object(
 );
 export type AdverseEffectCatalogVersion = Static<typeof AdverseEffectCatalogVersionSchema>;
 
+const governedIdSchema = Type.String({
+  pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
+  maxLength: 200,
+});
+
+export const MedicationCatalogEntryInputSchema = Type.Object(
+  {
+    canonicalId: governedIdSchema,
+    preferredName: Type.String({ minLength: 1, maxLength: 500 }),
+    synonyms: Type.Array(Type.String({ minLength: 1, maxLength: 500 }), {
+      maxItems: 100,
+      uniqueItems: true,
+    }),
+  },
+  { $id: "insight.medication-catalog-entry-input.v1", additionalProperties: false },
+);
+export type MedicationCatalogEntryInput = Static<typeof MedicationCatalogEntryInputSchema>;
+
+export const MedicationCatalogInputSchema = Type.Object(
+  { entries: Type.Array(MedicationCatalogEntryInputSchema, { minItems: 1, maxItems: 10_000 }) },
+  { $id: "insight.medication-catalog-input.v1", additionalProperties: false },
+);
+export type MedicationCatalogInput = Static<typeof MedicationCatalogInputSchema>;
+
+export const MedicationCatalogVersionSchema = Type.Object(
+  {
+    id: UuidSchema,
+    version: Type.Integer({ minimum: 1 }),
+    entries: Type.Array(MedicationCatalogEntryInputSchema, { minItems: 1, maxItems: 10_000 }),
+    createdByUserId: UuidSchema,
+    createdAt: TimestampSchema,
+    active: Type.Boolean(),
+  },
+  { $id: "insight.medication-catalog-version.v1", additionalProperties: false },
+);
+export type MedicationCatalogVersion = Static<typeof MedicationCatalogVersionSchema>;
+
+export const MedicationCatalogResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, catalog: MedicationCatalogVersionSchema },
+  { $id: "insight.medication-catalog-response.v1", additionalProperties: false },
+);
+
+export const MedicationCatalogHistoryResponseSchema = Type.Object(
+  { schemaVersion: SchemaVersionSchema, versions: Type.Array(MedicationCatalogVersionSchema) },
+  { $id: "insight.medication-catalog-history-response.v1", additionalProperties: false },
+);
+
 export const AdverseEffectCatalogResponseSchema = Type.Object(
   {
     schemaVersion: SchemaVersionSchema,
@@ -1132,11 +1179,6 @@ export const AdverseEffectCatalogHistoryResponseSchema = Type.Object(
   },
   { $id: "insight.adverse-effect-catalog-history-response.v1", additionalProperties: false },
 );
-
-const governedIdSchema = Type.String({
-  pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$",
-  maxLength: 200,
-});
 
 export const ComorbidityTermInputSchema = Type.Object(
   {

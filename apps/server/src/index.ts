@@ -18,6 +18,7 @@ export * from "./identity/index.js";
 export * from "./jobs/index.js";
 export * from "./medical-history/index.js";
 export * from "./mcp/index.js";
+export * from "./medication/index.js";
 export * from "./model-endpoint/index.js";
 export * from "./patient/index.js";
 
