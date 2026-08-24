@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "insight.ddi-import-report.v1",
+  "contract": "INS-054",
+  "batch": 2,
+  "batchSha256": "2dc6186425b20fe18dcea2e51008476639267ea892a2b2eed2f9d9c738e2312c",
+  "inventorySnapshotSha256": "7cdbbaae63b45f9e8e0a4da067537eebfed332ed7e6659874902fe0e2d92e942",
+  "evaluatedPositions": [
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64
+  ],
+  "approvedEntries": 0,
+  "importedEntries": 0,
+  "parserVersion": null,
+  "transformVersion": null,
+  "derivedRecords": [],
+  "evidenceRecords": [],
+  "conflictRecords": [],
+  "lifecycleRecords": [],
+  "omissions": [
+    {
+      "position": 33,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Glimepiride.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 34,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Glipizide.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 35,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Insulin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 36,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Liraglutide.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 37,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Metformin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 38,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Pioglitazone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 39,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Semaglutide.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 40,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Sitagliptin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 41,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Aripiprazole.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 42,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Asenapine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 43,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Brexpiprazole.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 44,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Cariprazine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 45,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Chlorpromazine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 46,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Clozapine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 47,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Fluphenazine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 48,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Haloperidol.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 49,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Iloperidone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 50,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Loxapine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 51,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Lurasidone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 52,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Molindone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 53,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Olanzapine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 54,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Paliperidone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 55,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Perphenazine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 56,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Pimozide.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 57,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Quetiapine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 58,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Risperidone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 59,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Thioridazine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 60,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Thiothixene.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 61,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Trifluoperazine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 62,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Valproic acid.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 63,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Ziprasidone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 64,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Alprazolam.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    }
+  ],
+  "result": "blocked",
+  "reportSha256": "979a88884ac1ab03e604a0f4702503a4c8b3c0d70bed5bee2fc72926ea167c73"
+}

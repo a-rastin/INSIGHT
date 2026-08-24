@@ -34,4 +34,5 @@ npm run ddi:inventory
 
 All archive entries remain blocked until ADR-005 permission, source-manifest, medication-mapping,
 legal-review, and clinical-review evidence is recorded. Inventory generation never imports or
-activates DDI records and never uses live or LLM fallback.
+activates DDI records and never uses live or LLM fallback. Batch 2 positions 33-64 have a frozen
+blocked-import report and review-gap record under `docs/ddi-import`; no reviewer identity is inferred.

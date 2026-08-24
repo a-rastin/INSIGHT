@@ -1,0 +1,43 @@
+{
+  "batchSha256": "2dc6186425b20fe18dcea2e51008476639267ea892a2b2eed2f9d9c738e2312c",
+  "firstEntry": {
+    "position": 33,
+    "batch": 2,
+    "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Glimepiride.txt",
+    "medicationName": "Glimepiride",
+    "mediaType": "text/plain; charset=utf-8",
+    "byteLength": 59527,
+    "sha256": "bce3c1e74ebff7baadb0312e178280af48c6b606683c49355cf18d88c0382ab2",
+    "manifestStatus": "missing",
+    "permissionStatus": "missing",
+    "catalogMappingStatus": "missing",
+    "importStatus": "blocked",
+    "blockedReasons": [
+      "missing_source_manifest",
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+      "missing_canonical_medication_id"
+    ]
+  },
+  "lastEntry": {
+    "position": 64,
+    "batch": 2,
+    "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Alprazolam.txt",
+    "medicationName": "Alprazolam",
+    "mediaType": "text/plain; charset=utf-8",
+    "byteLength": 78822,
+    "sha256": "fd3a62c9fb19f78be60abf52304ebf9c0e4e58f8893da0622aec9b4aeeb7224c",
+    "manifestStatus": "missing",
+    "permissionStatus": "missing",
+    "catalogMappingStatus": "missing",
+    "importStatus": "blocked",
+    "blockedReasons": [
+      "missing_source_manifest",
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+      "missing_canonical_medication_id"
+    ]
+  }
+}
