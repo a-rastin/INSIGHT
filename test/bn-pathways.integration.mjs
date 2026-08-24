@@ -33,6 +33,7 @@ const identifierConfiguration = {
 const candidates = [
   ["PHARMACOTHERAPY", "Pharmacotherapy/BN-Pharmacotherapy.xml"],
   ["TREATMENT_SETTING", "Treatment-Setting/BN-Treatment-Setting.xml"],
+  ["CONTINUING_MEDICATION", "5 - Continuing Medications/gemini-code-1783421787562.xml"],
   [
     "CLOZAPINE_TREATMENT_RESISTANCE",
     "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
@@ -44,7 +45,7 @@ const candidates = [
   ["CLOZAPINE_SUICIDE_RISK", "Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml"],
 ];
 
-test("synthetic Treatment Setting and clozapine pathway replay is pinned and deterministic", async () => {
+test("synthetic reviewed pathway replay is pinned and deterministic", async () => {
   assert.ok(adminConnectionString, "TEST_DATABASE_URL is required.");
   const artifactRoot = await mkdtemp(join(tmpdir(), "insight-bn-pathways-"));
   try {
@@ -115,6 +116,13 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
               comorbidityTermIds: [],
               medicationHistory: [
                 {
+                  canonicalMedicationId: "RX-ARIPIPRAZOLE",
+                  response: "IMPROVED",
+                  adequateDose: true,
+                  adequateDuration: true,
+                  adequateAdherence: true,
+                },
+                {
                   canonicalMedicationId: "RX-RISPERIDONE",
                   response: "NO_RESPONSE",
                   adequateDose: true,
@@ -129,7 +137,13 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
                   adequateAdherence: true,
                 },
               ],
-              currentRegimen: [],
+              currentRegimen: [{ canonicalMedicationId: "RX-ARIPIPRAZOLE" }],
+              medicationPlanRevision: {
+                sourcePlanRef: "synthetic-final-plan-v1",
+                sourcePlanRevision: 1,
+                targetPlanRevision: 2,
+                relationship: "REVISES",
+              },
               aggressiveBehavior: {
                 riskAfterOtherTreatments: "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS",
               },
@@ -142,6 +156,7 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
             "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
             "CLOZAPINE_SUICIDE_RISK",
             "CLOZAPINE_TREATMENT_RESISTANCE",
+            "CONTINUING_MEDICATION",
             "PHARMACOTHERAPY",
             "TREATMENT_SETTING",
           ],
@@ -161,6 +176,10 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
         const treatment = contracts.find(
           ({ modelHash }) =>
             modelHash === "2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91",
+        );
+        const continuing = contracts.find(
+          ({ modelHash }) =>
+            modelHash === "9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355",
         );
         const clozapine = contracts.find(
           ({ modelHash }) =>
@@ -186,6 +205,15 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
           treatment.evidence.clinicalReviewReference,
           "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
         );
+        assert.deepEqual(continuing.requestedOutputNodeRefs, [
+          "maintenance_antipsychotic_eligibility",
+          "adherence_strategy_priority",
+          "medication_adjustment_priority",
+          "management_recommendation",
+        ]);
+        assert.equal(continuing.evidence.calibrationStatus, "UNCALIBRATED");
+        assert.equal(continuing.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
+        assert.match(continuing.evidence.limitations.join(" "), /plan revision/i);
         assert.deepEqual(clozapineTrs.requestedOutputNodeRefs, [
           "TreatmentResistanceStatus",
           "ClozapineEligibility",

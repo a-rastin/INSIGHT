@@ -364,10 +364,11 @@ test("repository registry imports every candidate with pinned artifacts and expe
   );
 });
 
-test("reviewed Treatment Setting and clozapine full CPT inference replay is deterministic", async () => {
+test("reviewed pathway full CPT inference replay is deterministic", async () => {
   const root = new URL("../../../BNs/", import.meta.url);
   const fixtures = [
     ["Treatment-Setting/BN-Treatment-Setting.xml", "management_recommendation"],
+    ["5 - Continuing Medications/gemini-code-1783421787562.xml", "management_recommendation"],
     [
       "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
       "ManagementRecommendation",

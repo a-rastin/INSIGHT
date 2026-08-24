@@ -40,6 +40,15 @@ const treatmentSetting = {
   sourceReference: "BN-Treatment-Setting.xml",
 };
 
+const continuingMedication = {
+  modelId: "model-continuing-medication-v1",
+  pathwayIdentity: "CONTINUING_MEDICATION",
+  version: 1,
+  contentSha256: "9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355",
+  semanticSha256: "9".repeat(64),
+  sourceReference: "gemini-code-1783421787562.xml",
+};
+
 const clozapineTrs = {
   modelId: "model-clozapine-trs-v1",
   pathwayIdentity: "CLOZAPINE_TREATMENT_RESISTANCE",
@@ -188,6 +197,102 @@ test("Treatment Setting requires reviewed completed confirmed diagnosis trigger"
       (error) => error instanceof BnRoutingError && error.code === "MISSING_REQUIRED_ROUTE",
     );
   }
+});
+
+test("continuing-medication route golden vectors require pinned medication and plan revisions", () => {
+  const planRevision = {
+    sourcePlanRef: "plan-synthetic-v2",
+    sourcePlanRevision: 2,
+    targetPlanRevision: 3,
+    relationship: "REVISES",
+  };
+  const active = [pharmacotherapy, treatmentSetting, continuingMedication, clozapineSuicideRisk];
+  const route = (overrides) =>
+    evaluateBnRouting({ ...facts, ...overrides }, INITIAL_BN_ROUTING_ARTIFACT, active);
+  const golden = [
+    [
+      {
+        medicationHistory: [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", response: "IMPROVED" }],
+        medicationPlanRevision: planRevision,
+      },
+      true,
+    ],
+    [{ medicationPlanRevision: planRevision }, false],
+    [
+      {
+        medicationHistory: [{ canonicalMedicationId: "RX-RISPERIDONE", response: "IMPROVED" }],
+        medicationPlanRevision: planRevision,
+      },
+      false,
+    ],
+    [
+      {
+        medicationHistory: [
+          { canonicalMedicationId: "RX-ARIPIPRAZOLE", response: "PARTIAL_RESPONSE" },
+        ],
+        medicationPlanRevision: planRevision,
+      },
+      false,
+    ],
+    [{ medicationPlanRevision: undefined }, false],
+  ];
+  for (const [overrides, expected] of golden) {
+    assert.equal(
+      route(overrides).selectedModels.some(
+        ({ pathwayIdentity }) => pathwayIdentity === "CONTINUING_MEDICATION",
+      ),
+      expected,
+    );
+  }
+  assert.throws(
+    () =>
+      route({
+        medicationHistory: [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", response: "IMPROVED" }],
+        medicationPlanRevision: { ...planRevision, relationship: "LLM_INFERRED_REVISION" },
+      }),
+    (error) => error instanceof BnRoutingError && error.code === "INVALID_ROUTING_FACTS",
+  );
+});
+
+test("continuing-medication route fails closed on ambiguity and pinned hash mismatch", () => {
+  const continuingFacts = {
+    ...facts,
+    medicationHistory: [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", response: "IMPROVED" }],
+    medicationPlanRevision: {
+      sourcePlanRef: "plan-synthetic-v2",
+      sourcePlanRevision: 2,
+      targetPlanRevision: 3,
+      relationship: "REVISES",
+    },
+  };
+  const duplicateRule = INITIAL_BN_ROUTING_ARTIFACT.rules.find(
+    ({ pathwayIdentity }) => pathwayIdentity === "CONTINUING_MEDICATION",
+  );
+  assert.throws(
+    () =>
+      evaluateBnRouting(
+        continuingFacts,
+        {
+          ...INITIAL_BN_ROUTING_ARTIFACT,
+          rules: [
+            ...INITIAL_BN_ROUTING_ARTIFACT.rules,
+            { ...duplicateRule, ref: "BN-ROUTE-CONTINUING-MEDICATION-OTHER-001" },
+          ],
+        },
+        [pharmacotherapy, treatmentSetting, continuingMedication, clozapineSuicideRisk],
+      ),
+    (error) => error instanceof BnRoutingError && error.code === "AMBIGUOUS_ROUTE",
+  );
+  assert.throws(
+    () =>
+      evaluateBnRouting(continuingFacts, INITIAL_BN_ROUTING_ARTIFACT, [
+        pharmacotherapy,
+        treatmentSetting,
+        { ...continuingMedication, contentSha256: "8".repeat(64) },
+        clozapineSuicideRisk,
+      ]),
+    (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",
+  );
 });
 
 test("clozapine suicide-risk route uses terminal source state without a risk-band gate", () => {

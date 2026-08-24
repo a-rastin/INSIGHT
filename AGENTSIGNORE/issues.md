@@ -689,8 +689,8 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 
 - Sensitivity/model: **Critical — Frontier plus clinical/legal review**
 - Depends on: INS-054B
-- Outcome: approved sorted manifest entries 65–96 receive governed extraction, normalization, review, and lifecycle treatment.
-- Required work: follow the frozen INS-054 batch contract; preserve source/version/evidence/conflicts and add batch-specific regression fixtures without changing prior batches.
+- Outcome: sorted manifest entries 65–96 receive governed extraction, normalization, review, and lifecycle treatment.
+- Required work: preserve source/version/evidence/conflicts and add batch-specific regression fixtures without changing prior batches.
 - Acceptance: no skipped or duplicate manifest entry; all derived records are source-traceable; deterministic rebuild and focused DDI tests pass.
 - Verify: batch report, reviewer record, regression suite.
 
@@ -745,7 +745,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055B
 - Outcome: reviewed route and execution for `BNs/9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml` if structurally eligible.
-- Required work: define governed structured trigger data and outputs; no free-text-only trigger; add deterministic fixtures or preserve quarantine with blocker.
+- Required work: define structured trigger data and outputs; no free-text-only trigger; add deterministic fixtures or preserve quarantine with blocker.
 - Acceptance: routing cannot be selected by LLM or unnormalized notes; active version/hash and evidence limits are pinned; replay passes.
 - Verify: route vectors, artifact report, synthetic pathway E2E.
 
@@ -754,11 +754,11 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055C
 - Outcome: reviewed route and execution for `BNs/5 - Continuing Medications/gemini-code-1783421787562.xml` if structurally eligible.
-- Required work: define governed inputs/outputs and relationship to plan revisions; add deterministic fixtures or exact quarantine state.
+- Required work: define inputs/outputs and relationship to plan revisions; add deterministic fixtures or exact quarantine state.
 - Acceptance: prior/current medication facts and plan state are version-pinned; routing is deterministic; replay/provenance pass.
 - Verify: route vectors and synthetic pathway E2E.
 
-### [ ] INS-055E — Add the continuing-same-medication pathway
+### [ ] INS-055E — Add the continuing-same-medication pathway (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055D
@@ -772,7 +772,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055E
 - Outcome: reviewed route and execution for `BNs/10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml` if structurally eligible.
-- Required work: route only from governed adherence/history/regimen facts; add deterministic fixtures or exact quarantine reason.
+- Required work: route only from adherence/history/regimen facts; add deterministic fixtures or exact quarantine reason.
 - Acceptance: no LLM-selected route; active model/evidence metadata pinned; replay and synthetic case pass.
 - Verify: clinical route vectors and pathway E2E.
 

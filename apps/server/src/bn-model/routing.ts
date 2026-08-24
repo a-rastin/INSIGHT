@@ -5,7 +5,7 @@ import type { Pool, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 
-export const BN_ROUTING_ARTIFACT_VERSION = "4.0.0";
+export const BN_ROUTING_ARTIFACT_VERSION = "5.0.0";
 
 export interface BnRoutingFacts {
   readonly demographics: { readonly age: number; readonly sex: "MALE" | "FEMALE" };
@@ -24,6 +24,12 @@ export interface BnRoutingFacts {
     readonly adequateAdherence?: boolean;
   }[];
   readonly currentRegimen: readonly { readonly canonicalMedicationId: string }[];
+  readonly medicationPlanRevision?: {
+    readonly sourcePlanRef: string;
+    readonly sourcePlanRevision: number;
+    readonly targetPlanRevision: number;
+    readonly relationship: "REVISES";
+  };
   readonly aggressiveBehavior?: {
     readonly riskAfterOtherTreatments:
       | "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS"
@@ -63,7 +69,8 @@ export type BnRoutingCondition =
         BnRoutingFacts["aggressiveBehavior"]
       >["riskAfterOtherTreatments"][];
     }
-  | { readonly fact: "CURRENT_MEDICATION_ANY"; readonly values: readonly string[] };
+  | { readonly fact: "CURRENT_MEDICATION_ANY"; readonly values: readonly string[] }
+  | { readonly fact: "CONTINUING_MEDICATION_REVISION" };
 
 export interface BnRoutingRule {
   readonly ref: string;
@@ -113,12 +120,13 @@ export interface BnRoutingDecision {
 
 export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
   version: BN_ROUTING_ARTIFACT_VERSION,
-  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V4",
+  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V5",
   requiredRouteGroups: ["PRIMARY_TREATMENT", "TREATMENT_SETTING"],
   optionalRouteGroups: [
     "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
     "CLOZAPINE_TREATMENT_RESISTANCE",
     "CLOZAPINE_SUICIDE_RISK",
+    "CONTINUING_MEDICATION",
   ],
   rules: [
     {
@@ -148,6 +156,22 @@ export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
           assessmentType: "DSM5TR",
           values: ["SCHIZOPHRENIA_CONFIRMED"],
         },
+      ],
+    },
+    {
+      ref: "BN-ROUTE-CONTINUING-MEDICATION-001",
+      routeGroup: "CONTINUING_MEDICATION",
+      pathwayIdentity: "CONTINUING_MEDICATION",
+      expectedContentSha256: "9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355",
+      all: [
+        { fact: "PRESENTATION_STATUS_IN", values: ["KNOWN_SCHIZOPHRENIA"] },
+        { fact: "ASSESSMENT_STATE_IN", assessmentType: "DSM5TR", values: ["COMPLETED"] },
+        {
+          fact: "ASSESSMENT_RESULT_IN",
+          assessmentType: "DSM5TR",
+          values: ["SCHIZOPHRENIA_CONFIRMED"],
+        },
+        { fact: "CONTINUING_MEDICATION_REVISION" },
       ],
     },
     {
@@ -233,6 +257,28 @@ export const BN_PATHWAY_EXECUTION_PROFILES: Readonly<Record<string, BnPathwayExe
           "Base CPTs are placeholder distributions and are not clinically calibrated.",
           "Patient-specific LLM-generated CPTs have mathematical validation only.",
           "Output is research decision support and requires psychiatrist review.",
+        ]),
+      }),
+    }),
+    CONTINUING_MEDICATION: Object.freeze({
+      pathwayIdentity: "CONTINUING_MEDICATION",
+      artifactPath: "5 - Continuing Medications/gemini-code-1783421787562.xml",
+      contentSha256: "9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355",
+      requestedOutputNodeRefs: Object.freeze([
+        "maintenance_antipsychotic_eligibility",
+        "adherence_strategy_priority",
+        "medication_adjustment_priority",
+        "management_recommendation",
+      ]),
+      evidence: Object.freeze({
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: Object.freeze([
+          "Medication continuation routing requires an explicit improved response and same normalized prior/current medication; it does not establish clinical appropriateness.",
+          "CPT probabilities are qualitative placeholders and are not clinically calibrated.",
+          "Plan revision, adverse-effect, interaction, monitoring, patient-preference, and psychiatrist review remain required.",
         ]),
       }),
     }),
@@ -555,6 +601,8 @@ function validCondition(condition: BnRoutingCondition): boolean {
           ].includes(value),
         )
       );
+    case "CONTINUING_MEDICATION_REVISION":
+      return Object.keys(condition).length === 1;
     default:
       return false;
   }
@@ -595,6 +643,23 @@ function validateFacts(facts: BnRoutingFacts): void {
     ) ||
     !Array.isArray(facts.currentRegimen) ||
     facts.currentRegimen.some(({ canonicalMedicationId }) => !token(canonicalMedicationId)) ||
+    (facts.medicationPlanRevision !== undefined &&
+      (facts.medicationPlanRevision === null ||
+        typeof facts.medicationPlanRevision !== "object" ||
+        Array.isArray(facts.medicationPlanRevision) ||
+        Object.keys(facts.medicationPlanRevision).some(
+          (key) =>
+            !["sourcePlanRef", "sourcePlanRevision", "targetPlanRevision", "relationship"].includes(
+              key,
+            ),
+        ) ||
+        !token(facts.medicationPlanRevision.sourcePlanRef) ||
+        !Number.isSafeInteger(facts.medicationPlanRevision.sourcePlanRevision) ||
+        facts.medicationPlanRevision.sourcePlanRevision < 1 ||
+        !Number.isSafeInteger(facts.medicationPlanRevision.targetPlanRevision) ||
+        facts.medicationPlanRevision.targetPlanRevision <=
+          facts.medicationPlanRevision.sourcePlanRevision ||
+        facts.medicationPlanRevision.relationship !== "REVISES")) ||
     (facts.aggressiveBehavior !== undefined &&
       (facts.aggressiveBehavior === null ||
         typeof facts.aggressiveBehavior !== "object" ||
@@ -674,5 +739,18 @@ function matches(facts: BnRoutingFacts, condition: BnRoutingCondition): boolean 
       return facts.currentRegimen.some(({ canonicalMedicationId }) =>
         condition.values.includes(canonicalMedicationId),
       );
+    case "CONTINUING_MEDICATION_REVISION": {
+      if (!facts.medicationPlanRevision) return false;
+      const improved = new Set(
+        facts.medicationHistory
+          .filter(({ response }) => response === "IMPROVED")
+          .flatMap(({ canonicalMedicationId }) =>
+            canonicalMedicationId === undefined ? [] : [canonicalMedicationId],
+          ),
+      );
+      return facts.currentRegimen.some(({ canonicalMedicationId }) =>
+        improved.has(canonicalMedicationId),
+      );
+    }
   }
 }
