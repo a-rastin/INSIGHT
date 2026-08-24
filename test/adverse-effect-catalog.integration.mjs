@@ -96,7 +96,7 @@ test("adverse-effect versions activate immediately while case selections remain 
           `/patients/${patientId}/research-case/medical-history`,
           { schemaVersion: "1", expectedRevision: 1, history },
         );
-        assert.equal(saved.statusCode, 200);
+        assert.equal(saved.statusCode, 200, saved.body);
         assert.equal(saved.json().medicalHistory.priorTrials[0].otherAdverseEffectDetail, "");
         assert.deepEqual(
           saved.json().medicalHistory.priorTrials[0].adverseEffects.map(({ termId }) => termId),

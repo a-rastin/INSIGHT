@@ -216,7 +216,10 @@ const transitionBodySchema = {
   required: ["schemaVersion", "command", "expectedRevision"],
   properties: {
     schemaVersion: { type: "string", const: CURRENT_SCHEMA_VERSION },
-    command: { type: "string", enum: WORKFLOW_COMMANDS.filter((command) => command !== "FINALIZE") },
+    command: {
+      type: "string",
+      enum: WORKFLOW_COMMANDS.filter((command) => command !== "FINALIZE"),
+    },
     expectedRevision: { type: "integer", minimum: 1 },
   },
 } as const;

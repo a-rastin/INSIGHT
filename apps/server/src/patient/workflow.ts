@@ -137,30 +137,31 @@ export const WORKFLOW_TRANSITIONS: readonly TransitionDefinition[] = Object.free
   },
 ]);
 
-export const MODEL_TOOLS_BY_STATE: Readonly<Record<WorkflowState, readonly string[]>> = Object.freeze({
-  DATA_COLLECTION: [],
-  NORMALIZING_MEDICATIONS: [
-    "research_case.get_context",
-    "medication.search_candidates",
-    "medication.commit_mapping",
-  ],
-  IMPUTING_BYPASSED_ASSESSMENTS: ["research_case.get_context", "assessment.submit_imputation"],
-  ROUTING_BN: [],
-  GENERATING_CPTS: [
-    "research_case.get_context",
-    "bn.get_routed_contracts",
-    "bn.submit_cpt_snapshot",
-  ],
-  RUNNING_BN: ["bn.run_inference"],
-  CHECKING_PRIMARY_DDI: ["ddi.evaluate_regimen"],
-  GENERATING_PRIMARY_PLAN: ["research_case.get_context", "treatment_plan.submit_primary"],
-  CLINICIAN_REVIEW: [],
-  RECHECKING_FINAL_DDI: ["ddi.evaluate_regimen"],
-  READY_TO_FINALIZE: [],
-  FINALIZED: [],
-  REVISION_DRAFT: [],
-  DELETED: [],
-});
+export const MODEL_TOOLS_BY_STATE: Readonly<Record<WorkflowState, readonly string[]>> =
+  Object.freeze({
+    DATA_COLLECTION: [],
+    NORMALIZING_MEDICATIONS: [
+      "research_case.get_context",
+      "medication.search_candidates",
+      "medication.commit_mapping",
+    ],
+    IMPUTING_BYPASSED_ASSESSMENTS: ["research_case.get_context", "assessment.submit_imputation"],
+    ROUTING_BN: [],
+    GENERATING_CPTS: [
+      "research_case.get_context",
+      "bn.get_routed_contracts",
+      "bn.submit_cpt_snapshot",
+    ],
+    RUNNING_BN: ["bn.run_inference"],
+    CHECKING_PRIMARY_DDI: ["ddi.evaluate_regimen"],
+    GENERATING_PRIMARY_PLAN: ["research_case.get_context", "treatment_plan.submit_primary"],
+    CLINICIAN_REVIEW: [],
+    RECHECKING_FINAL_DDI: ["ddi.evaluate_regimen"],
+    READY_TO_FINALIZE: [],
+    FINALIZED: [],
+    REVISION_DRAFT: [],
+    DELETED: [],
+  });
 
 const STEP: Readonly<Record<WorkflowState, { readonly ordinal: number; readonly label: string }>> =
   Object.freeze({
@@ -429,6 +430,9 @@ export async function recordAssessmentState(
     if (!row) throw new ResearchCaseNotFoundError();
     assertRevision(row, expectedRevision);
     if (row.workflow_state !== "DATA_COLLECTION") throw new WorkflowTransitionError();
+    await client.query(`SELECT set_config($1,'allowed',true)`, [
+      assessmentType === "PANSS" ? "insight.panss_write" : "insight.cssrs_write",
+    ]);
     await client.query(
       `UPDATE insight.research_case_assessments
        SET status = $3, updated_by_user_id = $4, updated_at = $5

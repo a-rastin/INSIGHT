@@ -318,6 +318,8 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
     await apiClient.POST("/api/v1/logout", {
       headers: { "x-csrf-token": session.csrfToken },
     });
+    window.history.replaceState(null, "", "/");
+    window.dispatchEvent(new PopStateEvent("popstate"));
     onSignedOut();
   }
 

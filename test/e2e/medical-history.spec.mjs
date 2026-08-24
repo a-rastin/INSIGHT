@@ -66,7 +66,7 @@ test("known-treated medical history supports keyboard trial editing and sourced 
 
   await page.reload();
   await expect(page.getByLabel("Known schizophrenia")).toBeChecked();
-  await expect(page.getByLabel("Yes")).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Yes", exact: true })).toBeChecked();
   await expect(page.getByLabel("Medication (required)")).toHaveValue("Clozapine");
 });
 

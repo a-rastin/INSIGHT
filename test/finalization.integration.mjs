@@ -56,14 +56,7 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
 
       const sameKeyCase = await seedReadyCase(pool, actor, 981);
       await assert.rejects(
-        transitionResearchCase(
-          pool,
-          actor,
-          sameKeyCase.patientId,
-          "FINALIZE",
-          11,
-          randomUUID(),
-        ),
+        transitionResearchCase(pool, actor, sameKeyCase.patientId, "FINALIZE", 11, randomUUID()),
         WorkflowTransitionError,
       );
       await assert.rejects(

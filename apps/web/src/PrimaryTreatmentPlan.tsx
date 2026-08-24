@@ -396,12 +396,7 @@ export function PrimaryTreatmentPlanView({
       ) : null}
       {draft.readiness ? <FinalReadiness readiness={draft.readiness} /> : null}
       {onSave && draft.catalog ? (
-        <RegimenEditor
-          key={draft.draftRevision}
-          draft={draft}
-          saving={saving}
-          onSave={onSave}
-        />
+        <RegimenEditor key={draft.draftRevision} draft={draft} saving={saving} onSave={onSave} />
       ) : null}
       <section className="card" aria-labelledby="primary-plan-regimen-title">
         <p className="kicker">Generated baseline</p>

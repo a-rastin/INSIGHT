@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "scope": "TEST_ONLY",
+  "syntheticDataOnly": true,
+  "productionActivationPermitted": false,
+  "externalInputsPresent": false,
+  "instruments": {
+    "DSM5TR": "DSM-5-TR-2022",
+    "PANSS": "KAY-OPLER-FISZBEIN-1987",
+    "CSSRS_RECENT": "LOCAL-PDF-SHA256-8593cdd34b0a69027354db43f8551e622879e0fd04bcf0a875a4a15b676a84a2"
+  },
+  "medicationCatalog": {
+    "approvalRef": "TEST-CATALOG-001",
+    "entries": [
+      { "canonicalId": "rx-metformin", "preferredName": "Metformin", "synonyms": [] },
+      { "canonicalId": "rx-risperidone", "preferredName": "Risperidone", "synonyms": [] }
+    ]
+  },
+  "ddi": {
+    "approvalRef": "TEST-DDI-001",
+    "sourceRef": "test-ddi-fixture-v1",
+    "findingRef": "ddi-record-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-L10"
+  },
+  "bn": {
+    "approvalRef": "TEST-BN-001",
+    "pathwayIdentity": "PHARMACOTHERAPY",
+    "modelRef": "test-pharmacotherapy-v1",
+    "cpt": [{ "nodeRef": "Medication", "probabilities": [0.7, 0.3] }],
+    "inference": {
+      "nodeRef": "Medication",
+      "outcomes": [
+        { "outcome": "Risperidone", "probability": 0.7 },
+        { "outcome": "Alternative", "probability": 0.3 }
+      ]
+    }
+  }
+}

@@ -40,17 +40,20 @@ const searchOutput = {
 const hash = (value) => createHash("sha256").update(stableSerialize(value)).digest("hex");
 
 test("registers exactly nine tools across all six namespaces and filters them by state", () => {
-  assert.deepEqual(new Set(MODEL_TOOL_NAMES), new Set([
-    "research_case.get_context",
-    "assessment.submit_imputation",
-    "medication.search_candidates",
-    "medication.commit_mapping",
-    "ddi.evaluate_regimen",
-    "bn.get_routed_contracts",
-    "bn.submit_cpt_snapshot",
-    "bn.run_inference",
-    "treatment_plan.submit_primary",
-  ]));
+  assert.deepEqual(
+    new Set(MODEL_TOOL_NAMES),
+    new Set([
+      "research_case.get_context",
+      "assessment.submit_imputation",
+      "medication.search_candidates",
+      "medication.commit_mapping",
+      "ddi.evaluate_regimen",
+      "bn.get_routed_contracts",
+      "bn.submit_cpt_snapshot",
+      "bn.run_inference",
+      "treatment_plan.submit_primary",
+    ]),
+  );
   assert.deepEqual(
     new InternalMcpGateway({}).listTools(context()).map(({ name }) => name),
     ["research_case.get_context", "medication.search_candidates", "medication.commit_mapping"],
@@ -141,15 +144,17 @@ test("nested schema-invalid inputs and outputs never cross their boundary", asyn
     name: "treatment_plan.submit_primary",
     input: {
       schemaVersion: "1",
-      regimen: [{
-        canonicalMedicationId: "rx-one",
-        dose: { value: 1, unit: "mg", forged: true },
-        route: "oral",
-        frequency: "daily",
-        monitoring: [],
-        rationale: [{ kind: "BN", sourceRef: "source-1", text: "Reason" }],
-        warningRefs: [],
-      }],
+      regimen: [
+        {
+          canonicalMedicationId: "rx-one",
+          dose: { value: 1, unit: "mg", forged: true },
+          route: "oral",
+          frequency: "daily",
+          monitoring: [],
+          rationale: [{ kind: "BN", sourceRef: "source-1", text: "Reason" }],
+          warningRefs: [],
+        },
+      ],
       generalMonitoring: [],
       explanation: "Draft explanation",
       sourceExecutionRefs: ["source-1"],
@@ -297,11 +302,13 @@ test("raw exceptions and sensitive identifiers never enter model-visible results
     "medication.search_candidates": () => ({
       data: {
         ...searchOutput,
-        candidates: [{
-          ...searchOutput.candidates[0],
-          preferredName: "Jane Doe",
-          synonyms: ["11111111-1111-4111-8111-111111111111"],
-        }],
+        candidates: [
+          {
+            ...searchOutput.candidates[0],
+            preferredName: "Jane Doe",
+            synonyms: ["11111111-1111-4111-8111-111111111111"],
+          },
+        ],
       },
       sensitiveValues: ["Jane Doe", "9988776655"],
     }),

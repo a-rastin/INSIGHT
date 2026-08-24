@@ -64,69 +64,69 @@ test("DDI import is idempotent, changed bytes version, and activation remains ga
     await withIsolatedTestDatabase(adminConnectionString, async (connectionString) => {
       const pool = createPostgresPool({ connectionString });
       try {
-      await migrateToHead(pool);
-      const administrator = await createUser(pool, {
-        username: "DdiSourceAdministrator",
-        password: "ddi-source-admin-password",
-        role: "ADMINISTRATOR",
-      });
-      const actor = { id: administrator.id, role: administrator.role };
-      const first = await importDdiSource(pool, actor, input(bytes()), { artifactRoot });
-      const duplicate = await importDdiSource(pool, actor, input(bytes()), { artifactRoot });
-      assert.equal(duplicate.id, first.id);
-      assert.equal(duplicate.version, 1);
-      assert.equal(duplicate.lifecycle, "quarantined");
-      assert.equal(duplicate.manifest.contentDate, "2026-08-19");
-      assert.equal(duplicate.manifest.retrievedAt, "2026-08-20T10:00:00.000Z");
-      assert.equal(duplicate.manifest.reviewedAt, "2026-08-21T10:00:00.000Z");
-      assert.equal(duplicate.manifest.parserVersion, MEDSCAPE_PARSER_VERSION);
+        await migrateToHead(pool);
+        const administrator = await createUser(pool, {
+          username: "DdiSourceAdministrator",
+          password: "ddi-source-admin-password",
+          role: "ADMINISTRATOR",
+        });
+        const actor = { id: administrator.id, role: administrator.role };
+        const first = await importDdiSource(pool, actor, input(bytes()), { artifactRoot });
+        const duplicate = await importDdiSource(pool, actor, input(bytes()), { artifactRoot });
+        assert.equal(duplicate.id, first.id);
+        assert.equal(duplicate.version, 1);
+        assert.equal(duplicate.lifecycle, "quarantined");
+        assert.equal(duplicate.manifest.contentDate, "2026-08-19");
+        assert.equal(duplicate.manifest.retrievedAt, "2026-08-20T10:00:00.000Z");
+        assert.equal(duplicate.manifest.reviewedAt, "2026-08-21T10:00:00.000Z");
+        assert.equal(duplicate.manifest.parserVersion, MEDSCAPE_PARSER_VERSION);
 
-      const changed = await importDdiSource(pool, actor, input(bytes("v2")), { artifactRoot });
-      assert.notEqual(changed.id, first.id);
-      assert.equal(changed.version, 2);
+        const changed = await importDdiSource(pool, actor, input(bytes("v2")), { artifactRoot });
+        assert.notEqual(changed.id, first.id);
+        assert.equal(changed.version, 2);
 
-      const unlicensed = await importDdiSource(
-        pool,
-        actor,
-        {
-          ...input(bytes("unlicensed"), "not_granted"),
-          manifest: {
-            ...input(bytes("unlicensed"), "not_granted").manifest,
-            drugIdentity: "RXNORM.9999",
+        const unlicensed = await importDdiSource(
+          pool,
+          actor,
+          {
+            ...input(bytes("unlicensed"), "not_granted"),
+            manifest: {
+              ...input(bytes("unlicensed"), "not_granted").manifest,
+              drugIdentity: "RXNORM.9999",
+            },
           },
-        },
-        { artifactRoot },
-      );
-      const reviewedUnlicensed = await reviewDdiSource(
-        pool,
-        actor,
-        unlicensed.id,
-        "reviewed",
-        "review://ddi/unlicensed",
-      );
-      await assert.rejects(
-        activateDdiSource(pool, actor, reviewedUnlicensed.id, {
+          { artifactRoot },
+        );
+        const reviewedUnlicensed = await reviewDdiSource(
+          pool,
+          actor,
+          unlicensed.id,
+          "reviewed",
+          "review://ddi/unlicensed",
+        );
+        await assert.rejects(
+          activateDdiSource(pool, actor, reviewedUnlicensed.id, {
+            legalApprovalReference: "legal://approval/1",
+            clinicalApprovalReference: "clinical://approval/1",
+          }),
+          /permission/,
+        );
+
+        const reviewed = await reviewDdiSource(
+          pool,
+          actor,
+          changed.id,
+          "reviewed",
+          "review://ddi/v2",
+        );
+        const active = await activateDdiSource(pool, actor, reviewed.id, {
           legalApprovalReference: "legal://approval/1",
           clinicalApprovalReference: "clinical://approval/1",
-        }),
-        /permission/,
-      );
-
-      const reviewed = await reviewDdiSource(
-        pool,
-        actor,
-        changed.id,
-        "reviewed",
-        "review://ddi/v2",
-      );
-      const active = await activateDdiSource(pool, actor, reviewed.id, {
-        legalApprovalReference: "legal://approval/1",
-        clinicalApprovalReference: "clinical://approval/1",
-      });
-      assert.equal(active.lifecycle, "active");
-      assert.equal(active.legalApprovalReference, "legal://approval/1");
-      assert.equal(active.clinicalApprovalReference, "clinical://approval/1");
-      assert.equal(active.interactions[0].evidenceReference.sourceSha256, active.manifest.sha256);
+        });
+        assert.equal(active.lifecycle, "active");
+        assert.equal(active.legalApprovalReference, "legal://approval/1");
+        assert.equal(active.clinicalApprovalReference, "clinical://approval/1");
+        assert.equal(active.interactions[0].evidenceReference.sourceSha256, active.manifest.sha256);
       } finally {
         await pool.end();
       }

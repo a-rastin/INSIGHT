@@ -22,7 +22,7 @@ const identifierConfiguration = {
   normalization: "NFKC_UPPERCASE",
 };
 const common = {
-  currentMedications: [{ rawMedication: "metformin", normalizationState: "UNKNOWN" }],
+  currentMedications: [{ rawMedication: "metformin" }],
   comorbidities: [],
   supplementalNotes: "Synthetic history note",
 };

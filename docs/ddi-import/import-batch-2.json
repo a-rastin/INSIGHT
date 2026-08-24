@@ -1,0 +1,650 @@
+{
+  "schemaVersion": "insight.ddi-import-batch.v1",
+  "batch": 2,
+  "range": "33-64",
+  "inventorySnapshotSha256": "7cdbbaae63b45f9e8e0a4da067537eebfed332ed7e6659874902fe0e2d92e942",
+  "immutable": true,
+  "entries": [
+    {
+      "position": 33,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Glimepiride.txt",
+      "medicationName": "Glimepiride",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 59527,
+      "sha256": "bce3c1e74ebff7baadb0312e178280af48c6b606683c49355cf18d88c0382ab2",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 34,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Glipizide.txt",
+      "medicationName": "Glipizide",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 63073,
+      "sha256": "f3d36c79278309eaafab35feb97107c914b2d3f774056e510e32edff4dc9a13e",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 35,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Insulin.txt",
+      "medicationName": "Insulin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 73757,
+      "sha256": "d8b353cd1ad4c85994ba2c0fdf7905fb39143d3618d6081bbf58472253ae7e49",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 36,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Liraglutide.txt",
+      "medicationName": "Liraglutide",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 51669,
+      "sha256": "8854a467d7ea6baa9beb09ab011f299d1c6744f2499b908e7142142aede227d6",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 37,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Metformin.txt",
+      "medicationName": "Metformin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 81661,
+      "sha256": "a21da1c1adff1152f9feafa07718ebfcd79d8d91323df4c148cc8489e0489ed9",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 38,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Pioglitazone.txt",
+      "medicationName": "Pioglitazone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 56248,
+      "sha256": "a2e52ad0a1ae947490559fcc7a5e9f95dc30bed3b4223d694153124d1eb54b0b",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 39,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Semaglutide.txt",
+      "medicationName": "Semaglutide",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 40580,
+      "sha256": "ac6c2ac87e4a3315ae50bac149cc7a12ff3c6421968e5d0bd6671a4f82f794b5",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 40,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Sitagliptin.txt",
+      "medicationName": "Sitagliptin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 44041,
+      "sha256": "e7c9bc45ed5b3f829dfe8e29b015ee727645db2f3ed6cad8de99fea2dcd4022f",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 41,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Aripiprazole.txt",
+      "medicationName": "Aripiprazole",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 27273,
+      "sha256": "652cfa4e7499e41266fcb92e3fe607ecb5f18736dd8b48288f386d0eba27d30b",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 42,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Asenapine.txt",
+      "medicationName": "Asenapine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 25229,
+      "sha256": "15a13b1092a9fcc9debd359c1d538a9bff8bafa07fb5b373905d732daee137cc",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 43,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Brexpiprazole.txt",
+      "medicationName": "Brexpiprazole",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 13327,
+      "sha256": "d980258a986dfce60f80e6fecb69f1dbab6c1743b19d682279de4597d23da8fc",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 44,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Cariprazine.txt",
+      "medicationName": "Cariprazine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 12745,
+      "sha256": "df6d217dc3ee31170db0ac9d6bcfdeeea71da55c9a952f35ebd8bde93293f566",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 45,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Chlorpromazine.txt",
+      "medicationName": "Chlorpromazine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 28500,
+      "sha256": "98b6dc917a3641c31436ef4834cc8ec7efad5d48979d6a879f990dd56dbfdea4",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 46,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Clozapine.txt",
+      "medicationName": "Clozapine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 18453,
+      "sha256": "4a3585c8d3dc5ecf1935b681fc30b1655815b659a1ec88e4c09a970f4ee0ee35",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 47,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Fluphenazine.txt",
+      "medicationName": "Fluphenazine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 20622,
+      "sha256": "7977a158eb6598c00855ddbacc2a211ba2c78a52e53bc57f34fdf8f0c4ead040",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 48,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Haloperidol.txt",
+      "medicationName": "Haloperidol",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 42964,
+      "sha256": "fdaa4c7e71cccfcdc7094f3ae668172d6482055252890326fd489649e372e9bf",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 49,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Iloperidone.txt",
+      "medicationName": "Iloperidone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 28832,
+      "sha256": "253fca89aca5623173c18a57bcd403ac73ebfb0fc5419d84685cd12ba08268eb",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 50,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Loxapine.txt",
+      "medicationName": "Loxapine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 23803,
+      "sha256": "f13d7533699181ed0550d5dbabd5ae109e43c44c9894be43d2243325d191562c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 51,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Lurasidone.txt",
+      "medicationName": "Lurasidone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 27555,
+      "sha256": "b6fe1a1991f44c346dd85b5707a7019e4fe65884f6cd0689e94bfbde7f2c0aee",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 52,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Molindone.txt",
+      "medicationName": "Molindone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 51994,
+      "sha256": "f56944f409b405942f3fcf3d89d099b0e4461eff6fa83d62e57abe212ab35203",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 53,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Olanzapine.txt",
+      "medicationName": "Olanzapine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 16171,
+      "sha256": "898599241e17bd8783fe46783dc400fb0497dad5235815b48b73623339a64cf9",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 54,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Paliperidone.txt",
+      "medicationName": "Paliperidone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 17640,
+      "sha256": "e561e70d6c85d8d6c6a9dcdca74ce05e242de75ae5d3d708ca1d7649b88d047a",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 55,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Perphenazine.txt",
+      "medicationName": "Perphenazine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 27514,
+      "sha256": "aadb313bb67e10caa14fefdd6343d8912bdfe8c180bc625929cedff4beaae9d0",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 56,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Pimozide.txt",
+      "medicationName": "Pimozide",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 155604,
+      "sha256": "9522cb65163450f295c63568f234fbf4546c41ee41f6ad18e7cf75190cd148c9",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 57,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Quetiapine.txt",
+      "medicationName": "Quetiapine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 18443,
+      "sha256": "ed379be78f065306e9e388a4426536e115168adafa504ef6ca36f5a8530ba23c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 58,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Risperidone.txt",
+      "medicationName": "Risperidone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 24021,
+      "sha256": "89d865736c9d0628563ffb461c85648fbd7502b01081bc240d8646568e99f3e3",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 59,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Thioridazine.txt",
+      "medicationName": "Thioridazine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 15098,
+      "sha256": "e6a0ea6315cc78d6a398f7dc00f2b003f5af9c148db881d84b6c63fc6addea6c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 60,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Thiothixene.txt",
+      "medicationName": "Thiothixene",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 13848,
+      "sha256": "b9b0c8aab7f029e7f72e99223ec61573bd33f7e4e06b69f198e11947ea20c0bc",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 61,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Trifluoperazine.txt",
+      "medicationName": "Trifluoperazine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 16247,
+      "sha256": "6e6ebf25da0483f148279df1c1417d4455abeb0d8579e61ebf9b1acb0ecac2d1",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 62,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Valproic acid.txt",
+      "medicationName": "Valproic acid",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 29641,
+      "sha256": "a5430526c02b3074ca3bf77ce30f27a818f18d36cca207c42a4fd2c4b2285672",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 63,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Antipsychotics/Ziprasidone.txt",
+      "medicationName": "Ziprasidone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 18832,
+      "sha256": "5a13c48b7308e9f2937b0ffaa0d7213b722122a718b6c1940949daf1cc4db46b",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 64,
+      "batch": 2,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Alprazolam.txt",
+      "medicationName": "Alprazolam",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 78822,
+      "sha256": "fd3a62c9fb19f78be60abf52304ebf9c0e4e58f8893da0622aec9b4aeeb7224c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    }
+  ],
+  "batchSha256": "2dc6186425b20fe18dcea2e51008476639267ea892a2b2eed2f9d9c738e2312c"
+}

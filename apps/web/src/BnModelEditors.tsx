@@ -18,10 +18,7 @@ import {
 import { Button } from "./components/primitives";
 
 type ApplyMutation = (
-  operation: (
-    network: XmlBifNetwork,
-    allowDataLoss: boolean,
-  ) => MutationResult<XmlBifNetwork>,
+  operation: (network: XmlBifNetwork, allowDataLoss: boolean) => MutationResult<XmlBifNetwork>,
 ) => void;
 
 interface TableProjection {
@@ -167,14 +164,13 @@ export function TableEditor({
   readonly onApply: ApplyMutation;
 }) {
   const variable = findVariable(network, variableName);
-  const projection = useMemo(
-    () => projectTable(network, variableName),
-    [network, variableName],
-  );
+  const projection = useMemo(() => projectTable(network, variableName), [network, variableName]);
   const [drafts, setDrafts] = useState<string[][]>([]);
   const [error, setError] = useState("");
   useEffect(() => {
-    setDrafts(typeof projection === "string" ? [] : projection.values.map((row) => row.map(String)));
+    setDrafts(
+      typeof projection === "string" ? [] : projection.values.map((row) => row.map(String)),
+    );
     setError("");
   }, [projection]);
   if (!variable) return null;
@@ -267,11 +263,7 @@ export function TableEditor({
                     Apply row
                   </Button>
                   {variable.type === "nature" ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => commit(row, true)}
-                    >
+                    <Button type="button" variant="secondary" onClick={() => commit(row, true)}>
                       Normalize
                     </Button>
                   ) : null}

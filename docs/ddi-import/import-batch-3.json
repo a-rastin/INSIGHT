@@ -1,0 +1,650 @@
+{
+  "schemaVersion": "insight.ddi-import-batch.v1",
+  "batch": 3,
+  "range": "65-96",
+  "inventorySnapshotSha256": "7cdbbaae63b45f9e8e0a4da067537eebfed332ed7e6659874902fe0e2d92e942",
+  "immutable": true,
+  "entries": [
+    {
+      "position": 65,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Buspirone.txt",
+      "medicationName": "Buspirone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 46542,
+      "sha256": "0aed5c30cfb39f5c6059b5105ebf35bc6e1e00046b897306a6a0964de8d63bd0",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 66,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Clonazepam.txt",
+      "medicationName": "Clonazepam",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 70225,
+      "sha256": "fc5bf118cd676e10395015d5f3ac1882b172af4ffbf8c5bc6c3ce03de896a350",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 67,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Diazepam.txt",
+      "medicationName": "Diazepam",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 104865,
+      "sha256": "28e203bde541a005bd4cc38ced5969038a472f4c2a93cd5b13cc85f5065f7d64",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 68,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Lorazepam.txt",
+      "medicationName": "Lorazepam",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 61486,
+      "sha256": "3ac5129c4efd9bed3d32507f2a8374ac354272838ddecb47ed8451a0f16385a3",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 69,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Melatonin.txt",
+      "medicationName": "Melatonin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 37711,
+      "sha256": "93f644b331f2f989a228d25737399443b847ef4ebe7116a005ba7047e173180b",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 70,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Temazepam.txt",
+      "medicationName": "Temazepam",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 47613,
+      "sha256": "81f8bea07c9a464a849700481e2d7e5fbacba44c8284b702fba876b3b87aa245",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 71,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Trazodone.txt",
+      "medicationName": "Trazodone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 153732,
+      "sha256": "ffd27e7d20cf96b152dc6b759faed941dcd5fd939146b2afa8c50c74d6ea5185",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 72,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Zolpidem.txt",
+      "medicationName": "Zolpidem",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 70453,
+      "sha256": "b07ee61b94a29c9fe3bc2233211ddc935579607847aa12ae0c1e0e67c6674079",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 73,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Amlodipine.txt",
+      "medicationName": "Amlodipine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 87771,
+      "sha256": "36e0b845ed24b1f8e763c8462371e72c167625785a8b74d46a2cc1daf2222021",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 74,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Aspirin.txt",
+      "medicationName": "Aspirin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 108816,
+      "sha256": "4b1d853065e7e84d77b899c11e4263b71ea889b25537bf69ce7b3bbb6fd09873",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 75,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Atenolol.txt",
+      "medicationName": "Atenolol",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 57572,
+      "sha256": "247dd258fabedde52bc1f4caaa315824ef6c2cf3f1f3760169a33985ac4e3dfe",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 76,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Carvedilol.txt",
+      "medicationName": "Carvedilol",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 87140,
+      "sha256": "a2fac085324079a7659ff46fe1459ada75db390013e881e81dedd49142b58042",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 77,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Clonidine.txt",
+      "medicationName": "Clonidine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 108319,
+      "sha256": "eaaa68713023efb158f12f406ddd09547a3f29424c411aa2c86f31e97052a7c1",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 78,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Enalapril.txt",
+      "medicationName": "Enalapril",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 61578,
+      "sha256": "1a0658f79a66afe0eed8e415c2a2b3fe1ed78ef209aee24d81557dbfb23af6cc",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 79,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Furosemide.txt",
+      "medicationName": "Furosemide",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 77069,
+      "sha256": "97f1f0967826ece6054053378117073bb1f2735be72e81bec875cea3fe6e3e15",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 80,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Hydrochlorothiazide.txt",
+      "medicationName": "Hydrochlorothiazide",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 72637,
+      "sha256": "b7e40fd64416659f06caad7ec0151bec39807a40764c60cead96aa227ec1b788",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 81,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Lisinopril.txt",
+      "medicationName": "Lisinopril",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 62947,
+      "sha256": "0b049f0324187829fd76f06cbeb09de29b4356111be1f80b6e5210bc6e164a24",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 82,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Losartan.txt",
+      "medicationName": "Losartan",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 87587,
+      "sha256": "03cf4b69e493102630ef6f799a9294f278fab9c055e15a1c9f234ba187338813",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 83,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Metoprolol.txt",
+      "medicationName": "Metoprolol",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 81800,
+      "sha256": "640043a9ecb4222ec88dcfef7367df5b32af461db1ac5a24c04dfc23f6f9dc06",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 84,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Propranolol.txt",
+      "medicationName": "Propranolol",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 95212,
+      "sha256": "79a00d6257ecd74df5c99559df5eec573a4033f75867d84ea30f2c158964acea",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 85,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Terazosin.txt",
+      "medicationName": "Terazosin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 26201,
+      "sha256": "0e72d51803770a6b7c77801d3fc9e5018b42d868a6a6efd63b11b535a29714b4",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 86,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Cardiovascular and Antihypertensive Agents/Valsartan.txt",
+      "medicationName": "Valsartan",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 73610,
+      "sha256": "d3a3bb86ca2d12e39ba8bd8a551c1d55a278b4dd9ec5d1adc6355300787a5d12",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 87,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Endocrine, Vitamins, and Supplements/Fludrocortisone.txt",
+      "medicationName": "Fludrocortisone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 95292,
+      "sha256": "58a381b2cc572576e84b59f358ee73745c73e7ae1334d031523039cd1597876a",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 88,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Endocrine, Vitamins, and Supplements/Levothyroxine.txt",
+      "medicationName": "Levothyroxine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 53565,
+      "sha256": "1d49e90a29a885c77f47392ed80c737d387dae5d9de00703f18ddf4be59d189c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 89,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Bisacodyl.txt",
+      "medicationName": "Bisacodyl",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 6007,
+      "sha256": "fad4052611bab6d9c60b682667f6510fc1d8dbf49f247a15a69ca2a0301debf2",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 90,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Docusate.txt",
+      "medicationName": "Docusate",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 5117,
+      "sha256": "8c0d403360569550dcd4b91409f6e29cd98d03bebc92f30ea5354dee22fa7910",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 91,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Esomeprazole.pdf",
+      "medicationName": "Esomeprazole",
+      "mediaType": "application/pdf",
+      "byteLength": 596995,
+      "sha256": "2e47940829574dbccd16fdaba7dc4f36440aceb0e7e680613f5ffceb2eacc8f3",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 92,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Famotidine.pdf",
+      "medicationName": "Famotidine",
+      "mediaType": "application/pdf",
+      "byteLength": 393254,
+      "sha256": "ccc53ec390fa42bb0d3408ad70456997ed7653457550b99c63c9f98649a1be24",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 93,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Lactulose.txt",
+      "medicationName": "Lactulose",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 6417,
+      "sha256": "75ee84c0639a0b9e3b733a82a31e7df63a98376753637b9b0d0bc69069c63846",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 94,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Lansoprazole.pdf",
+      "medicationName": "Lansoprazole",
+      "mediaType": "application/pdf",
+      "byteLength": 553294,
+      "sha256": "fb348f21aeb423774e715fd6116e8a3487d978fcfc5b64515de42da34e52e32a",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 95,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Loperamide.pdf",
+      "medicationName": "Loperamide",
+      "mediaType": "application/pdf",
+      "byteLength": 442899,
+      "sha256": "7e5e8a16969b92fdf4192fe5774a9ad3034930f1ecffb267aaf4af86c0e264b5",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 96,
+      "batch": 3,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Omeprazole.pdf",
+      "medicationName": "Omeprazole",
+      "mediaType": "application/pdf",
+      "byteLength": 557423,
+      "sha256": "698113ac238a3b737ca8cd6b2fdb5d783547bf2c894f40f636b195334d72a732",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    }
+  ],
+  "batchSha256": "d6d85daca0139a7adf8a9d683f356f437d7197343dc4980e1af8be95e60489b3"
+}

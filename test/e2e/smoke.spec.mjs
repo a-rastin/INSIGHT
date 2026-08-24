@@ -8,6 +8,7 @@ test("backend roles own gateway navigation and refresh restores safe state", asy
 }) => {
   const blockedOrigins = [];
   const consoleErrors = [];
+  let createdPassword;
 
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
@@ -22,6 +23,11 @@ test("backend roles own gateway navigation and refresh restores safe state", asy
   page.on("console", (message) => {
     if (message.type() === "error" && !/status of 401 \(Unauthorized\)/.test(message.text())) {
       consoleErrors.push(message.text());
+    }
+  });
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().endsWith("/api/v1/admin/users")) {
+      createdPassword = request.postDataJSON().password;
     }
   });
 
@@ -54,7 +60,9 @@ test("backend roles own gateway navigation and refresh restores safe state", asy
   const username = `E2EUser-${Date.now()}`;
   await page.getByRole("textbox", { name: "Username" }).fill(username);
   await page.getByLabel("Initial password").fill("initial-password");
+  await expect(page.getByLabel("Initial password")).toHaveValue("initial-password");
   await page.getByRole("button", { name: "Create user" }).click();
+  expect(createdPassword).toBe("initial-password");
   const row = page.getByRole("row", { name: new RegExp(username) });
   await expect(row).toBeVisible({ timeout: 20_000 });
 

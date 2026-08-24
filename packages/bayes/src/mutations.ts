@@ -19,11 +19,7 @@ import {
   type VariableType,
   type XmlBifNetwork,
 } from "./model.js";
-import {
-  EDITOR_IDENTIFIER_PATTERN,
-  PROBABILITY_TOLERANCE,
-  validateFile,
-} from "./validator.js";
+import { EDITOR_IDENTIFIER_PATTERN, PROBABILITY_TOLERANCE, validateFile } from "./validator.js";
 
 export interface MutationSuccess<T> {
   readonly ok: true;
@@ -110,10 +106,7 @@ function definitionCardinalities(
   return tableAxisCardinalities(network, definition) as number[];
 }
 
-function outcomeEditFailure(
-  network: XmlBifNetwork,
-  variableName: string,
-): MutationFailure | null {
+function outcomeEditFailure(network: XmlBifNetwork, variableName: string): MutationFailure | null {
   return findVariable(network, variableName)?.type === "utility"
     ? {
         ok: false,
@@ -152,8 +145,7 @@ function hasNonzeroAxisState(
 ): boolean {
   return values.some(
     (value, flatIndex) =>
-      value !== 0 &&
-      flatIndexToCoordinates(flatIndex, cardinalities)[axisIndex] === stateIndex,
+      value !== 0 && flatIndexToCoordinates(flatIndex, cardinalities)[axisIndex] === stateIndex,
   );
 }
 
@@ -276,8 +268,7 @@ export function reorderOutcomes(
   if (
     newOrder.length !== variable.outcomes.length ||
     newOrder.some(
-      (index) =>
-        !Number.isInteger(index) || index < 0 || index >= variable.outcomes.length,
+      (index) => !Number.isInteger(index) || index < 0 || index >= variable.outcomes.length,
     ) ||
     new Set(newOrder).size !== variable.outcomes.length
   ) {
@@ -353,8 +344,7 @@ export function addOutcome(
         definitionCardinalities(network, definition),
         axisIndex,
         index,
-        () =>
-          ownDefinition || child.type !== "nature" ? 0 : 1 / child.outcomes.length,
+        () => (ownDefinition || child.type !== "nature" ? 0 : 1 / child.outcomes.length),
       ),
     };
   });
@@ -396,9 +386,7 @@ export function removeOutcome(
       ok: false,
       diagnostics: [
         diagnostic(
-          variable.type === "decision"
-            ? "DECISION_OUTCOME_REQUIRED"
-            : "NATURE_OUTCOME_REQUIRED",
+          variable.type === "decision" ? "DECISION_OUTCOME_REQUIRED" : "NATURE_OUTCOME_REQUIRED",
           `${variable.type === "decision" ? "Decision" : "Nature"} variable must keep at least one outcome: ${variableName}`,
         ),
       ],
@@ -504,14 +492,17 @@ export function setCptDistribution(
     definition.table.length !== product(cardinalities) ||
     parentStateIndexes.length !== definition.given.length ||
     parentStateIndexes.some(
-      (state, axis) =>
-        !Number.isInteger(state) || state < 0 || state >= cardinalities[axis]!,
+      (state, axis) => !Number.isInteger(state) || state < 0 || state >= cardinalities[axis]!,
     )
   ) {
     return {
       ok: false,
       diagnostics: [
-        diagnostic("CPT_TABLE_LENGTH", `CPT dimensions are invalid for ${childName}`, "probability"),
+        diagnostic(
+          "CPT_TABLE_LENGTH",
+          `CPT dimensions are invalid for ${childName}`,
+          "probability",
+        ),
       ],
     };
   }
@@ -519,8 +510,7 @@ export function setCptDistribution(
   if (
     values.length !== child.outcomes.length ||
     values.some(
-      (value) =>
-        !Number.isFinite(value) || value < 0 || value > 1 + PROBABILITY_TOLERANCE,
+      (value) => !Number.isFinite(value) || value < 0 || value > 1 + PROBABILITY_TOLERANCE,
     ) ||
     Math.abs(sum - 1) > PROBABILITY_TOLERANCE
   ) {
@@ -537,9 +527,7 @@ export function setCptDistribution(
   }
   const table = [...definition.table];
   values.forEach((value, childStateIndex) => {
-    table[
-      coordinatesToFlatIndex([...parentStateIndexes, childStateIndex], cardinalities)
-    ] = value;
+    table[coordinatesToFlatIndex([...parentStateIndexes, childStateIndex], cardinalities)] = value;
   });
   return validateMutation({
     ...network,
@@ -577,8 +565,7 @@ export function setRawTableRow(
     definition.table.length !== product(cardinalities) ||
     parentStateIndexes.length !== parentCardinalities.length ||
     parentStateIndexes.some(
-      (state, axis) =>
-        !Number.isInteger(state) || state < 0 || state >= parentCardinalities[axis]!,
+      (state, axis) => !Number.isInteger(state) || state < 0 || state >= parentCardinalities[axis]!,
     ) ||
     values.length !== valueCount ||
     values.some((value) => !Number.isFinite(value))
@@ -598,9 +585,7 @@ export function setRawTableRow(
   values.forEach((value, columnIndex) => {
     table[
       coordinatesToFlatIndex(
-        variable.type === "decision"
-          ? [...parentStateIndexes, columnIndex]
-          : parentStateIndexes,
+        variable.type === "decision" ? [...parentStateIndexes, columnIndex] : parentStateIndexes,
         cardinalities,
       )
     ] = value;

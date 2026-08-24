@@ -389,6 +389,17 @@ export async function deletePatient(
       { version: existing.encryption_key_version, key_material: keyMaterial },
       now,
     );
+    for (const setting of [
+      "insight.workflow_transition",
+      "insight.dsm5tr_write",
+      "insight.panss_write",
+      "insight.cssrs_write",
+      "insight.medical_history_write",
+      "insight.primary_plan_write",
+      "insight.final_plan_write",
+    ]) {
+      await client.query("SELECT set_config($1,'allowed',true)", [setting]);
+    }
     await client.query("DELETE FROM insight.patients WHERE id = $1", [patientId]);
   });
 

@@ -1,0 +1,650 @@
+{
+  "schemaVersion": "insight.ddi-import-batch.v1",
+  "batch": 1,
+  "range": "1-32",
+  "inventorySnapshotSha256": "7cdbbaae63b45f9e8e0a4da067537eebfed332ed7e6659874902fe0e2d92e942",
+  "immutable": true,
+  "entries": [
+    {
+      "position": 1,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Acetaminophen.txt",
+      "medicationName": "Acetaminophen",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 25476,
+      "sha256": "1307eb381ba3b9399d30cf821f205d843e8603674de451201940a10ec2303117",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 2,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Celecoxib.txt",
+      "medicationName": "Celecoxib",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 104953,
+      "sha256": "4ad3411ce9c9b4ea16defd4a695d0d151158e9d1dcea97e804b70a27df02eae7",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 3,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Diclofenac.txt",
+      "medicationName": "Diclofenac",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 109132,
+      "sha256": "dfd660c34c90e8f7d78400cbcfbfe66dba63f2496fa63d1a11f9879bd280a7c8",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 4,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Ibuprofen.txt",
+      "medicationName": "Ibuprofen",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 97091,
+      "sha256": "31440af590e321516c3e2273768a31952465f12cb1f7660a414cd17665ad220b",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 5,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Meloxicam.txt",
+      "medicationName": "Meloxicam",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 96046,
+      "sha256": "551ab727dc38b023ea862a298228776939701abcc9d97c8364c8c7041d61a14e",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 6,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Naproxen.txt",
+      "medicationName": "Naproxen",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 83885,
+      "sha256": "a3f4f52fad6ac9a6388f3e44438201ea9e90ea491e591dda477dd00a20a777cf",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 7,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Oxycodone.txt",
+      "medicationName": "Oxycodone",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 121008,
+      "sha256": "aef11b2273c22ec49f5476959d7bc10f2fcf988f21445c811693fc6d7f4d7654",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 8,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Analgesics and NSAIDs/Tramadol.txt",
+      "medicationName": "Tramadol",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 125828,
+      "sha256": "f006c2932b09da37343de94dba6b69d52bd2cdfc6cf4b478cfa7f7dfc9339598",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 9,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antibiotics/Amoxicillin.txt",
+      "medicationName": "Amoxicillin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 31337,
+      "sha256": "6e2d5036f1c4e7731a59cdbaf3533ce74558a65c65ac78f3d4442de9755006ac",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 10,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antibiotics/Azithromycin.txt",
+      "medicationName": "Azithromycin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 85947,
+      "sha256": "aa3d97168ffceaa65bf9ebaf75a60915caafe04a573547c195b7e164c03cc2ea",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 11,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antibiotics/Cephalexin.txt",
+      "medicationName": "Cephalexin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 29410,
+      "sha256": "97748565baab6f8480a63321537cc10e3726e83340cc91b26a62ea9b5fbc8323",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 12,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antibiotics/Ciprofloxacin.txt",
+      "medicationName": "Ciprofloxacin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 125607,
+      "sha256": "7dbb1201029901b37449ec620eccb9082c90a3533b84e7f484a22e10c7a6da90",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 13,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antibiotics/Doxycycline.txt",
+      "medicationName": "Doxycycline",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 50487,
+      "sha256": "74b59ff3cd8916d631773e1a15029324072ed498e323c445ca578ef90e1ae008",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 14,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Anticholinergics & Parkinsonism Agents/Amantadine.txt",
+      "medicationName": "Amantadine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 43182,
+      "sha256": "53df1c298a1ceb1cb3699c46ad8620836e2aed3ce7c1a05b6ee738ff0594653a",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 15,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Anticholinergics & Parkinsonism Agents/Atropine.txt",
+      "medicationName": "Atropine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 36523,
+      "sha256": "cb0945149c56b143bedd2dfa229fb5eb0a9f5e723edc0cc7ca604f3595469735",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 16,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Anticholinergics & Parkinsonism Agents/Benztropine.txt",
+      "medicationName": "Benztropine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 25619,
+      "sha256": "9a0e72eef079ad4a702328ac3f6b6490a9a706bc9b53fda7958d0762f61b308c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 17,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Anticholinergics & Parkinsonism Agents/Bromocriptine.txt",
+      "medicationName": "Bromocriptine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 61937,
+      "sha256": "9f53a99b9b1510696d5b944b7dfaeb3ef6a8592b370578d819e1050b3b82070c",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 18,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Anticholinergics & Parkinsonism Agents/Glycopyrrolate.txt",
+      "medicationName": "Glycopyrrolate",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 45507,
+      "sha256": "0e1faae6bbcbeaa0bad33e930b064ca6e67ac8d7d5d4f25eef01f07620194e85",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 19,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Anticholinergics & Parkinsonism Agents/Trihexyphenidyl.txt",
+      "medicationName": "Trihexyphenidyl",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 24195,
+      "sha256": "151124011104b0ace0df2fa893f472cea1666466a0b8ffd9f091b687802fa682",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 20,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Amitriptyline.txt",
+      "medicationName": "Amitriptyline",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 151945,
+      "sha256": "fd2ee857f929fef93e02ad81f1c5f809d1f0de8bb417d3ea78bb4ccb22562598",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 21,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Bupropion.txt",
+      "medicationName": "Bupropion",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 64055,
+      "sha256": "39949f078ba840b5adb67c578ef548f7795f1f07bd4be88c974a4b155072a5dd",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 22,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Citalopram.txt",
+      "medicationName": "Citalopram",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 121534,
+      "sha256": "8e3d5ad20b99d28508c5f4e7df4ec3e23c7fff53764762835c7e812b87d99622",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 23,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Clomipramine.txt",
+      "medicationName": "Clomipramine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 165914,
+      "sha256": "7ac3cce0afdf8d04af5531ad6a7d1b2ff50062f33fa86c0e6ca25a75cd62110f",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 24,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Duloxetine.txt",
+      "medicationName": "Duloxetine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 94259,
+      "sha256": "3a06234c0a9140bb8c8b0b2c89acd5925dbda696731d5c5c1b18c9b2f3a6f120",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 25,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Escitalopram.txt",
+      "medicationName": "Escitalopram",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 115661,
+      "sha256": "1eb25a69bb771a1d539215618e50405f2b9e5f3f0d8a39c2c0a6b874be18cea1",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 26,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Fluoxetine.txt",
+      "medicationName": "Fluoxetine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 129644,
+      "sha256": "1c2b3680ff0216c79c99028b26e3aff0d8efb506dda679b1e488137a22af9e2e",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 27,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Mirtazapine.txt",
+      "medicationName": "Mirtazapine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 99082,
+      "sha256": "bc6a83f32a7a531b6cc92ff625b1136c876b1534d87470760fc1fc8a1f5327c4",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 28,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Nortriptyline.txt",
+      "medicationName": "Nortriptyline",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 134307,
+      "sha256": "ad04bb2db22c5e39d30641802bf2aa5f9b3a16a6a477eb45faee9316a78b36b1",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 29,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Paroxetine.txt",
+      "medicationName": "Paroxetine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 112624,
+      "sha256": "b62b1dd4652cc8fc7ba70858d58b7008ce9ae976f79979b6b5b406864d8ee613",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 30,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Sertraline.txt",
+      "medicationName": "Sertraline",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 103231,
+      "sha256": "70e5a933c1dfc50d4ee2b283005d8d572994d7dc1977748dec5123df7de3cfe7",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 31,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidepressants/Venlafaxine.txt",
+      "medicationName": "Venlafaxine",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 109124,
+      "sha256": "ecf873b181a64207185d1031c5e64557162dddd159a61a8c03ed20a8d2c5d4cf",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 32,
+      "batch": 1,
+      "path": "medical-documentation/ddi-checker/Medscape/Antidiabetic Agents/Empagliflozin.txt",
+      "medicationName": "Empagliflozin",
+      "mediaType": "text/plain; charset=utf-8",
+      "byteLength": 30026,
+      "sha256": "a1c3e703b2dadb4559a3d1b2a4e16a2e0332e23ac38497c846cd850eeeb4de30",
+      "manifestStatus": "missing",
+      "permissionStatus": "missing",
+      "catalogMappingStatus": "missing",
+      "importStatus": "blocked",
+      "blockedReasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    }
+  ],
+  "batchSha256": "fa24f1eb76f7b674660cf92572206223cd16ab0826a434d136a1f1aa9afbebbf"
+}

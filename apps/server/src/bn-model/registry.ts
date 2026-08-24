@@ -312,10 +312,7 @@ export async function rollbackBnModel(
       [modelId],
     );
     if (!model.rows[0]) throw new BnModelInputError("Bayesian model version does not exist.");
-    if (
-      !model.rows[0].software_compatible ||
-      model.rows[0].initial_lifecycle === "QUARANTINED"
-    ) {
+    if (!model.rows[0].software_compatible || model.rows[0].initial_lifecycle === "QUARANTINED") {
       throw new BnModelInputError("Only a software-compatible Bayesian model can be restored.");
     }
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [

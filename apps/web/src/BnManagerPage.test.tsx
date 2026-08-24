@@ -219,7 +219,10 @@ describe("BN Manager", () => {
   });
 
   it("edits outcomes, CPTs, and finite raw values through synchronized projections", async () => {
-    vi.stubGlobal("confirm", vi.fn(() => true));
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true),
+    );
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -267,7 +270,10 @@ describe("BN Manager", () => {
       version: 3,
       lifecycle: "ACTIVE",
     };
-    vi.stubGlobal("confirm", vi.fn(() => true));
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true),
+    );
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

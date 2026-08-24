@@ -443,7 +443,7 @@ async function insertTrials(
         trial.treatmentEnd ?? null,
         trial.approximatePeriod ?? null,
         trial.response ?? null,
-        trial.adverseEffects ?? null,
+        trial.adverseEffects ? JSON.stringify(trial.adverseEffects) : null,
         trial.otherAdverseEffectDetail ?? null,
         trial.discontinuationReason ?? null,
         trial.notes ?? null,

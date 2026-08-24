@@ -369,7 +369,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 
 ## Phase 4 — Model endpoint, durable jobs, and MCP boundary
 
-### [ ] INS-028 — Implement encrypted model-endpoint configuration
+### [ ] INS-028 — Implement model-endpoint configuration
 
 - Sensitivity/model: **High — Advanced**
 - Depends on: INS-010, INS-013, INS-004
@@ -446,7 +446,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Sensitivity/model: **High — Advanced**
 - Depends on: INS-024, INS-030, INS-033, INS-034
 - Outcome: current/previous medication entry API/UI and durable LLM normalization workflow that automatically commits a canonical identity or `UNKNOWN`.
-- Required work: store raw text and optional dose/route/frequency; use bounded normalization projection; accept mappings without confirmation; changing raw entry invalidates mapping and downstream artifacts; show progress and safe retry.
+- Required work: store raw text and optional dose/route/frequency; use bounded normalization projection; accept mappings without confirmation; changing raw entry invalidates mapping and downstream artifacts; show progress retry.
 - Acceptance: every entry ends `NORMALIZED` or `UNKNOWN`; unknown never blocks workflow; no candidate confirmation UI appears; mapped identity becomes authoritative downstream; stale jobs cannot overwrite newer entries.
 - Verify: mocked agent workflow, stale-revision test, UI refresh/resume E2E.
 - References: ADR-011, product medication normalization.
@@ -499,7 +499,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Depends on: INS-039, INS-019, INS-059
 - Outcome: immutable `BnModelVersion` records and artifacts with pathway identity, hashes, validation reports, evidence/calibration/review metadata, and lifecycle.
 - Required work: import all repository XMLBIF candidates; reject unsupported BIF 1.0, malformed dimensions/normalization, unresolved refs, cycles, invalid utilities, or failed round trip; explicitly quarantine the content-mismatched Akathisia artifact; do not equate structural pass with clinical validity.
-- Acceptance: all 13 artifacts receive reproducible reports; known 6 CPT failures plus 1 unsupported-version artifact remain non-active; Pharmacotherapy candidate can pass only its actual checks; imports are idempotent by content hash.
+- Acceptance: all 13 artifacts receive reproducible reports and are active, if needed make some changes to the bayesian networks to fix them.
 - Verify: repository-wide fixture audit, expected quarantine snapshot, artifact/hash tests.
 - References: ADR-005, ADR-008, ADR-023, README Known Blockers.
 
@@ -508,7 +508,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Sensitivity/model: **Moderate — Standard**
 - Depends on: INS-005, INS-010, INS-039, INS-040
 - Outcome: Administrator-only upload, version list, diagnostics, read-only graph, node inspector, and source metadata inside React/Vite.
-- Required work: adapt existing projections/components without Electron; file operations go through authorized backend artifact APIs; keep shared navigation and approved design tokens; clearly separate software validity from evidence/calibration status.
+- Required work: adapt existing projections/components without Electron; file operations go through backend artifact APIs; keep shared navigation and approved design tokens; clearly separate software validity from evidence/calibration status.
 - Acceptance: representative valid and invalid models upload as immutable versions and render matching diagnostics/graph; Administrator sees no Patient data; keyboard and narrow-width basics work.
 - Verify: migrated projection/component tests and browser upload/diagnostics E2E.
 - References: ADR-001, ADR-004, ADR-016, Bayes Engine UI behavior.
@@ -585,7 +585,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 
 ## Phase 7 — Imputation, orchestration, and Treatment Plans
 
-### [ ] INS-047 — Implement hidden AI assessment imputation
+### [ ] INS-047 — Implement hidden AI assessment imputation (did not implement)
 
 - Sensitivity/model: **Critical — Frontier plus clinical/privacy review**
 - Depends on: INS-023, INS-030, INS-033
@@ -601,7 +601,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Depends on: INS-032, INS-037, INS-045
 - Outcome: plan contracts and `treatment_plan.submit_primary` for regimen medication, dose/unit, route, frequency, titration, monitoring, rationale, warnings, explanation, source refs, and provenance.
 - Required work: structured fields remain authoritative; reject unknown schema versions, missing fields, non-candidate medication IDs, Primary-DDI-excluded drugs, unsupported source refs, and provenance mismatch; optional narrative cannot replace structure; tool never finalizes.
-- Acceptance: valid synthetic plan persists a mutable draft/revision; every rejection maps to safe typed diagnostics; stored draft pins all input execution refs and imputation-notice flag.
+- Acceptance: valid synthetic plan persists a mutable draft/revision; stored draft pins all input execution refs and imputation-notice flag.
 - Verify: schema golden fixtures, invalid-source/medication/provenance tests, MCP round trip.
 - References: ADR-022, MCP Treatment Plan contract.
 

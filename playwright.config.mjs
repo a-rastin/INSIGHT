@@ -2,6 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "test/e2e",
+  workers: 1,
   outputDir: "test-artifacts/playwright/results",
   reporter: "line",
   use: {
