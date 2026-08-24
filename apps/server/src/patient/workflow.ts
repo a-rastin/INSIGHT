@@ -358,6 +358,9 @@ export async function transitionResearchCase(
   now = new Date(),
 ): Promise<ResearchCaseWorkflow> {
   requirePsychiatrist(actor);
+  if (command === "FINALIZE") {
+    throw new WorkflowTransitionError("Use Treatment Plan finalization.");
+  }
   return withTransaction(pool, async (client) => {
     const row = await caseByPatient(client, patientId, true);
     if (!row) throw new ResearchCaseNotFoundError();
@@ -618,7 +621,7 @@ async function materializeWorkflow(
 ): Promise<ResearchCaseWorkflow> {
   const commands: WorkflowCommand[] = [];
   for (const transition of WORKFLOW_TRANSITIONS) {
-    if (transition.from !== row.workflow_state) continue;
+    if (transition.from !== row.workflow_state || transition.command === "FINALIZE") continue;
     try {
       await requiredResultIds(database, row, transition);
       commands.push(transition.command);

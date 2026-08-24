@@ -756,6 +756,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/final-plans": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["finalizeTreatmentPlan"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5452,7 +5468,6 @@ export interface operations {
             | "REQUEST_FINAL_DDI_RECHECK"
             | "CONFIRM_UNCHANGED_REGIMEN"
             | "COMPLETE_FINAL_DDI"
-            | "FINALIZE"
             | "CREATE_REVISION_DRAFT"
             | "REQUEST_REVISION_DDI_RECHECK";
           expectedRevision: number;
@@ -7393,6 +7408,91 @@ export interface operations {
               /** Format: date-time */
               updatedAt: string;
             } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  finalizeTreatmentPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          idempotencyKey: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            finalPlan: {
+              id: string;
+              researchCaseId: string;
+              sequence: number;
+              status: "ACTIVE" | "SUPERSEDED";
+              predecessorId: string | null;
+              schemaVersion: string;
+              plan: {
+                [key: string]: unknown;
+              };
+              planHash: string;
+              sourceDraftRef: string;
+              sourceDraftRevision: number;
+              finalDdiExecutionRef: string;
+              provenance: {
+                [key: string]: unknown;
+              };
+              finalizedByUserId: string;
+              /** Format: date-time */
+              finalizedAt: string;
+              idempotencyKey: string;
+            };
           };
         };
       };

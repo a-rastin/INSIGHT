@@ -2403,6 +2403,61 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_final_ddi_recheck_pins();
     `,
   },
+  {
+    version: 32,
+    name: "immutable_final_plan_versions",
+    sql: `
+      CREATE TABLE insight.final_plan_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        sequence bigint NOT NULL CHECK (sequence > 0),
+        status text NOT NULL CHECK (status IN ('ACTIVE', 'SUPERSEDED')),
+        predecessor_id uuid REFERENCES insight.final_plan_versions(id),
+        schema_version text NOT NULL CHECK (schema_version = '1.0.0'),
+        plan_snapshot jsonb NOT NULL CHECK (jsonb_typeof(plan_snapshot) = 'object'),
+        plan_hash text NOT NULL CHECK (plan_hash ~ '^[0-9a-f]{64}$'),
+        source_draft_ref text NOT NULL,
+        source_draft_revision bigint NOT NULL CHECK (source_draft_revision > 0),
+        final_ddi_execution_ref text NOT NULL REFERENCES insight.ddi_executions(execution_ref),
+        provenance jsonb NOT NULL CHECK (jsonb_typeof(provenance) = 'object'),
+        finalized_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        finalized_at timestamptz NOT NULL,
+        idempotency_key text NOT NULL CHECK (
+          idempotency_key = btrim(idempotency_key)
+          AND length(idempotency_key) BETWEEN 1 AND 200
+        ),
+        UNIQUE (research_case_id, sequence),
+        UNIQUE (research_case_id, idempotency_key),
+        UNIQUE (id, research_case_id),
+        FOREIGN KEY (predecessor_id, research_case_id)
+          REFERENCES insight.final_plan_versions (id, research_case_id),
+        CHECK ((sequence = 1) = (predecessor_id IS NULL))
+      );
+      CREATE UNIQUE INDEX final_plan_versions_one_active_idx
+        ON insight.final_plan_versions (research_case_id) WHERE status = 'ACTIVE';
+
+      CREATE FUNCTION insight.protect_final_plan_version_write()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        IF current_setting('insight.final_plan_write', true) IS DISTINCT FROM 'allowed' THEN
+          RAISE EXCEPTION 'Final Treatment Plan versions are immutable' USING ERRCODE = '55000';
+        END IF;
+        IF TG_OP = 'UPDATE' AND (
+          OLD.status <> 'ACTIVE' OR NEW.status <> 'SUPERSEDED'
+          OR (to_jsonb(NEW) - 'status') IS DISTINCT FROM (to_jsonb(OLD) - 'status')
+        ) THEN
+          RAISE EXCEPTION 'Final Treatment Plan content is immutable' USING ERRCODE = '55000';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+      CREATE TRIGGER final_plan_versions_immutable
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.final_plan_versions
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_final_plan_version_write();
+    `,
+  },
 ]);
 
 export function prepareMigrations(
