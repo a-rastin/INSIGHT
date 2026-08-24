@@ -127,11 +127,11 @@ function sumOut(factor: Factor, name: string): Factor {
     const target =
       coordinates.length === 0
         ? 0
-      : coordinates.reduce(
-          (flat, coordinate, coordinateAxis) =>
-            flat + coordinate * targetStrides[coordinateAxis]!,
-          0,
-        );
+        : coordinates.reduce(
+            (flat, coordinate, coordinateAxis) =>
+              flat + coordinate * targetStrides[coordinateAxis]!,
+            0,
+          );
     values[target] += value;
   });
   return { variables, cardinalities, values };
