@@ -1,8 +1,8 @@
-# Treatment Setting and Clozapine TRS Pathway Review Record
+# Treatment Setting and Clozapine Pathway Review Record
 
 - **Record date:** 2026-08-24
-- **Routing artifact:** `2.0.0`
-- **Mapping review reference:** `BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24`
+- **Routing artifact:** `3.0.0`
+- **Mapping review reference:** `BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V3`
 - **Clinical approval status:** Not established
 - **Calibration status:** Uncalibrated
 
@@ -19,6 +19,7 @@ validation record exists in the repository.
 | ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | Treatment Setting              | `BNs/Treatment-Setting/BN-Treatment-Setting.xml`                                       | `2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 | Clozapine treatment resistance | `BNs/7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml` | `faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
+| Clozapine suicide risk         | `BNs/Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml`                       | `90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 
 Only active models with these exact content hashes are eligible for these routes. A missing,
 inactive, quarantined, superseded, duplicate, or hash-mismatched model fails closed.
@@ -30,12 +31,18 @@ Treatment Setting is required only when presentation status is `FIRST_PRESENTATI
 `SCHIZOPHRENIA_CONFIRMED`. Missing confirmation produces `MISSING_REQUIRED_ROUTE`; duplicate
 matching rules produce `AMBIGUOUS_ROUTE`.
 
+Clozapine suicide risk is optional and selected only for `KNOWN_SCHIZOPHRENIA` with the same
+completed confirmation and a C-SSRS routing state of `COMPLETED`, `BYPASSED`, or `IMPUTED`.
+All three terminal states select the same pinned model. Risk band, generated classification,
+answers, and free text never gate routing. `NOT_STARTED` and `IN_PROGRESS` do not select it.
+This preserves the warning-only C-SSRS policy and does not create a suicide-risk action gate.
+
 Clozapine treatment resistance is optional and selected only for `KNOWN_SCHIZOPHRENIA` with the
 same completed confirmation plus at least two distinct normalized prior medications. Each counted
 trial must explicitly record adequate dose, adequate duration, adequate adherence, and
 `NO_RESPONSE` or `PARTIAL_RESPONSE`. Duplicate medicines, missing adequacy fields, nonadherence,
-or fewer than two qualifying trials do not select the route. This is a conservative routing
-prerequisite, not a clinical diagnosis of treatment-resistant schizophrenia.
+other responses, or fewer than two qualifying trials do not select the route. This is a conservative
+routing prerequisite, not a clinical diagnosis of treatment-resistant schizophrenia.
 
 ## Requested Outputs
 
@@ -45,6 +52,11 @@ Treatment Setting requests:
 - `inpatient_service_priority`
 - `less_restrictive_care_priority`
 - `management_recommendation`
+
+Clozapine suicide risk requests:
+
+- `Clozapine_Eligibility`
+- `Clinical_Action_Pattern`
 
 Clozapine treatment resistance requests:
 
@@ -61,7 +73,9 @@ contract. Arbitrary model or node selection is rejected.
 
 ## Evidence and Calibration Limits
 
-- Both artifacts contain placeholder or qualitative CPTs and have no calibration report.
+- Treatment Setting and clozapine treatment resistance contain placeholder CPTs; clozapine suicide
+  risk contains qualitative root priors and deterministic internal tables. None has a calibration
+  report.
 - Patient-specific LLM-generated CPTs receive mathematical validation only.
 - Structural validity does not establish clinical validity, safety, fairness, or local suitability.
 - Clozapine use still requires current prescribing information, patient-specific contraindication
@@ -79,8 +93,8 @@ clinical approval.
 
 ## Verification
 
-- `test/bn-routing.test.mjs` contains accepted, missing, ambiguous, inactive, duplicate-trial, and
-  hash-mismatch route vectors.
+- `test/bn-routing.test.mjs` contains reviewed diagnosis, treatment-trial, C-SSRS terminal-state,
+  missing, ambiguous, inactive, duplicate-trial, unsupported-semantic, and hash-mismatch vectors.
 - `packages/bayes/test/bayes.test.mjs` replays full artifact CPTs through exact marginal inference.
 - `test/bn-pathways.integration.mjs` imports and activates pinned artifacts, routes one synthetic
   qualifying case, validates all CPT contracts, persists snapshots, and verifies stable inference

@@ -45,14 +45,26 @@ const clozapineTrs = {
   pathwayIdentity: "CLOZAPINE_TREATMENT_RESISTANCE",
   version: 1,
   contentSha256: "faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb",
-  semanticSha256: "d".repeat(64),
+  semanticSha256: "e".repeat(64),
   sourceReference: "gemini-code-1783422447172.xml",
+};
+
+const clozapineSuicideRisk = {
+  modelId: "model-clozapine-suicide-risk-v1",
+  pathwayIdentity: "CLOZAPINE_SUICIDE_RISK",
+  version: 1,
+  contentSha256: "90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a",
+  semanticSha256: "d".repeat(64),
+  sourceReference: "BN-Clozapine-in-Suicide-Risk.xml",
 };
 
 test("route golden table selects only reviewed required pathway fixtures", () => {
   const golden = [
     ["FIRST_PRESENTATION", ["BN-Pharmacotherapy.xml", "BN-Treatment-Setting.xml"]],
-    ["KNOWN_SCHIZOPHRENIA", ["BN-Pharmacotherapy.xml", "BN-Treatment-Setting.xml"]],
+    [
+      "KNOWN_SCHIZOPHRENIA",
+      ["BN-Clozapine-in-Suicide-Risk.xml", "BN-Pharmacotherapy.xml", "BN-Treatment-Setting.xml"],
+    ],
     [null, "MISSING_REQUIRED_ROUTE"],
   ];
   for (const [presentationStatus, expected] of golden) {
@@ -60,6 +72,7 @@ test("route golden table selects only reviewed required pathway fixtures", () =>
       evaluateBnRouting({ ...facts, presentationStatus }, INITIAL_BN_ROUTING_ARTIFACT, [
         pharmacotherapy,
         treatmentSetting,
+        clozapineSuicideRisk,
       ]);
     if (Array.isArray(expected)) {
       assert.deepEqual(
@@ -138,7 +151,7 @@ test("ambiguous rules and missing active models fail closed", () => {
     ...INITIAL_BN_ROUTING_ARTIFACT,
     rules: [
       ...INITIAL_BN_ROUTING_ARTIFACT.rules,
-      { ...INITIAL_BN_ROUTING_ARTIFACT.rules[0], ref: "BN-ROUTE-OTHER-001" },
+      { ...INITIAL_BN_ROUTING_ARTIFACT.rules[1], ref: "BN-ROUTE-TREATMENT-SETTING-OTHER-001" },
     ],
   };
   assert.throws(
@@ -151,37 +164,97 @@ test("ambiguous rules and missing active models fail closed", () => {
   );
 });
 
+test("Treatment Setting requires reviewed completed confirmed diagnosis trigger", () => {
+  for (const dsm5tr of [
+    { type: "DSM5TR", state: "IN_PROGRESS" },
+    { type: "DSM5TR", state: "COMPLETED", result: "SCHIZOPHRENIA_NOT_CONFIRMED" },
+  ]) {
+    assert.throws(
+      () =>
+        evaluateBnRouting(
+          { ...facts, assessments: [dsm5tr, ...facts.assessments.slice(1)] },
+          INITIAL_BN_ROUTING_ARTIFACT,
+          [pharmacotherapy, treatmentSetting, clozapineSuicideRisk],
+        ),
+      (error) => error instanceof BnRoutingError && error.code === "MISSING_REQUIRED_ROUTE",
+    );
+  }
+});
+
+test("clozapine suicide-risk route uses terminal source state without a risk-band gate", () => {
+  const active = [pharmacotherapy, treatmentSetting, clozapineSuicideRisk];
+  for (const cssrs of [
+    { type: "CSSRS_RECENT", state: "COMPLETED", result: "HIGH" },
+    { type: "CSSRS_RECENT", state: "BYPASSED" },
+    { type: "CSSRS_RECENT", state: "IMPUTED", result: "HIGH" },
+  ]) {
+    const routed = evaluateBnRouting(
+      { ...facts, assessments: [...facts.assessments.slice(0, 2), cssrs] },
+      INITIAL_BN_ROUTING_ARTIFACT,
+      active,
+    );
+    assert.deepEqual(routed.matchedRuleRefs, [
+      "BN-ROUTE-CLOZAPINE-SUICIDE-RISK-001",
+      "BN-ROUTE-PHARMACOTHERAPY-001",
+      "BN-ROUTE-TREATMENT-SETTING-001",
+    ]);
+    assert.deepEqual(
+      routed.selectedModels.map(({ pathwayIdentity }) => pathwayIdentity),
+      ["CLOZAPINE_SUICIDE_RISK", "PHARMACOTHERAPY", "TREATMENT_SETTING"],
+    );
+  }
+
+  for (const state of ["NOT_STARTED", "IN_PROGRESS"]) {
+    const routed = evaluateBnRouting(
+      {
+        ...facts,
+        assessments: [
+          ...facts.assessments.slice(0, 2),
+          { type: "CSSRS_RECENT", state, result: "HIGH" },
+        ],
+      },
+      INITIAL_BN_ROUTING_ARTIFACT,
+      active,
+    );
+    assert.equal(
+      routed.selectedModels.some(
+        ({ pathwayIdentity }) => pathwayIdentity === "CLOZAPINE_SUICIDE_RISK",
+      ),
+      false,
+    );
+  }
+});
+
 test("clozapine TRS route requires two distinct adequate adherent poor-response trials", () => {
-  const adequateTrial = (canonicalMedicationId) => ({
+  const adequateTrial = (canonicalMedicationId, response = "NO_RESPONSE") => ({
     canonicalMedicationId,
-    response: "NO_RESPONSE",
+    response,
     adequateDose: true,
     adequateDuration: true,
     adequateAdherence: true,
   });
-  const active = [pharmacotherapy, treatmentSetting, clozapineTrs];
+  const active = [pharmacotherapy, treatmentSetting, clozapineTrs, clozapineSuicideRisk];
+  const qualifying = [
+    adequateTrial("RX-RISPERIDONE"),
+    adequateTrial("RX-OLANZAPINE", "PARTIAL_RESPONSE"),
+  ];
   const routed = evaluateBnRouting(
-    {
-      ...facts,
-      medicationHistory: [adequateTrial("RX-RISPERIDONE"), adequateTrial("RX-OLANZAPINE")],
-    },
+    { ...facts, medicationHistory: qualifying },
     INITIAL_BN_ROUTING_ARTIFACT,
     active,
   );
-  assert.deepEqual(routed.matchedRuleRefs, [
-    "BN-ROUTE-CLOZAPINE-TRS-001",
-    "BN-ROUTE-PHARMACOTHERAPY-001",
-    "BN-ROUTE-TREATMENT-SETTING-001",
-  ]);
-  assert.deepEqual(
-    routed.selectedModels.map(({ pathwayIdentity }) => pathwayIdentity),
-    ["CLOZAPINE_TREATMENT_RESISTANCE", "PHARMACOTHERAPY", "TREATMENT_SETTING"],
+  assert.equal(
+    routed.selectedModels.some(
+      ({ pathwayIdentity }) => pathwayIdentity === "CLOZAPINE_TREATMENT_RESISTANCE",
+    ),
+    true,
   );
 
   for (const medicationHistory of [
-    [adequateTrial("RX-RISPERIDONE")],
+    qualifying.slice(0, 1),
     [adequateTrial("RX-RISPERIDONE"), adequateTrial("RX-RISPERIDONE")],
     [adequateTrial("RX-RISPERIDONE"), { ...adequateTrial("RX-OLANZAPINE"), adequateDose: false }],
+    [adequateTrial("RX-RISPERIDONE"), adequateTrial("RX-OLANZAPINE", "GOOD_RESPONSE")],
   ]) {
     assert.equal(
       evaluateBnRouting(
@@ -197,29 +270,47 @@ test("clozapine TRS route requires two distinct adequate adherent poor-response 
 });
 
 test("inactive, quarantined, or hash-mismatched reviewed models are never selected", () => {
-  const medicationHistory = [
-    {
-      canonicalMedicationId: "RX-RISPERIDONE",
-      response: "NO_RESPONSE",
-      adequateDose: true,
-      adequateDuration: true,
-      adequateAdherence: true,
-    },
-    {
-      canonicalMedicationId: "RX-OLANZAPINE",
-      response: "PARTIAL_RESPONSE",
-      adequateDose: true,
-      adequateDuration: true,
-      adequateAdherence: true,
-    },
-  ];
-  for (const clozapineModel of [undefined, { ...clozapineTrs, contentSha256: "e".repeat(64) }]) {
+  for (const clozapineModel of [
+    undefined,
+    { ...clozapineSuicideRisk, contentSha256: "e".repeat(64) },
+  ]) {
     assert.throws(
       () =>
-        evaluateBnRouting({ ...facts, medicationHistory }, INITIAL_BN_ROUTING_ARTIFACT, [
+        evaluateBnRouting(facts, INITIAL_BN_ROUTING_ARTIFACT, [
           pharmacotherapy,
           treatmentSetting,
           ...(clozapineModel ? [clozapineModel] : []),
+        ]),
+      (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",
+    );
+  }
+  const qualifying = {
+    ...facts,
+    medicationHistory: [
+      {
+        canonicalMedicationId: "RX-RISPERIDONE",
+        response: "NO_RESPONSE",
+        adequateDose: true,
+        adequateDuration: true,
+        adequateAdherence: true,
+      },
+      {
+        canonicalMedicationId: "RX-OLANZAPINE",
+        response: "PARTIAL_RESPONSE",
+        adequateDose: true,
+        adequateDuration: true,
+        adequateAdherence: true,
+      },
+    ],
+  };
+  for (const model of [undefined, { ...clozapineTrs, contentSha256: "f".repeat(64) }]) {
+    assert.throws(
+      () =>
+        evaluateBnRouting(qualifying, INITIAL_BN_ROUTING_ARTIFACT, [
+          pharmacotherapy,
+          treatmentSetting,
+          clozapineSuicideRisk,
+          ...(model ? [model] : []),
         ]),
       (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",
     );
@@ -253,6 +344,21 @@ test("unapproved or incomplete structured facts fail closed", () => {
         [pharmacotherapy, treatmentSetting],
       ),
     (error) => error instanceof BnRoutingError && error.code === "INVALID_ROUTING_ARTIFACT",
+  );
+  assert.throws(
+    () =>
+      evaluateBnRouting(
+        {
+          ...facts,
+          assessments: [
+            { type: "DSM5TR", state: "IMPUTED", result: "SCHIZOPHRENIA_CONFIRMED" },
+            ...facts.assessments.slice(1),
+          ],
+        },
+        INITIAL_BN_ROUTING_ARTIFACT,
+        [pharmacotherapy, treatmentSetting, clozapineSuicideRisk],
+      ),
+    (error) => error instanceof BnRoutingError && error.code === "INVALID_ROUTING_FACTS",
   );
 });
 

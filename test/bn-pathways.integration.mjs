@@ -37,9 +37,10 @@ const candidates = [
     "CLOZAPINE_TREATMENT_RESISTANCE",
     "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
   ],
+  ["CLOZAPINE_SUICIDE_RISK", "Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml"],
 ];
 
-test("synthetic Treatment Setting and clozapine TRS pathway replay is pinned and deterministic", async () => {
+test("synthetic Treatment Setting and clozapine pathway replay is pinned and deterministic", async () => {
   assert.ok(adminConnectionString, "TEST_DATABASE_URL is required.");
   const artifactRoot = await mkdtemp(join(tmpdir(), "insight-bn-pathways-"));
   try {
@@ -93,13 +94,6 @@ test("synthetic Treatment Setting and clozapine TRS pathway replay is pinned and
           "00000000-0000-4000-8000-000000000981",
         );
         const researchCaseId = patient.patient.researchCase.id;
-        const adequateTrial = (canonicalMedicationId, response) => ({
-          canonicalMedicationId,
-          response,
-          adequateDose: true,
-          adequateDuration: true,
-          adequateAdherence: true,
-        });
         const routing = await routeAndRecordBnModels(
           pool,
           { id: psychiatrist.id, role: psychiatrist.role },
@@ -112,12 +106,24 @@ test("synthetic Treatment Setting and clozapine TRS pathway replay is pinned and
               assessments: [
                 { type: "DSM5TR", state: "COMPLETED", result: "SCHIZOPHRENIA_CONFIRMED" },
                 { type: "PANSS", state: "COMPLETED", result: "TOTAL_82" },
-                { type: "CSSRS_RECENT", state: "BYPASSED" },
+                { type: "CSSRS_RECENT", state: "COMPLETED", result: "HIGH" },
               ],
               comorbidityTermIds: [],
               medicationHistory: [
-                adequateTrial("RX-RISPERIDONE", "NO_RESPONSE"),
-                adequateTrial("RX-OLANZAPINE", "PARTIAL_RESPONSE"),
+                {
+                  canonicalMedicationId: "RX-RISPERIDONE",
+                  response: "NO_RESPONSE",
+                  adequateDose: true,
+                  adequateDuration: true,
+                  adequateAdherence: true,
+                },
+                {
+                  canonicalMedicationId: "RX-OLANZAPINE",
+                  response: "PARTIAL_RESPONSE",
+                  adequateDose: true,
+                  adequateDuration: true,
+                  adequateAdherence: true,
+                },
               ],
               currentRegimen: [],
             },
@@ -125,7 +131,12 @@ test("synthetic Treatment Setting and clozapine TRS pathway replay is pinned and
         );
         assert.deepEqual(
           routing.selectedModels.map(({ pathwayIdentity }) => pathwayIdentity),
-          ["CLOZAPINE_TREATMENT_RESISTANCE", "PHARMACOTHERAPY", "TREATMENT_SETTING"],
+          [
+            "CLOZAPINE_SUICIDE_RISK",
+            "CLOZAPINE_TREATMENT_RESISTANCE",
+            "PHARMACOTHERAPY",
+            "TREATMENT_SETTING",
+          ],
         );
         await withTransaction(pool, async (client) => {
           await client.query("SELECT set_config('insight.workflow_transition','allowed',true)");
@@ -145,6 +156,10 @@ test("synthetic Treatment Setting and clozapine TRS pathway replay is pinned and
         );
         const clozapine = contracts.find(
           ({ modelHash }) =>
+            modelHash === "90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a",
+        );
+        const clozapineTrs = contracts.find(
+          ({ modelHash }) =>
             modelHash === "faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb",
         );
         assert.deepEqual(treatment.requestedOutputNodeRefs, [
@@ -154,7 +169,28 @@ test("synthetic Treatment Setting and clozapine TRS pathway replay is pinned and
           "management_recommendation",
         ]);
         assert.equal(treatment.evidence.calibrationStatus, "UNCALIBRATED");
+        assert.equal(treatment.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
+        assert.equal(
+          treatment.evidence.clinicalReviewReference,
+          "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        );
+        assert.deepEqual(clozapineTrs.requestedOutputNodeRefs, [
+          "TreatmentResistanceStatus",
+          "ClozapineEligibility",
+          "ClozapinePriority",
+          "ClozapineImplementationMode",
+          "ECTPriority",
+          "TMSPriority",
+          "ManagementRecommendation",
+        ]);
+        assert.equal(clozapineTrs.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
+        assert.match(clozapineTrs.evidence.limitations.join(" "), /not a diagnosis/);
+        assert.deepEqual(clozapine.requestedOutputNodeRefs, [
+          "Clozapine_Eligibility",
+          "Clinical_Action_Pattern",
+        ]);
         assert.equal(clozapine.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
+        assert.match(clozapine.evidence.limitations.join(" "), /warning-only/);
 
         const execution = {
           executionId: randomUUID(),

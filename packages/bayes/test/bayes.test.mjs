@@ -364,7 +364,7 @@ test("repository registry imports every candidate with pinned artifacts and expe
   );
 });
 
-test("Treatment Setting and clozapine TRS full CPT inference replay is deterministic", async () => {
+test("reviewed Treatment Setting and clozapine full CPT inference replay is deterministic", async () => {
   const root = new URL("../../../BNs/", import.meta.url);
   const fixtures = [
     ["Treatment-Setting/BN-Treatment-Setting.xml", "management_recommendation"],
@@ -372,6 +372,7 @@ test("Treatment Setting and clozapine TRS full CPT inference replay is determini
       "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
       "ManagementRecommendation",
     ],
+    ["Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml", "Clinical_Action_Pattern"],
   ];
   for (const [name, output] of fixtures) {
     const parsed = parseXmlBif(await readFile(new URL(name, root), "utf8"));

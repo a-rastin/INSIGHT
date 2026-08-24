@@ -5,14 +5,14 @@ import type { Pool, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 
-export const BN_ROUTING_ARTIFACT_VERSION = "2.0.0";
+export const BN_ROUTING_ARTIFACT_VERSION = "3.0.0";
 
 export interface BnRoutingFacts {
   readonly demographics: { readonly age: number; readonly sex: "MALE" | "FEMALE" };
   readonly presentationStatus: "FIRST_PRESENTATION" | "KNOWN_SCHIZOPHRENIA" | null;
   readonly assessments: readonly {
     readonly type: "DSM5TR" | "PANSS" | "CSSRS_RECENT";
-    readonly state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED";
+    readonly state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "BYPASSED" | "IMPUTED";
     readonly result?: string;
   }[];
   readonly comorbidityTermIds: readonly string[];
@@ -101,9 +101,9 @@ export interface BnRoutingDecision {
 
 export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
   version: BN_ROUTING_ARTIFACT_VERSION,
-  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24",
+  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V3",
   requiredRouteGroups: ["PRIMARY_TREATMENT", "TREATMENT_SETTING"],
-  optionalRouteGroups: ["CLOZAPINE_TREATMENT_RESISTANCE"],
+  optionalRouteGroups: ["CLOZAPINE_TREATMENT_RESISTANCE", "CLOZAPINE_SUICIDE_RISK"],
   rules: [
     {
       ref: "BN-ROUTE-PHARMACOTHERAPY-001",
@@ -151,6 +151,26 @@ export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
           fact: "ADEQUATE_PRIOR_TRIAL_COUNT_AT_LEAST",
           minimum: 2,
           responses: ["NO_RESPONSE", "PARTIAL_RESPONSE"],
+        },
+      ],
+    },
+    {
+      ref: "BN-ROUTE-CLOZAPINE-SUICIDE-RISK-001",
+      routeGroup: "CLOZAPINE_SUICIDE_RISK",
+      pathwayIdentity: "CLOZAPINE_SUICIDE_RISK",
+      expectedContentSha256: "90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a",
+      all: [
+        { fact: "PRESENTATION_STATUS_IN", values: ["KNOWN_SCHIZOPHRENIA"] },
+        { fact: "ASSESSMENT_STATE_IN", assessmentType: "DSM5TR", values: ["COMPLETED"] },
+        {
+          fact: "ASSESSMENT_RESULT_IN",
+          assessmentType: "DSM5TR",
+          values: ["SCHIZOPHRENIA_CONFIRMED"],
+        },
+        {
+          fact: "ASSESSMENT_STATE_IN",
+          assessmentType: "CSSRS_RECENT",
+          values: ["COMPLETED", "BYPASSED", "IMPUTED"],
         },
       ],
     },
@@ -204,6 +224,23 @@ export const BN_PATHWAY_EXECUTION_PROFILES: Readonly<Record<string, BnPathwayExe
           "Two adequate adherent trials are a routing prerequisite, not a diagnosis of treatment resistance.",
           "Base CPTs are qualitative placeholders and are not clinically calibrated.",
           "Current prescribing information, monitoring rules, safety review, and psychiatrist judgment remain required.",
+        ]),
+      }),
+    }),
+    CLOZAPINE_SUICIDE_RISK: Object.freeze({
+      pathwayIdentity: "CLOZAPINE_SUICIDE_RISK",
+      artifactPath: "Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml",
+      contentSha256: "90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a",
+      requestedOutputNodeRefs: Object.freeze(["Clozapine_Eligibility", "Clinical_Action_Pattern"]),
+      evidence: Object.freeze({
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: Object.freeze([
+          "C-SSRS completion, bypass, or imputation selects this research pathway without creating a suicide-risk action gate.",
+          "Root priors are qualitative placeholders and are not clinically calibrated.",
+          "C-SSRS findings remain warning-only; current prescribing information, monitoring rules, safety review, and psychiatrist judgment remain required.",
         ]),
       }),
     }),
@@ -431,8 +468,9 @@ function validCondition(condition: BnRoutingCondition): boolean {
         ["DSM5TR", "PANSS", "CSSRS_RECENT"].includes(condition.assessmentType) &&
         condition.values.length > 0 &&
         condition.values.every((value) =>
-          ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BYPASSED"].includes(value),
-        )
+          ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BYPASSED", "IMPUTED"].includes(value),
+        ) &&
+        (condition.assessmentType === "CSSRS_RECENT" || !condition.values.includes("IMPUTED"))
       );
     case "ASSESSMENT_RESULT_IN":
       return (
@@ -457,7 +495,7 @@ function validCondition(condition: BnRoutingCondition): boolean {
 
 function validateFacts(facts: BnRoutingFacts): void {
   const assessmentTypes = ["DSM5TR", "PANSS", "CSSRS_RECENT"];
-  const assessmentStates = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BYPASSED"];
+  const assessmentStates = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BYPASSED", "IMPUTED"];
   const token = (value: unknown) =>
     typeof value === "string" && /^[A-Za-z][A-Za-z0-9._:-]{0,199}$/.test(value);
   if (
@@ -474,6 +512,7 @@ function validateFacts(facts: BnRoutingFacts): void {
       ({ type, state, result }) =>
         !assessmentTypes.includes(type) ||
         !assessmentStates.includes(state) ||
+        (state === "IMPUTED" && type !== "CSSRS_RECENT") ||
         (result !== undefined && !token(result)),
     ) ||
     !Array.isArray(facts.comorbidityTermIds) ||
