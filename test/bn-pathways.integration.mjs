@@ -37,6 +37,10 @@ const candidates = [
     "CLOZAPINE_TREATMENT_RESISTANCE",
     "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
   ],
+  [
+    "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+    "9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml",
+  ],
   ["CLOZAPINE_SUICIDE_RISK", "Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml"],
 ];
 
@@ -126,12 +130,16 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
                 },
               ],
               currentRegimen: [],
+              aggressiveBehavior: {
+                riskAfterOtherTreatments: "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS",
+              },
             },
           },
         );
         assert.deepEqual(
           routing.selectedModels.map(({ pathwayIdentity }) => pathwayIdentity),
           [
+            "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
             "CLOZAPINE_SUICIDE_RISK",
             "CLOZAPINE_TREATMENT_RESISTANCE",
             "PHARMACOTHERAPY",
@@ -157,6 +165,10 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
         const clozapine = contracts.find(
           ({ modelHash }) =>
             modelHash === "90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a",
+        );
+        const clozapineAggressiveBehavior = contracts.find(
+          ({ modelHash }) =>
+            modelHash === "424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416",
         );
         const clozapineTrs = contracts.find(
           ({ modelHash }) =>
@@ -185,6 +197,16 @@ test("synthetic Treatment Setting and clozapine pathway replay is pinned and det
         ]);
         assert.equal(clozapineTrs.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
         assert.match(clozapineTrs.evidence.limitations.join(" "), /not a diagnosis/);
+        assert.deepEqual(clozapineAggressiveBehavior.requestedOutputNodeRefs, [
+          "ClozapineIndicationPriority",
+          "ClozapineEligibility",
+          "ManagementRecommendation",
+        ]);
+        assert.equal(clozapineAggressiveBehavior.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
+        assert.match(
+          clozapineAggressiveBehavior.evidence.limitations.join(" "),
+          /not a validated violence-risk assessment/,
+        );
         assert.deepEqual(clozapine.requestedOutputNodeRefs, [
           "Clozapine_Eligibility",
           "Clinical_Action_Pattern",

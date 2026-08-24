@@ -5,7 +5,7 @@ import type { Pool, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 
-export const BN_ROUTING_ARTIFACT_VERSION = "3.0.0";
+export const BN_ROUTING_ARTIFACT_VERSION = "4.0.0";
 
 export interface BnRoutingFacts {
   readonly demographics: { readonly age: number; readonly sex: "MALE" | "FEMALE" };
@@ -24,6 +24,12 @@ export interface BnRoutingFacts {
     readonly adequateAdherence?: boolean;
   }[];
   readonly currentRegimen: readonly { readonly canonicalMedicationId: string }[];
+  readonly aggressiveBehavior?: {
+    readonly riskAfterOtherTreatments:
+      | "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS"
+      | "NOT_SUBSTANTIAL_OR_CONTROLLED"
+      | "INSUFFICIENT_OTHER_TREATMENT_OR_ADHERENCE_ASSESSMENT";
+  };
 }
 
 export type BnRoutingCondition =
@@ -50,6 +56,12 @@ export type BnRoutingCondition =
       readonly fact: "ADEQUATE_PRIOR_TRIAL_COUNT_AT_LEAST";
       readonly minimum: number;
       readonly responses: readonly string[];
+    }
+  | {
+      readonly fact: "AGGRESSION_RISK_AFTER_OTHER_TREATMENTS_IN";
+      readonly values: readonly NonNullable<
+        BnRoutingFacts["aggressiveBehavior"]
+      >["riskAfterOtherTreatments"][];
     }
   | { readonly fact: "CURRENT_MEDICATION_ANY"; readonly values: readonly string[] };
 
@@ -101,9 +113,13 @@ export interface BnRoutingDecision {
 
 export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
   version: BN_ROUTING_ARTIFACT_VERSION,
-  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V3",
+  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V4",
   requiredRouteGroups: ["PRIMARY_TREATMENT", "TREATMENT_SETTING"],
-  optionalRouteGroups: ["CLOZAPINE_TREATMENT_RESISTANCE", "CLOZAPINE_SUICIDE_RISK"],
+  optionalRouteGroups: [
+    "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+    "CLOZAPINE_TREATMENT_RESISTANCE",
+    "CLOZAPINE_SUICIDE_RISK",
+  ],
   rules: [
     {
       ref: "BN-ROUTE-PHARMACOTHERAPY-001",
@@ -131,6 +147,25 @@ export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
           fact: "ASSESSMENT_RESULT_IN",
           assessmentType: "DSM5TR",
           values: ["SCHIZOPHRENIA_CONFIRMED"],
+        },
+      ],
+    },
+    {
+      ref: "BN-ROUTE-CLOZAPINE-AGGRESSIVE-BEHAVIOR-001",
+      routeGroup: "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+      pathwayIdentity: "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+      expectedContentSha256: "424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416",
+      all: [
+        { fact: "PRESENTATION_STATUS_IN", values: ["KNOWN_SCHIZOPHRENIA"] },
+        { fact: "ASSESSMENT_STATE_IN", assessmentType: "DSM5TR", values: ["COMPLETED"] },
+        {
+          fact: "ASSESSMENT_RESULT_IN",
+          assessmentType: "DSM5TR",
+          values: ["SCHIZOPHRENIA_CONFIRMED"],
+        },
+        {
+          fact: "AGGRESSION_RISK_AFTER_OTHER_TREATMENTS_IN",
+          values: ["SUBSTANTIAL_DESPITE_OTHER_TREATMENTS"],
         },
       ],
     },
@@ -198,6 +233,27 @@ export const BN_PATHWAY_EXECUTION_PROFILES: Readonly<Record<string, BnPathwayExe
           "Base CPTs are placeholder distributions and are not clinically calibrated.",
           "Patient-specific LLM-generated CPTs have mathematical validation only.",
           "Output is research decision support and requires psychiatrist review.",
+        ]),
+      }),
+    }),
+    CLOZAPINE_AGGRESSIVE_BEHAVIOR: Object.freeze({
+      pathwayIdentity: "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+      artifactPath: "9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml",
+      contentSha256: "424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416",
+      requestedOutputNodeRefs: Object.freeze([
+        "ClozapineIndicationPriority",
+        "ClozapineEligibility",
+        "ManagementRecommendation",
+      ]),
+      evidence: Object.freeze({
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: Object.freeze([
+          "Structured persistent aggression status is a routing prerequisite, not a validated violence-risk assessment.",
+          "CPT probabilities are qualitative placeholders and are not clinically calibrated.",
+          "Current prescribing information, monitoring rules, safety review, and psychiatrist judgment remain required.",
         ]),
       }),
     }),
@@ -488,6 +544,17 @@ function validCondition(condition: BnRoutingCondition): boolean {
         condition.minimum > 0 &&
         tokens(condition.responses)
       );
+    case "AGGRESSION_RISK_AFTER_OTHER_TREATMENTS_IN":
+      return (
+        condition.values.length > 0 &&
+        condition.values.every((value) =>
+          [
+            "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS",
+            "NOT_SUBSTANTIAL_OR_CONTROLLED",
+            "INSUFFICIENT_OTHER_TREATMENT_OR_ADHERENCE_ASSESSMENT",
+          ].includes(value),
+        )
+      );
     default:
       return false;
   }
@@ -527,7 +594,17 @@ function validateFacts(facts: BnRoutingFacts): void {
         ),
     ) ||
     !Array.isArray(facts.currentRegimen) ||
-    facts.currentRegimen.some(({ canonicalMedicationId }) => !token(canonicalMedicationId))
+    facts.currentRegimen.some(({ canonicalMedicationId }) => !token(canonicalMedicationId)) ||
+    (facts.aggressiveBehavior !== undefined &&
+      (facts.aggressiveBehavior === null ||
+        typeof facts.aggressiveBehavior !== "object" ||
+        Array.isArray(facts.aggressiveBehavior) ||
+        Object.keys(facts.aggressiveBehavior).some((key) => key !== "riskAfterOtherTreatments") ||
+        ![
+          "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS",
+          "NOT_SUBSTANTIAL_OR_CONTROLLED",
+          "INSUFFICIENT_OTHER_TREATMENT_OR_ADHERENCE_ASSESSMENT",
+        ].includes(facts.aggressiveBehavior.riskAfterOtherTreatments)))
   ) {
     throw new BnRoutingError("INVALID_ROUTING_FACTS");
   }
@@ -587,6 +664,11 @@ function matches(facts: BnRoutingFacts, condition: BnRoutingCondition): boolean 
             )
             .map(({ canonicalMedicationId }) => canonicalMedicationId),
         ).size >= condition.minimum
+      );
+    case "AGGRESSION_RISK_AFTER_OTHER_TREATMENTS_IN":
+      return (
+        facts.aggressiveBehavior !== undefined &&
+        condition.values.includes(facts.aggressiveBehavior.riskAfterOtherTreatments)
       );
     case "CURRENT_MEDICATION_ANY":
       return facts.currentRegimen.some(({ canonicalMedicationId }) =>

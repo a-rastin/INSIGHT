@@ -372,6 +372,10 @@ test("reviewed Treatment Setting and clozapine full CPT inference replay is dete
       "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
       "ManagementRecommendation",
     ],
+    [
+      "9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml",
+      "ManagementRecommendation",
+    ],
     ["Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml", "Clinical_Action_Pattern"],
   ];
   for (const [name, output] of fixtures) {

@@ -1,8 +1,8 @@
 # Treatment Setting and Clozapine Pathway Review Record
 
 - **Record date:** 2026-08-24
-- **Routing artifact:** `3.0.0`
-- **Mapping review reference:** `BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V3`
+- **Routing artifact:** `4.0.0`
+- **Mapping review reference:** `BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V4`
 - **Clinical approval status:** Not established
 - **Calibration status:** Uncalibrated
 
@@ -18,6 +18,7 @@ validation record exists in the repository.
 | Pathway                        | Artifact                                                                               | SHA-256                                                            | Structural result                                                     |
 | ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | Treatment Setting              | `BNs/Treatment-Setting/BN-Treatment-Setting.xml`                                       | `2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
+| Clozapine aggressive behavior  | `BNs/9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml`             | `424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 | Clozapine treatment resistance | `BNs/7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml` | `faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 | Clozapine suicide risk         | `BNs/Clozapine in Suicide Risk/BN-Clozapine-in-Suicide-Risk.xml`                       | `90f633bee7da1625ca4d44d35ace5acace5ca51ee7d597541ee7a5d0089acf3a` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 
@@ -44,6 +45,14 @@ trial must explicitly record adequate dose, adequate duration, adequate adherenc
 other responses, or fewer than two qualifying trials do not select the route. This is a conservative
 routing prerequisite, not a clinical diagnosis of treatment-resistant schizophrenia.
 
+Clozapine aggressive behavior is optional and selected only for `KNOWN_SCHIZOPHRENIA` with the
+same completed confirmation and structured `riskAfterOtherTreatments` value
+`SUBSTANTIAL_DESPITE_OTHER_TREATMENTS`. Missing aggression data, controlled/non-substantial risk,
+or insufficient prior-treatment/adherence assessment does not select it. Unknown enum values,
+additional note fields, and free-text-only payloads fail as `INVALID_ROUTING_FACTS`; no LLM output
+or unnormalized note can select this route. This trigger is a conservative routing prerequisite,
+not a validated violence-risk assessment.
+
 ## Requested Outputs
 
 Treatment Setting requests:
@@ -52,6 +61,12 @@ Treatment Setting requests:
 - `inpatient_service_priority`
 - `less_restrictive_care_priority`
 - `management_recommendation`
+
+Clozapine aggressive behavior requests:
+
+- `ClozapineIndicationPriority`
+- `ClozapineEligibility`
+- `ManagementRecommendation`
 
 Clozapine suicide risk requests:
 
@@ -73,9 +88,9 @@ contract. Arbitrary model or node selection is rejected.
 
 ## Evidence and Calibration Limits
 
-- Treatment Setting and clozapine treatment resistance contain placeholder CPTs; clozapine suicide
-  risk contains qualitative root priors and deterministic internal tables. None has a calibration
-  report.
+- Treatment Setting and clozapine treatment resistance contain placeholder CPTs; clozapine
+  aggressive behavior and suicide risk contain qualitative placeholder probabilities. None has a
+  calibration report.
 - Patient-specific LLM-generated CPTs receive mathematical validation only.
 - Structural validity does not establish clinical validity, safety, fairness, or local suitability.
 - Clozapine use still requires current prescribing information, patient-specific contraindication
@@ -93,8 +108,9 @@ clinical approval.
 
 ## Verification
 
-- `test/bn-routing.test.mjs` contains reviewed diagnosis, treatment-trial, C-SSRS terminal-state,
-  missing, ambiguous, inactive, duplicate-trial, unsupported-semantic, and hash-mismatch vectors.
+- `test/bn-routing.test.mjs` contains reviewed diagnosis, aggression, treatment-trial, C-SSRS
+  terminal-state, free-text rejection, missing, ambiguous, inactive, duplicate-trial,
+  unsupported-semantic, and hash-mismatch vectors.
 - `packages/bayes/test/bayes.test.mjs` replays full artifact CPTs through exact marginal inference.
 - `test/bn-pathways.integration.mjs` imports and activates pinned artifacts, routes one synthetic
   qualifying case, validates all CPT contracts, persists snapshots, and verifies stable inference

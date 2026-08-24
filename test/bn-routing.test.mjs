@@ -49,6 +49,15 @@ const clozapineTrs = {
   sourceReference: "gemini-code-1783422447172.xml",
 };
 
+const clozapineAggressiveBehavior = {
+  modelId: "model-clozapine-aggressive-behavior-v1",
+  pathwayIdentity: "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+  version: 1,
+  contentSha256: "424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416",
+  semanticSha256: "f".repeat(64),
+  sourceReference: "gemini-code-1783422744909.xml",
+};
+
 const clozapineSuicideRisk = {
   modelId: "model-clozapine-suicide-risk-v1",
   pathwayIdentity: "CLOZAPINE_SUICIDE_RISK",
@@ -269,6 +278,54 @@ test("clozapine TRS route requires two distinct adequate adherent poor-response 
   }
 });
 
+test("clozapine aggressive-behavior route accepts only reviewed structured trigger vectors", () => {
+  const active = [
+    pharmacotherapy,
+    treatmentSetting,
+    clozapineAggressiveBehavior,
+    clozapineSuicideRisk,
+  ];
+  const route = (aggressiveBehavior) =>
+    evaluateBnRouting({ ...facts, aggressiveBehavior }, INITIAL_BN_ROUTING_ARTIFACT, active);
+
+  assert.equal(
+    route({ riskAfterOtherTreatments: "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS" }).selectedModels.some(
+      ({ pathwayIdentity }) => pathwayIdentity === "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+    ),
+    true,
+  );
+  for (const riskAfterOtherTreatments of [
+    "NOT_SUBSTANTIAL_OR_CONTROLLED",
+    "INSUFFICIENT_OTHER_TREATMENT_OR_ADHERENCE_ASSESSMENT",
+  ]) {
+    assert.equal(
+      route({ riskAfterOtherTreatments }).selectedModels.some(
+        ({ pathwayIdentity }) => pathwayIdentity === "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+      ),
+      false,
+    );
+  }
+  assert.equal(
+    route(undefined).selectedModels.some(
+      ({ pathwayIdentity }) => pathwayIdentity === "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
+    ),
+    false,
+  );
+  for (const aggressiveBehavior of [
+    { notes: "persistent aggression" },
+    { riskAfterOtherTreatments: "LLM_INFERRED_SUBSTANTIAL" },
+    {
+      riskAfterOtherTreatments: "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS",
+      notes: "free text must not participate",
+    },
+  ]) {
+    assert.throws(
+      () => route(aggressiveBehavior),
+      (error) => error instanceof BnRoutingError && error.code === "INVALID_ROUTING_FACTS",
+    );
+  }
+});
+
 test("inactive, quarantined, or hash-mismatched reviewed models are never selected", () => {
   for (const clozapineModel of [
     undefined,
@@ -312,6 +369,25 @@ test("inactive, quarantined, or hash-mismatched reviewed models are never select
           clozapineSuicideRisk,
           ...(model ? [model] : []),
         ]),
+      (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",
+    );
+  }
+  for (const model of [
+    undefined,
+    { ...clozapineAggressiveBehavior, contentSha256: "f".repeat(64) },
+  ]) {
+    assert.throws(
+      () =>
+        evaluateBnRouting(
+          {
+            ...facts,
+            aggressiveBehavior: {
+              riskAfterOtherTreatments: "SUBSTANTIAL_DESPITE_OTHER_TREATMENTS",
+            },
+          },
+          INITIAL_BN_ROUTING_ARTIFACT,
+          [pharmacotherapy, treatmentSetting, clozapineSuicideRisk, ...(model ? [model] : [])],
+        ),
       (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",
     );
   }

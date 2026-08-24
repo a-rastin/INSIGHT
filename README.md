@@ -43,7 +43,7 @@ rejection, lifecycle-policy, rebuild-hash, and reviewer-sign-off status without 
 
 ## Bayesian Pathways
 
-Treatment Setting, clozapine treatment-resistance, and clozapine suicide-risk execution use deterministic structured routing,
+Treatment Setting and clozapine aggressive-behavior, treatment-resistance, and suicide-risk execution use deterministic structured routing,
 exact pinned artifact hashes, complete CPT contracts, fixed requested outputs, immutable inference
 results, and fail-closed model selection. Evidence, calibration, and clinical-review limits are
 published in `docs/reviews/bn-treatment-setting-and-clozapine-pathways.md`; none of these pathways has
