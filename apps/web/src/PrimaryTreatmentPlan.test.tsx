@@ -144,6 +144,55 @@ describe("Primary Treatment Plan review", () => {
     expect(screen.getByText("rx-synthetic-a")).toBeTruthy();
   });
 
+  it("keeps successful final-DDI findings warning-only", () => {
+    render(
+      <PrimaryTreatmentPlanView
+        result={result("SUCCEEDED", {
+          draft: {
+            ...draft,
+            readiness: {
+              status: "READY",
+              reason: null,
+              executionRef: "ddi-final-safe",
+              findings: [
+                {
+                  leftCanonicalId: "rx-synthetic-a",
+                  rightCanonicalId: "rx-synthetic-b",
+                  severity: "contraindicated",
+                },
+              ],
+            },
+          },
+        })}
+      />,
+    );
+    expect(
+      screen.getByRole("heading", { name: "Final regimen DDI recheck complete" }),
+    ).toBeTruthy();
+    expect(screen.getByText(/ready to finalize/i)).toBeTruthy();
+    expect(screen.getByText(/Warning: rx-synthetic-a \+ rx-synthetic-b/)).toBeTruthy();
+  });
+
+  it("blocks finalization when final-DDI proof failed", () => {
+    render(
+      <PrimaryTreatmentPlanView
+        result={result("SUCCEEDED", {
+          draft: {
+            ...draft,
+            readiness: {
+              status: "BLOCKED",
+              reason: "FAILED",
+              executionRef: null,
+              findings: [],
+            },
+          },
+        })}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Finalization blocked" })).toBeTruthy();
+    expect(screen.getByText(/successful exact-regimen check is required/i)).toBeTruthy();
+  });
+
   it("has no detectable WCAG A or AA violations", async () => {
     const { container } = render(<PrimaryTreatmentPlanView result={result("SUCCEEDED")} />);
     const findings = await axe.run(container, {

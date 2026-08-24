@@ -2352,6 +2352,57 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_orchestration_attempt_mutation();
     `,
   },
+  {
+    version: 31,
+    name: "clinician_regimen_final_ddi",
+    sql: `
+      ALTER TABLE insight.primary_treatment_plan_drafts
+        ADD COLUMN clinician_regimen jsonb CHECK (
+          clinician_regimen IS NULL OR jsonb_typeof(clinician_regimen) = 'array'
+        ),
+        ADD COLUMN regimen_fingerprint text CHECK (
+          regimen_fingerprint IS NULL OR regimen_fingerprint ~ '^[0-9a-f]{64}$'
+        ),
+        ADD COLUMN final_ddi_execution_ref text REFERENCES insight.ddi_executions(execution_ref);
+
+      CREATE TABLE insight.final_ddi_rechecks (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        job_id uuid NOT NULL UNIQUE REFERENCES insight.jobs(id) ON DELETE CASCADE,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        draft_ref text NOT NULL,
+        draft_revision bigint NOT NULL CHECK (draft_revision > 0),
+        regimen_fingerprint text NOT NULL CHECK (regimen_fingerprint ~ '^[0-9a-f]{64}$'),
+        exact_regimen jsonb NOT NULL CHECK (jsonb_typeof(exact_regimen) = 'array'),
+        workflow_revision bigint NOT NULL CHECK (workflow_revision > 0),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        requested_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        execution_ref text UNIQUE REFERENCES insight.ddi_executions(execution_ref),
+        created_at timestamptz NOT NULL,
+        completed_at timestamptz
+      );
+      CREATE INDEX final_ddi_rechecks_case_idx ON insight.final_ddi_rechecks
+        (research_case_id, draft_revision DESC, created_at DESC);
+
+      CREATE FUNCTION insight.protect_final_ddi_recheck_pins()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF (NEW.job_id,NEW.research_case_id,NEW.draft_ref,NEW.draft_revision,
+            NEW.regimen_fingerprint,NEW.exact_regimen,NEW.workflow_revision,
+            NEW.input_revision,NEW.requested_by_user_id,NEW.created_at)
+           IS DISTINCT FROM
+           (OLD.job_id,OLD.research_case_id,OLD.draft_ref,OLD.draft_revision,
+            OLD.regimen_fingerprint,OLD.exact_regimen,OLD.workflow_revision,
+            OLD.input_revision,OLD.requested_by_user_id,OLD.created_at)
+        THEN RAISE EXCEPTION 'Final DDI recheck pins are immutable' USING ERRCODE = '55000';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+      CREATE TRIGGER final_ddi_recheck_pins_immutable
+      BEFORE UPDATE ON insight.final_ddi_rechecks
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_final_ddi_recheck_pins();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

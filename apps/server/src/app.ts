@@ -45,6 +45,7 @@ import { modelEndpointRoutes, type ModelEndpointHttpOptions } from "./model-endp
 import { orchestrationRoutes } from "./orchestration/http.js";
 import { patientRoutes } from "./patient/http.js";
 import type { OfficialIdentifierConfiguration } from "./patient/patients.js";
+import { treatmentPlanRoutes } from "./treatment-plan/http.js";
 
 const API_PREFIX = "/api/v1";
 
@@ -352,6 +353,10 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       );
       void app.register(
         orchestrationRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
+        { prefix: API_PREFIX },
+      );
+      void app.register(
+        treatmentPlanRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
         { prefix: API_PREFIX },
       );
     }

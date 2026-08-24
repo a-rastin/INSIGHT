@@ -201,6 +201,34 @@ export const PrimaryTreatmentPlanOutputSchema = Type.Object(
 );
 export type PrimaryTreatmentPlanOutput = Static<typeof PrimaryTreatmentPlanOutputSchema>;
 
+export const ClinicianRegimenMedicationSchema = Type.Object(
+  {
+    canonicalMedicationId: TreatmentPlanRefSchema,
+    dose: Type.Object(
+      {
+        value: Type.Number({ exclusiveMinimum: 0 }),
+        unit: TreatmentPlanShortTextSchema,
+      },
+      { additionalProperties: false },
+    ),
+    route: TreatmentPlanShortTextSchema,
+    frequency: TreatmentPlanShortTextSchema,
+    titration: Type.Optional(TreatmentPlanTextSchema),
+    monitoring: Type.Array(TreatmentPlanTextSchema, { maxItems: 100 }),
+  },
+  { additionalProperties: false },
+);
+export type ClinicianRegimenMedication = Static<typeof ClinicianRegimenMedicationSchema>;
+
+export const ClinicianRegimenInputSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+    regimen: Type.Array(ClinicianRegimenMedicationSchema, { minItems: 1, maxItems: 100 }),
+  },
+  { $id: "insight.clinician-regimen-input.v1", additionalProperties: false },
+);
+export type ClinicianRegimenInput = Static<typeof ClinicianRegimenInputSchema>;
+
 export const HealthResponseSchema = Type.Object(
   { schemaVersion: SchemaVersionSchema, status: Type.Literal("ok") },
   { $id: "insight.health-response.v1", additionalProperties: false },

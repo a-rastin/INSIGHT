@@ -12,6 +12,7 @@ import {
   AssessmentStatusSchema,
   AssessmentTypeSchema,
   ContractValidationError,
+  ClinicianRegimenInputSchema,
   PaginationQuerySchema,
   PrimaryTreatmentPlanInputSchema,
   ProvenanceSchema,
@@ -179,7 +180,10 @@ test("Treatment Plan golden fixtures keep structure authoritative and versioned"
     false,
   );
   for (const field of ["regimen", "generalMonitoring", "explanation", "sourceExecutionRefs"]) {
-    assert.equal(isContract(PrimaryTreatmentPlanInputSchema, { ...valid, [field]: undefined }), false);
+    assert.equal(
+      isContract(PrimaryTreatmentPlanInputSchema, { ...valid, [field]: undefined }),
+      false,
+    );
   }
   for (const field of [
     "canonicalMedicationId",
@@ -202,6 +206,29 @@ test("Treatment Plan golden fixtures keep structure authoritative and versioned"
     isContract(PrimaryTreatmentPlanInputSchema, {
       ...valid,
       regimen: [{ ...valid.regimen[0], dose: { value: 2 } }],
+    }),
+    false,
+  );
+});
+
+test("clinician regimen contract requires structure but no reason or acknowledgement", () => {
+  const regimen = {
+    schemaVersion: "1",
+    regimen: [
+      {
+        canonicalMedicationId: "rx-clozapine",
+        dose: { value: 100, unit: "mg" },
+        route: "oral",
+        frequency: "daily",
+        monitoring: [],
+      },
+    ],
+  };
+  assert.equal(isContract(ClinicianRegimenInputSchema, regimen), true);
+  assert.equal(
+    isContract(ClinicianRegimenInputSchema, {
+      ...regimen,
+      regimen: [{ ...regimen.regimen[0], reason: "not required" }],
     }),
     false,
   );

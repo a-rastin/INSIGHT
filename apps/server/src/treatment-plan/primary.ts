@@ -157,6 +157,7 @@ export async function submitPrimaryPlan(
          ai_imputation_notice_visible=EXCLUDED.ai_imputation_notice_visible,
          workflow_revision=EXCLUDED.workflow_revision,input_revision=EXCLUDED.input_revision,
          last_tool_execution_id=EXCLUDED.last_tool_execution_id,
+         clinician_regimen=NULL,regimen_fingerprint=NULL,final_ddi_execution_ref=NULL,
          updated_by_user_id=EXCLUDED.updated_by_user_id,updated_at=EXCLUDED.updated_at
        RETURNING *`,
       [

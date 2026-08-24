@@ -1,6 +1,13 @@
 import { type ReactNode, useEffect, useState } from "react";
 
-import { Badge, Banner, EmptyState, ErrorState, LoadingState } from "./components/primitives";
+import {
+  Badge,
+  Banner,
+  Button,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "./components/primitives";
 
 export type PrimaryPlanStatus =
   | "EMPTY"
@@ -18,10 +25,10 @@ type Medication = {
   dose: { value: number; unit: string };
   route: string;
   frequency: string;
-  titration: string;
+  titration?: string;
   monitoring: string[];
-  rationale: Rationale[];
-  warningRefs: string[];
+  rationale?: Rationale[];
+  warningRefs?: string[];
 };
 type SourceRecord = {
   sourceRef: string;
@@ -44,6 +51,36 @@ type Draft = {
     generatedAt: string;
   };
   authorizedSources: SourceRecord[];
+  readiness?: {
+    status: "CHECKING" | "BLOCKED" | "READY";
+    reason: "PENDING" | "FAILED" | "UNPROVEN" | null;
+    executionRef: string | null;
+    findings: Array<{
+      leftCanonicalId: string;
+      rightCanonicalId: string;
+      severity: string;
+      recommendedAction?: string;
+    }>;
+  };
+  catalog?: Array<{ canonicalMedicationId: string; preferredName: string }>;
+};
+
+type Review = {
+  draftRef: string;
+  draftRevision: number;
+  aiImputationNoticeVisible: boolean;
+  generatedPlan: {
+    regimen: Medication[];
+    generalMonitoring: string[];
+    explanation: string;
+    sourceExecutionRefs: string[];
+  };
+  regimen: Medication[];
+  diff: Array<{ field: string }>;
+  readiness: NonNullable<Draft["readiness"]>;
+  catalog: NonNullable<Draft["catalog"]>;
+  primaryDdiExecutionRef: string;
+  updatedAt: string;
 };
 
 export type PrimaryPlanResponse = {
@@ -58,7 +95,17 @@ async function requestPlan(patientId: string): Promise<PrimaryPlanResponse> {
   const response = await fetch(`/api/v1/patients/${patientId}/research-case/primary-plan`);
   if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
   if (!response.ok) throw new Error("UNAVAILABLE");
-  const body = (await response.json()) as Partial<PrimaryPlanResponse>;
+  const raw = (await response.json()) as Partial<PrimaryPlanResponse> & { review?: Review | null };
+  const body: Partial<PrimaryPlanResponse> =
+    "review" in raw
+      ? {
+          schemaVersion: "1",
+          status: raw.review ? "SUCCEEDED" : "EMPTY",
+          progress: null,
+          failure: null,
+          draft: raw.review ? reviewDraft(raw.review) : null,
+        }
+      : raw;
   if (
     body.schemaVersion !== "1" ||
     ![
@@ -83,6 +130,52 @@ async function requestPlan(patientId: string): Promise<PrimaryPlanResponse> {
   return body as PrimaryPlanResponse;
 }
 
+function reviewDraft(review: Review): Draft {
+  const generatedById = new Map(
+    review.generatedPlan.regimen.map((medication) => [
+      medication.canonicalMedicationId,
+      medication,
+    ]),
+  );
+  const sources = new Map<string, SourceRecord>();
+  for (const medication of review.generatedPlan.regimen) {
+    for (const rationale of medication.rationale ?? []) {
+      sources.set(rationale.sourceRef, {
+        sourceRef: rationale.sourceRef,
+        label: rationale.kind.replaceAll("_", " ").toLocaleLowerCase("en-US"),
+        category: rationale.kind === "BN_INFERENCE" ? "BN_INFERENCE" : "EXECUTION",
+        summary: rationale.text,
+      });
+    }
+  }
+  return {
+    draftRef: review.draftRef,
+    draftRevision: review.draftRevision,
+    aiImputationNoticeVisible: review.aiImputationNoticeVisible,
+    regimen: review.regimen.map((medication) => ({
+      ...medication,
+      rationale: generatedById.get(medication.canonicalMedicationId)?.rationale ?? [],
+      warningRefs: generatedById.get(medication.canonicalMedicationId)?.warningRefs ?? [],
+    })),
+    generalMonitoring: review.generatedPlan.generalMonitoring,
+    explanation: review.generatedPlan.explanation,
+    baseline: {
+      draftRef: review.draftRef,
+      revision: 1,
+      changedFields: review.diff.map(({ field }) => field),
+    },
+    provenance: {
+      schemaVersion: "1.0.0",
+      modelExecutionRef: review.generatedPlan.sourceExecutionRefs[0] ?? "unavailable",
+      primaryDdiExecutionRef: review.primaryDdiExecutionRef,
+      generatedAt: review.updatedAt,
+    },
+    authorizedSources: [...sources.values()],
+    readiness: review.readiness,
+    catalog: review.catalog,
+  };
+}
+
 function completeDraft(draft: Draft): boolean {
   try {
     const sources = new Set(draft.authorizedSources.map(({ sourceRef }) => sourceRef));
@@ -102,13 +195,11 @@ function completeDraft(draft: Draft): boolean {
             medication.dose.unit &&
             medication.route &&
             medication.frequency &&
-            medication.titration &&
-            medication.monitoring.length > 0 &&
-            medication.rationale.length > 0 &&
-            medication.rationale.every(
+            Array.isArray(medication.monitoring) &&
+            (medication.rationale ?? []).every(
               ({ sourceRef, text }) => sourceRef && text && sources.has(sourceRef),
             ) &&
-            medication.warningRefs.every((sourceRef) => sources.has(sourceRef)),
+            (medication.warningRefs ?? []).every((sourceRef) => sources.has(sourceRef)),
         ),
     );
   } catch {
@@ -116,9 +207,16 @@ function completeDraft(draft: Draft): boolean {
   }
 }
 
-export function PrimaryTreatmentPlan({ patientId }: { patientId: string }) {
+export function PrimaryTreatmentPlan({
+  patientId,
+  csrfToken,
+}: {
+  patientId: string;
+  csrfToken: string;
+}) {
   const [result, setResult] = useState<PrimaryPlanResponse | null>(null);
   const [error, setError] = useState<"unauthorized" | "unavailable" | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -136,6 +234,24 @@ export function PrimaryTreatmentPlan({ patientId }: { patientId: string }) {
     };
   }, [patientId]);
 
+  useEffect(() => {
+    if (result?.draft?.readiness?.status !== "CHECKING") return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      void requestPlan(patientId)
+        .then((next) => {
+          if (active) setResult(next);
+        })
+        .catch(() => {
+          if (active) setError("unavailable");
+        });
+    }, 1000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [patientId, result?.draft?.readiness?.status]);
+
   if (!result && !error) return <LoadingState label="Loading Primary Treatment Plan draft" />;
   if (error) {
     return (
@@ -149,10 +265,50 @@ export function PrimaryTreatmentPlan({ patientId }: { patientId: string }) {
       />
     );
   }
-  return result ? <PrimaryTreatmentPlanView result={result} /> : null;
+  async function save(regimen: Medication[]) {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/v1/patients/${patientId}/research-case/primary-plan`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
+        body: JSON.stringify({
+          schemaVersion: "1",
+          regimen: regimen.map((item) => ({
+            canonicalMedicationId: item.canonicalMedicationId,
+            dose: item.dose,
+            route: item.route,
+            frequency: item.frequency,
+            ...(item.titration ? { titration: item.titration } : {}),
+            monitoring: item.monitoring,
+          })),
+        }),
+      });
+      if (!response.ok) throw new Error("UNAVAILABLE");
+      setResult(await requestPlan(patientId));
+    } catch {
+      setError("unavailable");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return result ? (
+    <PrimaryTreatmentPlanView
+      result={result}
+      saving={saving}
+      onSave={(regimen) => void save(regimen)}
+    />
+  ) : null;
 }
 
-export function PrimaryTreatmentPlanView({ result }: { result: PrimaryPlanResponse }) {
+export function PrimaryTreatmentPlanView({
+  result,
+  saving = false,
+  onSave,
+}: {
+  result: PrimaryPlanResponse;
+  saving?: boolean;
+  onSave?: (regimen: Medication[]) => void;
+}) {
   if (result.status === "EMPTY") {
     return (
       <PlanSection status={result.status}>
@@ -238,6 +394,15 @@ export function PrimaryTreatmentPlanView({ result }: { result: PrimaryPlanRespon
           displayed.
         </p>
       ) : null}
+      {draft.readiness ? <FinalReadiness readiness={draft.readiness} /> : null}
+      {onSave && draft.catalog ? (
+        <RegimenEditor
+          key={draft.draftRevision}
+          draft={draft}
+          saving={saving}
+          onSave={onSave}
+        />
+      ) : null}
       <section className="card" aria-labelledby="primary-plan-regimen-title">
         <p className="kicker">Generated baseline</p>
         <h3 id="primary-plan-regimen-title">Structured regimen</h3>
@@ -276,7 +441,7 @@ export function PrimaryTreatmentPlanView({ result }: { result: PrimaryPlanRespon
               </ul>
               <h5>Rationale</h5>
               <ul className="primary-plan__rationale">
-                {medication.rationale.map((item) => {
+                {(medication.rationale ?? []).map((item) => {
                   const resolved = sources.get(item.sourceRef)!;
                   return (
                     <li key={`${item.sourceRef}-${item.text}`}>
@@ -286,11 +451,11 @@ export function PrimaryTreatmentPlanView({ result }: { result: PrimaryPlanRespon
                   );
                 })}
               </ul>
-              {medication.warningRefs.length ? (
+              {(medication.warningRefs ?? []).length ? (
                 <div className="primary-plan__warnings">
                   <h5>Warnings</h5>
                   <ul>
-                    {medication.warningRefs.map((sourceRef) => {
+                    {(medication.warningRefs ?? []).map((sourceRef) => {
                       const resolved = sources.get(sourceRef)!;
                       return (
                         <li key={sourceRef}>
@@ -387,6 +552,159 @@ function PlanSection({ children, status }: { children: ReactNode; status: Primar
         <Badge tone={tone}>{status.replaceAll("_", " ").toLocaleLowerCase("en-US")}</Badge>
       </div>
       {children}
+    </section>
+  );
+}
+
+function FinalReadiness({ readiness }: { readiness: NonNullable<Draft["readiness"]> }) {
+  if (readiness.status === "READY") {
+    return (
+      <Banner
+        title="Final regimen DDI recheck complete"
+        tone={readiness.findings.length ? "warning" : "info"}
+      >
+        <p>Exact regimen is ready to finalize. Findings are warnings and do not block readiness.</p>
+        {readiness.findings.map((finding) => (
+          <p key={`${finding.leftCanonicalId}-${finding.rightCanonicalId}-${finding.severity}`}>
+            Warning: {finding.leftCanonicalId} + {finding.rightCanonicalId} ({finding.severity})
+            {finding.recommendedAction ? `: ${finding.recommendedAction}` : ""}
+          </p>
+        ))}
+      </Banner>
+    );
+  }
+  return (
+    <Banner
+      title={
+        readiness.status === "CHECKING"
+          ? "Final regimen DDI recheck running"
+          : "Finalization blocked"
+      }
+      tone={readiness.status === "CHECKING" ? "info" : "urgent"}
+    >
+      {readiness.reason === "FAILED"
+        ? "Final-regimen DDI recheck failed. A successful exact-regimen check is required."
+        : readiness.reason === "UNPROVEN"
+          ? "No proven final-regimen DDI result is bound to this draft."
+          : "Medication safety check is pending."}
+    </Banner>
+  );
+}
+
+function RegimenEditor({
+  draft,
+  saving,
+  onSave,
+}: {
+  draft: Draft;
+  saving: boolean;
+  onSave: (regimen: Medication[]) => void;
+}) {
+  const [regimen, setRegimen] = useState(draft.regimen);
+  const catalog = draft.catalog!;
+  const update = (index: number, patch: Partial<Medication>) =>
+    setRegimen((current) =>
+      current.map((medication, position) =>
+        position === index ? { ...medication, ...patch } : medication,
+      ),
+    );
+  return (
+    <section className="card primary-plan__editor" aria-labelledby="primary-plan-editor-title">
+      <p className="kicker">Clinician edit</p>
+      <h3 id="primary-plan-editor-title">Final structured regimen</h3>
+      <p>Any canonical medication may be selected. DDI findings remain warning-only.</p>
+      {regimen.map((medication, index) => (
+        <fieldset key={index}>
+          <legend>Medication {index + 1}</legend>
+          <label>
+            Canonical medication
+            <select
+              value={medication.canonicalMedicationId}
+              onChange={(event) => update(index, { canonicalMedicationId: event.target.value })}
+            >
+              {catalog.map((entry) => (
+                <option key={entry.canonicalMedicationId} value={entry.canonicalMedicationId}>
+                  {entry.preferredName} ({entry.canonicalMedicationId})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Dose
+            <input
+              type="number"
+              min="0.01"
+              step="any"
+              value={medication.dose.value}
+              onChange={(event) =>
+                update(index, { dose: { ...medication.dose, value: Number(event.target.value) } })
+              }
+            />
+          </label>
+          <label>
+            Unit
+            <input
+              value={medication.dose.unit}
+              onChange={(event) =>
+                update(index, { dose: { ...medication.dose, unit: event.target.value } })
+              }
+            />
+          </label>
+          <label>
+            Route
+            <input
+              value={medication.route}
+              onChange={(event) => update(index, { route: event.target.value })}
+            />
+          </label>
+          <label>
+            Frequency
+            <input
+              value={medication.frequency}
+              onChange={(event) => update(index, { frequency: event.target.value })}
+            />
+          </label>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              setRegimen((current) => current.filter((_, position) => position !== index))
+            }
+          >
+            Remove medication
+          </Button>
+        </fieldset>
+      ))}
+      <div className="primary-plan__editor-actions">
+        <Button
+          variant="secondary"
+          disabled={!catalog.length || regimen.length >= 100}
+          onClick={() => {
+            const entry = catalog.find(
+              ({ canonicalMedicationId }) =>
+                !regimen.some((item) => item.canonicalMedicationId === canonicalMedicationId),
+            );
+            if (entry)
+              setRegimen((current) => [
+                ...current,
+                {
+                  canonicalMedicationId: entry.canonicalMedicationId,
+                  dose: { value: 1, unit: "mg" },
+                  route: "oral",
+                  frequency: "once daily",
+                  titration: "Reassess before change.",
+                  monitoring: [],
+                  rationale: [],
+                  warningRefs: [],
+                },
+              ]);
+          }}
+        >
+          Add medication
+        </Button>
+        <Button disabled={!regimen.length} loading={saving} onClick={() => onSave(regimen)}>
+          Save regimen and recheck DDI
+        </Button>
+      </div>
     </section>
   );
 }

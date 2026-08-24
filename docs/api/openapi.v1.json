@@ -13317,6 +13317,1117 @@
           }
         }
       }
+    },
+    "/api/v1/patients/{patientId}/research-case/primary-plan": {
+      "get": {
+        "operationId": "getPrimaryTreatmentPlanReview",
+        "tags": ["treatment-plan"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "review"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "review": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "draftRef",
+                            "draftRevision",
+                            "aiImputationNoticeVisible",
+                            "generatedPlan",
+                            "regimen",
+                            "diff",
+                            "readiness",
+                            "catalog",
+                            "primaryDdiExecutionRef",
+                            "updatedAt"
+                          ],
+                          "properties": {
+                            "draftRef": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "draftRevision": { "minimum": 1, "type": "integer" },
+                            "aiImputationNoticeVisible": { "type": "boolean" },
+                            "generatedPlan": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "schemaVersion",
+                                "regimen",
+                                "generalMonitoring",
+                                "explanation",
+                                "sourceExecutionRefs"
+                              ],
+                              "properties": {
+                                "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                                "regimen": {
+                                  "minItems": 1,
+                                  "maxItems": 100,
+                                  "type": "array",
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "required": [
+                                      "canonicalMedicationId",
+                                      "dose",
+                                      "route",
+                                      "frequency",
+                                      "monitoring",
+                                      "rationale",
+                                      "warningRefs"
+                                    ],
+                                    "properties": {
+                                      "canonicalMedicationId": {
+                                        "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                        "type": "string"
+                                      },
+                                      "dose": {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "required": ["value", "unit"],
+                                        "properties": {
+                                          "value": { "exclusiveMinimum": 0, "type": "number" },
+                                          "unit": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "route": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      },
+                                      "frequency": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      },
+                                      "titration": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "monitoring": {
+                                        "maxItems": 100,
+                                        "type": "array",
+                                        "items": {
+                                          "minLength": 1,
+                                          "maxLength": 4000,
+                                          "type": "string"
+                                        }
+                                      },
+                                      "rationale": {
+                                        "minItems": 1,
+                                        "maxItems": 100,
+                                        "type": "array",
+                                        "items": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "required": ["kind", "sourceRef", "text"],
+                                          "properties": {
+                                            "kind": {
+                                              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                              "type": "string"
+                                            },
+                                            "sourceRef": {
+                                              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                              "type": "string"
+                                            },
+                                            "text": {
+                                              "minLength": 1,
+                                              "maxLength": 4000,
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "warningRefs": {
+                                        "maxItems": 100,
+                                        "uniqueItems": true,
+                                        "type": "array",
+                                        "items": {
+                                          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "generalMonitoring": {
+                                  "maxItems": 100,
+                                  "type": "array",
+                                  "items": { "minLength": 1, "maxLength": 4000, "type": "string" }
+                                },
+                                "explanation": {
+                                  "minLength": 1,
+                                  "maxLength": 4000,
+                                  "type": "string"
+                                },
+                                "sourceExecutionRefs": {
+                                  "minItems": 1,
+                                  "maxItems": 100,
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "title": "insight.treatment-plan-primary-input.v1"
+                            },
+                            "regimen": {
+                              "minItems": 1,
+                              "maxItems": 100,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "canonicalMedicationId",
+                                  "dose",
+                                  "route",
+                                  "frequency",
+                                  "monitoring"
+                                ],
+                                "properties": {
+                                  "canonicalMedicationId": {
+                                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                    "type": "string"
+                                  },
+                                  "dose": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "required": ["value", "unit"],
+                                    "properties": {
+                                      "value": { "exclusiveMinimum": 0, "type": "number" },
+                                      "unit": { "minLength": 1, "maxLength": 500, "type": "string" }
+                                    }
+                                  },
+                                  "route": { "minLength": 1, "maxLength": 500, "type": "string" },
+                                  "frequency": {
+                                    "minLength": 1,
+                                    "maxLength": 500,
+                                    "type": "string"
+                                  },
+                                  "titration": {
+                                    "minLength": 1,
+                                    "maxLength": 4000,
+                                    "type": "string"
+                                  },
+                                  "monitoring": {
+                                    "maxItems": 100,
+                                    "type": "array",
+                                    "items": { "minLength": 1, "maxLength": 4000, "type": "string" }
+                                  }
+                                }
+                              }
+                            },
+                            "diff": {
+                              "maxItems": 100,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["field", "before", "after"],
+                                "properties": {
+                                  "field": { "minLength": 1, "maxLength": 500, "type": "string" },
+                                  "before": {
+                                    "anyOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "required": [
+                                          "canonicalMedicationId",
+                                          "dose",
+                                          "route",
+                                          "frequency",
+                                          "monitoring"
+                                        ],
+                                        "properties": {
+                                          "canonicalMedicationId": {
+                                            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                            "type": "string"
+                                          },
+                                          "dose": {
+                                            "additionalProperties": false,
+                                            "type": "object",
+                                            "required": ["value", "unit"],
+                                            "properties": {
+                                              "value": { "exclusiveMinimum": 0, "type": "number" },
+                                              "unit": {
+                                                "minLength": 1,
+                                                "maxLength": 500,
+                                                "type": "string"
+                                              }
+                                            }
+                                          },
+                                          "route": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "frequency": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "titration": {
+                                            "minLength": 1,
+                                            "maxLength": 4000,
+                                            "type": "string"
+                                          },
+                                          "monitoring": {
+                                            "maxItems": 100,
+                                            "type": "array",
+                                            "items": {
+                                              "minLength": 1,
+                                              "maxLength": 4000,
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      { "type": "null" }
+                                    ]
+                                  },
+                                  "after": {
+                                    "anyOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "required": [
+                                          "canonicalMedicationId",
+                                          "dose",
+                                          "route",
+                                          "frequency",
+                                          "monitoring"
+                                        ],
+                                        "properties": {
+                                          "canonicalMedicationId": {
+                                            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                            "type": "string"
+                                          },
+                                          "dose": {
+                                            "additionalProperties": false,
+                                            "type": "object",
+                                            "required": ["value", "unit"],
+                                            "properties": {
+                                              "value": { "exclusiveMinimum": 0, "type": "number" },
+                                              "unit": {
+                                                "minLength": 1,
+                                                "maxLength": 500,
+                                                "type": "string"
+                                              }
+                                            }
+                                          },
+                                          "route": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "frequency": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "titration": {
+                                            "minLength": 1,
+                                            "maxLength": 4000,
+                                            "type": "string"
+                                          },
+                                          "monitoring": {
+                                            "maxItems": 100,
+                                            "type": "array",
+                                            "items": {
+                                              "minLength": 1,
+                                              "maxLength": 4000,
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      { "type": "null" }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            "readiness": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["status", "reason", "executionRef", "findings"],
+                              "properties": {
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["CHECKING"] },
+                                    { "type": "string", "enum": ["BLOCKED"] },
+                                    { "type": "string", "enum": ["READY"] }
+                                  ]
+                                },
+                                "reason": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["PENDING"] },
+                                    { "type": "string", "enum": ["FAILED"] },
+                                    { "type": "string", "enum": ["UNPROVEN"] },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "executionRef": {
+                                  "anyOf": [
+                                    { "minLength": 1, "maxLength": 200, "type": "string" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "findings": {
+                                  "maxItems": 10000,
+                                  "type": "array",
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "required": [
+                                      "leftCanonicalId",
+                                      "rightCanonicalId",
+                                      "severity",
+                                      "sourceRecordRef"
+                                    ],
+                                    "properties": {
+                                      "leftCanonicalId": {
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "type": "string"
+                                      },
+                                      "rightCanonicalId": {
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "type": "string"
+                                      },
+                                      "severity": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      },
+                                      "mechanism": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "clinicalEffect": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "recommendedAction": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "sourceRecordRef": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "catalog": {
+                              "maxItems": 100000,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["canonicalMedicationId", "preferredName"],
+                                "properties": {
+                                  "canonicalMedicationId": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "type": "string"
+                                  },
+                                  "preferredName": {
+                                    "minLength": 1,
+                                    "maxLength": 500,
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "primaryDdiExecutionRef": {
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "updatedAt": { "format": "date-time", "type": "string" }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "saveClinicianRegimen",
+        "tags": ["treatment-plan"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["schemaVersion", "regimen"],
+                "properties": {
+                  "schemaVersion": { "type": "string", "enum": ["1"] },
+                  "regimen": {
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "canonicalMedicationId",
+                        "dose",
+                        "route",
+                        "frequency",
+                        "monitoring"
+                      ],
+                      "properties": {
+                        "canonicalMedicationId": {
+                          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                          "type": "string"
+                        },
+                        "dose": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": ["value", "unit"],
+                          "properties": {
+                            "value": { "exclusiveMinimum": 0, "type": "number" },
+                            "unit": { "minLength": 1, "maxLength": 500, "type": "string" }
+                          }
+                        },
+                        "route": { "minLength": 1, "maxLength": 500, "type": "string" },
+                        "frequency": { "minLength": 1, "maxLength": 500, "type": "string" },
+                        "titration": { "minLength": 1, "maxLength": 4000, "type": "string" },
+                        "monitoring": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": { "minLength": 1, "maxLength": 4000, "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "review"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "review": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "draftRef",
+                            "draftRevision",
+                            "aiImputationNoticeVisible",
+                            "generatedPlan",
+                            "regimen",
+                            "diff",
+                            "readiness",
+                            "catalog",
+                            "primaryDdiExecutionRef",
+                            "updatedAt"
+                          ],
+                          "properties": {
+                            "draftRef": { "minLength": 1, "maxLength": 200, "type": "string" },
+                            "draftRevision": { "minimum": 1, "type": "integer" },
+                            "aiImputationNoticeVisible": { "type": "boolean" },
+                            "generatedPlan": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "schemaVersion",
+                                "regimen",
+                                "generalMonitoring",
+                                "explanation",
+                                "sourceExecutionRefs"
+                              ],
+                              "properties": {
+                                "schemaVersion": { "type": "string", "enum": ["1.0.0"] },
+                                "regimen": {
+                                  "minItems": 1,
+                                  "maxItems": 100,
+                                  "type": "array",
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "required": [
+                                      "canonicalMedicationId",
+                                      "dose",
+                                      "route",
+                                      "frequency",
+                                      "monitoring",
+                                      "rationale",
+                                      "warningRefs"
+                                    ],
+                                    "properties": {
+                                      "canonicalMedicationId": {
+                                        "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                        "type": "string"
+                                      },
+                                      "dose": {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "required": ["value", "unit"],
+                                        "properties": {
+                                          "value": { "exclusiveMinimum": 0, "type": "number" },
+                                          "unit": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "route": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      },
+                                      "frequency": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      },
+                                      "titration": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "monitoring": {
+                                        "maxItems": 100,
+                                        "type": "array",
+                                        "items": {
+                                          "minLength": 1,
+                                          "maxLength": 4000,
+                                          "type": "string"
+                                        }
+                                      },
+                                      "rationale": {
+                                        "minItems": 1,
+                                        "maxItems": 100,
+                                        "type": "array",
+                                        "items": {
+                                          "additionalProperties": false,
+                                          "type": "object",
+                                          "required": ["kind", "sourceRef", "text"],
+                                          "properties": {
+                                            "kind": {
+                                              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                              "type": "string"
+                                            },
+                                            "sourceRef": {
+                                              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                              "type": "string"
+                                            },
+                                            "text": {
+                                              "minLength": 1,
+                                              "maxLength": 4000,
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "warningRefs": {
+                                        "maxItems": 100,
+                                        "uniqueItems": true,
+                                        "type": "array",
+                                        "items": {
+                                          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "generalMonitoring": {
+                                  "maxItems": 100,
+                                  "type": "array",
+                                  "items": { "minLength": 1, "maxLength": 4000, "type": "string" }
+                                },
+                                "explanation": {
+                                  "minLength": 1,
+                                  "maxLength": 4000,
+                                  "type": "string"
+                                },
+                                "sourceExecutionRefs": {
+                                  "minItems": 1,
+                                  "maxItems": 100,
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "regimen": {
+                              "minItems": 1,
+                              "maxItems": 100,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "canonicalMedicationId",
+                                  "dose",
+                                  "route",
+                                  "frequency",
+                                  "monitoring"
+                                ],
+                                "properties": {
+                                  "canonicalMedicationId": {
+                                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                    "type": "string"
+                                  },
+                                  "dose": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "required": ["value", "unit"],
+                                    "properties": {
+                                      "value": { "exclusiveMinimum": 0, "type": "number" },
+                                      "unit": { "minLength": 1, "maxLength": 500, "type": "string" }
+                                    }
+                                  },
+                                  "route": { "minLength": 1, "maxLength": 500, "type": "string" },
+                                  "frequency": {
+                                    "minLength": 1,
+                                    "maxLength": 500,
+                                    "type": "string"
+                                  },
+                                  "titration": {
+                                    "minLength": 1,
+                                    "maxLength": 4000,
+                                    "type": "string"
+                                  },
+                                  "monitoring": {
+                                    "maxItems": 100,
+                                    "type": "array",
+                                    "items": { "minLength": 1, "maxLength": 4000, "type": "string" }
+                                  }
+                                }
+                              }
+                            },
+                            "diff": {
+                              "maxItems": 100,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["field", "before", "after"],
+                                "properties": {
+                                  "field": { "minLength": 1, "maxLength": 500, "type": "string" },
+                                  "before": {
+                                    "anyOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "required": [
+                                          "canonicalMedicationId",
+                                          "dose",
+                                          "route",
+                                          "frequency",
+                                          "monitoring"
+                                        ],
+                                        "properties": {
+                                          "canonicalMedicationId": {
+                                            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                            "type": "string"
+                                          },
+                                          "dose": {
+                                            "additionalProperties": false,
+                                            "type": "object",
+                                            "required": ["value", "unit"],
+                                            "properties": {
+                                              "value": { "exclusiveMinimum": 0, "type": "number" },
+                                              "unit": {
+                                                "minLength": 1,
+                                                "maxLength": 500,
+                                                "type": "string"
+                                              }
+                                            }
+                                          },
+                                          "route": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "frequency": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "titration": {
+                                            "minLength": 1,
+                                            "maxLength": 4000,
+                                            "type": "string"
+                                          },
+                                          "monitoring": {
+                                            "maxItems": 100,
+                                            "type": "array",
+                                            "items": {
+                                              "minLength": 1,
+                                              "maxLength": 4000,
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      { "type": "null" }
+                                    ]
+                                  },
+                                  "after": {
+                                    "anyOf": [
+                                      {
+                                        "additionalProperties": false,
+                                        "type": "object",
+                                        "required": [
+                                          "canonicalMedicationId",
+                                          "dose",
+                                          "route",
+                                          "frequency",
+                                          "monitoring"
+                                        ],
+                                        "properties": {
+                                          "canonicalMedicationId": {
+                                            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,199}$",
+                                            "type": "string"
+                                          },
+                                          "dose": {
+                                            "additionalProperties": false,
+                                            "type": "object",
+                                            "required": ["value", "unit"],
+                                            "properties": {
+                                              "value": { "exclusiveMinimum": 0, "type": "number" },
+                                              "unit": {
+                                                "minLength": 1,
+                                                "maxLength": 500,
+                                                "type": "string"
+                                              }
+                                            }
+                                          },
+                                          "route": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "frequency": {
+                                            "minLength": 1,
+                                            "maxLength": 500,
+                                            "type": "string"
+                                          },
+                                          "titration": {
+                                            "minLength": 1,
+                                            "maxLength": 4000,
+                                            "type": "string"
+                                          },
+                                          "monitoring": {
+                                            "maxItems": 100,
+                                            "type": "array",
+                                            "items": {
+                                              "minLength": 1,
+                                              "maxLength": 4000,
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      { "type": "null" }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            "readiness": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": ["status", "reason", "executionRef", "findings"],
+                              "properties": {
+                                "status": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["CHECKING"] },
+                                    { "type": "string", "enum": ["BLOCKED"] },
+                                    { "type": "string", "enum": ["READY"] }
+                                  ]
+                                },
+                                "reason": {
+                                  "anyOf": [
+                                    { "type": "string", "enum": ["PENDING"] },
+                                    { "type": "string", "enum": ["FAILED"] },
+                                    { "type": "string", "enum": ["UNPROVEN"] },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "executionRef": {
+                                  "anyOf": [
+                                    { "minLength": 1, "maxLength": 200, "type": "string" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "findings": {
+                                  "maxItems": 10000,
+                                  "type": "array",
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "type": "object",
+                                    "required": [
+                                      "leftCanonicalId",
+                                      "rightCanonicalId",
+                                      "severity",
+                                      "sourceRecordRef"
+                                    ],
+                                    "properties": {
+                                      "leftCanonicalId": {
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "type": "string"
+                                      },
+                                      "rightCanonicalId": {
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "type": "string"
+                                      },
+                                      "severity": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      },
+                                      "mechanism": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "clinicalEffect": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "recommendedAction": {
+                                        "minLength": 1,
+                                        "maxLength": 4000,
+                                        "type": "string"
+                                      },
+                                      "sourceRecordRef": {
+                                        "minLength": 1,
+                                        "maxLength": 500,
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "catalog": {
+                              "maxItems": 100000,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": ["canonicalMedicationId", "preferredName"],
+                                "properties": {
+                                  "canonicalMedicationId": {
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "type": "string"
+                                  },
+                                  "preferredName": {
+                                    "minLength": 1,
+                                    "maxLength": 500,
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "primaryDdiExecutionRef": {
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "type": "string"
+                            },
+                            "updatedAt": { "format": "date-time", "type": "string" }
+                          }
+                        },
+                        { "type": "null" }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

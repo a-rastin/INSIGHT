@@ -6,10 +6,15 @@ import test from "node:test";
 import {
   InternalMcpGateway,
   McpToolError,
+  bindFinalDdiExecution,
   createOrOverwritePatient,
   createTreatmentPlanToolHandlers,
   createUser,
+  getClinicianReview,
   getPrimaryPlanDraft,
+  regimenFingerprint,
+  saveClinicianRegimen,
+  saveMedicationCatalog,
   submitPrimaryPlan,
 } from "../.tsbuild/server/index.js";
 import {
@@ -38,12 +43,24 @@ test("Primary Treatment Plan validates provenance and persists mutable MCP draft
     const pool = createPostgresPool({ connectionString });
     try {
       await migrateToHead(pool);
+      const administrator = await createUser(pool, {
+        username: "PlanAdministrator",
+        password: "plan-administrator-password",
+        role: "ADMINISTRATOR",
+      });
       const psychiatrist = await createUser(pool, {
         username: "PlanPsychiatrist",
         password: "plan-psychiatrist-password",
         role: "PSYCHIATRIST",
       });
-      const researchCaseId = await prepareCase(pool, psychiatrist);
+      await saveMedicationCatalog(pool, administrator, {
+        entries: [
+          { canonicalId: "rx-risperidone", preferredName: "Risperidone", synonyms: [] },
+          { canonicalId: "rx-clozapine", preferredName: "Clozapine", synonyms: [] },
+          { canonicalId: "rx-olanzapine", preferredName: "Olanzapine", synonyms: [] },
+        ],
+      });
+      const { researchCaseId, patientId } = await prepareCase(pool, psychiatrist);
       await insertDdiExecution(pool, researchCaseId, psychiatrist.id, ddiRef, []);
       await insertDdiExecution(pool, researchCaseId, psychiatrist.id, excludedDdiRef, [
         "rx-risperidone",
@@ -149,6 +166,91 @@ test("Primary Treatment Plan validates provenance and persists mutable MCP draft
       assert.equal(result.data.draftRevision, 3);
       assert.equal(result.data.aiImputationNoticeVisible, true);
       assert.equal((await getPrimaryPlanDraft(pool, researchCaseId)).draftRevision, 3);
+
+      const actor = { id: psychiatrist.id, role: psychiatrist.role };
+      const generated = clinicianMedication(valid.regimen[0]);
+      const firstReview = await saveClinicianRegimen(pool, actor, patientId, [generated]);
+      assert.equal(firstReview.readiness.status, "CHECKING");
+      assert.deepEqual(firstReview.diff, []);
+      assert.equal(await recheckCount(pool, researchCaseId), 1);
+
+      await saveClinicianRegimen(pool, actor, patientId, [generated]);
+      assert.equal(await recheckCount(pool, researchCaseId), 1, "unchanged regimen reuses check");
+
+      const clozapine = { ...generated, canonicalMedicationId: "rx-clozapine" };
+      const olanzapine = { ...generated, canonicalMedicationId: "rx-olanzapine" };
+      await Promise.all([
+        saveClinicianRegimen(pool, actor, patientId, [clozapine]),
+        saveClinicianRegimen(pool, actor, patientId, [olanzapine]),
+      ]);
+      const latest = await getClinicianReview(pool, actor, patientId);
+      assert.equal(latest.diff.length, 1);
+      assert.equal(await recheckCount(pool, researchCaseId), 3);
+
+      const rechecks = await pool.query(
+        `SELECT job_id,regimen_fingerprint,exact_regimen FROM insight.final_ddi_rechecks
+         WHERE research_case_id=$1 ORDER BY created_at,id`,
+        [researchCaseId],
+      );
+      const currentFingerprint = latestRegimenFingerprint(latest);
+      const current = rechecks.rows.find(
+        ({ regimen_fingerprint }) => regimen_fingerprint === currentFingerprint,
+      );
+      const stale = rechecks.rows.find(
+        ({ regimen_fingerprint }) => regimen_fingerprint !== currentFingerprint,
+      );
+      assert.ok(current && stale);
+      const staleRef = `ddi-execution-${"1".repeat(64)}`;
+      await insertFinalDdiExecution(
+        pool,
+        researchCaseId,
+        psychiatrist.id,
+        staleRef,
+        stale.exact_regimen,
+        [],
+      );
+      assert.equal(await bindFinalDdiExecution(pool, stale.job_id, staleRef), false);
+      assert.equal((await getClinicianReview(pool, actor, patientId)).readiness.status, "CHECKING");
+
+      const currentRef = `ddi-execution-${"2".repeat(64)}`;
+      await insertFinalDdiExecution(
+        pool,
+        researchCaseId,
+        psychiatrist.id,
+        currentRef,
+        current.exact_regimen,
+        [
+          {
+            leftCanonicalId: "rx-current",
+            rightCanonicalId: latest.regimen[0].canonicalMedicationId,
+            severity: "contraindicated",
+            sourceRecordRef: findingRef,
+          },
+        ],
+      );
+      assert.equal(await bindFinalDdiExecution(pool, current.job_id, currentRef), true);
+      const ready = await getClinicianReview(pool, actor, patientId);
+      assert.equal(ready.readiness.status, "READY", "successful findings are warning-only");
+      assert.equal(ready.readiness.findings.length, 1);
+
+      const changed =
+        latest.regimen[0].canonicalMedicationId === "rx-clozapine" ? olanzapine : clozapine;
+      const pending = await saveClinicianRegimen(pool, actor, patientId, [changed]);
+      assert.equal(pending.readiness.status, "CHECKING");
+      await pool.query(
+        `UPDATE insight.jobs SET status='FAILED',attempt_count=max_attempts,
+           error_code='ATTEMPTS_EXHAUSTED',error_message='Job attempts were exhausted.',
+           completed_at=clock_timestamp(),updated_at=clock_timestamp()
+         WHERE id=(SELECT job_id FROM insight.final_ddi_rechecks
+           WHERE research_case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1)`,
+        [researchCaseId],
+      );
+      assert.deepEqual((await getClinicianReview(pool, actor, patientId)).readiness, {
+        status: "BLOCKED",
+        reason: "FAILED",
+        executionRef: null,
+        findings: [],
+      });
     } finally {
       await pool.end();
     }
@@ -213,6 +315,70 @@ async function insertDdiExecution(
   );
 }
 
+async function insertFinalDdiExecution(
+  pool,
+  researchCaseId,
+  userId,
+  executionRef,
+  exactRegimen,
+  findings,
+) {
+  await pool.query(
+    `INSERT INTO insight.ddi_executions
+       (execution_ref,tool_execution_id,research_case_id,requested_by_user_id,purpose,
+        workflow_revision,input_revision,exact_regimen,evaluated_pairs,source_versions,
+        source_version,unknown_medication_entry_refs,omitted_pair_count,findings,
+        excluded_canonical_ids,executed_at)
+     VALUES ($1,$2,$3,$4,'FINAL_RECHECK',1,1,$5,'[]','[]','synthetic-source-set',
+             '[]',0,$6,'[]',clock_timestamp())`,
+    [
+      executionRef,
+      randomUUID(),
+      researchCaseId,
+      userId,
+      JSON.stringify(exactRegimen),
+      JSON.stringify(findings),
+    ],
+  );
+}
+
+function clinicianMedication(medication) {
+  return {
+    canonicalMedicationId: medication.canonicalMedicationId,
+    dose: medication.dose,
+    route: medication.route,
+    frequency: medication.frequency,
+    ...(medication.titration ? { titration: medication.titration } : {}),
+    monitoring: medication.monitoring,
+  };
+}
+
+function latestRegimenFingerprint(review) {
+  return regimenFingerprint(
+    review.regimen.map((medication, index) => ({
+      medicationEntryRef: `final-${index + 1}`,
+      kind: "PROPOSED",
+      normalizationState: "NORMALIZED",
+      canonicalId: medication.canonicalMedicationId,
+      regimenDetails: {
+        dose: medication.dose,
+        route: medication.route,
+        frequency: medication.frequency,
+        titration: medication.titration ?? null,
+        monitoring: medication.monitoring,
+      },
+    })),
+  );
+}
+
+async function recheckCount(pool, researchCaseId) {
+  const result = await pool.query(
+    "SELECT count(*)::int AS count FROM insight.final_ddi_rechecks WHERE research_case_id=$1",
+    [researchCaseId],
+  );
+  return result.rows[0].count;
+}
+
 async function prepareCase(pool, psychiatrist) {
   const synthetic = makeSyntheticPatientIdentity(971);
   const created = await createOrOverwritePatient(
@@ -232,5 +398,5 @@ async function prepareCase(pool, psychiatrist) {
     identifierConfiguration,
     randomUUID(),
   );
-  return created.patient.researchCase.id;
+  return { researchCaseId: created.patient.researchCase.id, patientId: created.patient.id };
 }

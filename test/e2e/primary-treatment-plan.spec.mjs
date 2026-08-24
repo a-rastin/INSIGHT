@@ -13,6 +13,18 @@ for (const scenario of [
     imputed: true,
   },
   { name: "failure", status: "FAILED", heading: "Primary plan generation failed" },
+  {
+    name: "final DDI warning",
+    status: "SUCCEEDED",
+    heading: "Final regimen DDI recheck complete",
+    readiness: "READY",
+  },
+  {
+    name: "final DDI failure",
+    status: "SUCCEEDED",
+    heading: "Finalization blocked",
+    readiness: "BLOCKED",
+  },
 ]) {
   test(`Primary Treatment Plan ${scenario.name} state`, async ({ page }) => {
     await installApi(page, planState(scenario));
@@ -21,7 +33,7 @@ for (const scenario of [
 
     await expect(page.getByRole("heading", { name: scenario.heading })).toBeVisible();
     if (scenario.status === "SUCCEEDED") {
-      await expect(page.getByText("rx-synthetic-e2e")).toBeVisible();
+      await expect(page.getByRole("heading", { name: "rx-synthetic-e2e" })).toBeVisible();
       await expect(page.getByText(/Psychiatrist must review every field/)).toBeVisible();
       await expect(page.getByRole("link", { name: "Authorized pathway result" })).toHaveAttribute(
         "href",
@@ -31,9 +43,9 @@ for (const scenario of [
       await expect(
         page.getByText(/unknown medication|interaction coverage is incomplete/i),
       ).toHaveCount(0);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-        360,
-      );
+      expect(
+        await page.evaluate(() => globalThis.document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(360);
     }
     if (scenario.imputed) {
       await expect(page.getByText(/AI imputation was used/)).toHaveCount(1);
@@ -47,7 +59,7 @@ for (const scenario of [
   });
 }
 
-function planState({ status, imputed = false }) {
+function planState({ status, imputed = false, readiness }) {
   return {
     schemaVersion: "1",
     status,
@@ -97,6 +109,30 @@ function planState({ status, imputed = false }) {
                 summary: "Accepted Research Case record.",
               },
             ],
+            ...(readiness
+              ? {
+                  readiness:
+                    readiness === "READY"
+                      ? {
+                          status: "READY",
+                          reason: null,
+                          executionRef: "ddi-final-e2e",
+                          findings: [
+                            {
+                              leftCanonicalId: "rx-synthetic-e2e",
+                              rightCanonicalId: "rx-current-e2e",
+                              severity: "contraindicated",
+                            },
+                          ],
+                        }
+                      : {
+                          status: "BLOCKED",
+                          reason: "FAILED",
+                          executionRef: null,
+                          findings: [],
+                        },
+                }
+              : {}),
           }
         : null,
   };

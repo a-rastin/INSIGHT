@@ -740,6 +740,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/primary-plan": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getPrimaryTreatmentPlanReview"];
+    put: operations["saveClinicianRegimen"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7076,6 +7092,307 @@ export interface operations {
                */
               updatedAt: string;
             };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getPrimaryTreatmentPlanReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            review: {
+              draftRef: string;
+              draftRevision: number;
+              aiImputationNoticeVisible: boolean;
+              /** insight.treatment-plan-primary-input.v1 */
+              generatedPlan: {
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                regimen: {
+                  canonicalMedicationId: string;
+                  dose: {
+                    value: number;
+                    unit: string;
+                  };
+                  route: string;
+                  frequency: string;
+                  titration?: string;
+                  monitoring: string[];
+                  rationale: {
+                    kind: string;
+                    sourceRef: string;
+                    text: string;
+                  }[];
+                  warningRefs: string[];
+                }[];
+                generalMonitoring: string[];
+                explanation: string;
+                sourceExecutionRefs: string[];
+              };
+              regimen: {
+                canonicalMedicationId: string;
+                dose: {
+                  value: number;
+                  unit: string;
+                };
+                route: string;
+                frequency: string;
+                titration?: string;
+                monitoring: string[];
+              }[];
+              diff: {
+                field: string;
+                before: {
+                  canonicalMedicationId: string;
+                  dose: {
+                    value: number;
+                    unit: string;
+                  };
+                  route: string;
+                  frequency: string;
+                  titration?: string;
+                  monitoring: string[];
+                } | null;
+                after: {
+                  canonicalMedicationId: string;
+                  dose: {
+                    value: number;
+                    unit: string;
+                  };
+                  route: string;
+                  frequency: string;
+                  titration?: string;
+                  monitoring: string[];
+                } | null;
+              }[];
+              readiness: {
+                status: "CHECKING" | "BLOCKED" | "READY";
+                reason: "PENDING" | "FAILED" | "UNPROVEN" | null;
+                executionRef: string | null;
+                findings: {
+                  leftCanonicalId: string;
+                  rightCanonicalId: string;
+                  severity: string;
+                  mechanism?: string;
+                  clinicalEffect?: string;
+                  recommendedAction?: string;
+                  sourceRecordRef: string;
+                }[];
+              };
+              catalog: {
+                canonicalMedicationId: string;
+                preferredName: string;
+              }[];
+              primaryDdiExecutionRef: string;
+              /** Format: date-time */
+              updatedAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  saveClinicianRegimen: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          schemaVersion: "1";
+          regimen: {
+            canonicalMedicationId: string;
+            dose: {
+              value: number;
+              unit: string;
+            };
+            route: string;
+            frequency: string;
+            titration?: string;
+            monitoring: string[];
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            review: {
+              draftRef: string;
+              draftRevision: number;
+              aiImputationNoticeVisible: boolean;
+              generatedPlan: {
+                /** @enum {string} */
+                schemaVersion: "1.0.0";
+                regimen: {
+                  canonicalMedicationId: string;
+                  dose: {
+                    value: number;
+                    unit: string;
+                  };
+                  route: string;
+                  frequency: string;
+                  titration?: string;
+                  monitoring: string[];
+                  rationale: {
+                    kind: string;
+                    sourceRef: string;
+                    text: string;
+                  }[];
+                  warningRefs: string[];
+                }[];
+                generalMonitoring: string[];
+                explanation: string;
+                sourceExecutionRefs: string[];
+              };
+              regimen: {
+                canonicalMedicationId: string;
+                dose: {
+                  value: number;
+                  unit: string;
+                };
+                route: string;
+                frequency: string;
+                titration?: string;
+                monitoring: string[];
+              }[];
+              diff: {
+                field: string;
+                before: {
+                  canonicalMedicationId: string;
+                  dose: {
+                    value: number;
+                    unit: string;
+                  };
+                  route: string;
+                  frequency: string;
+                  titration?: string;
+                  monitoring: string[];
+                } | null;
+                after: {
+                  canonicalMedicationId: string;
+                  dose: {
+                    value: number;
+                    unit: string;
+                  };
+                  route: string;
+                  frequency: string;
+                  titration?: string;
+                  monitoring: string[];
+                } | null;
+              }[];
+              readiness: {
+                status: "CHECKING" | "BLOCKED" | "READY";
+                reason: "PENDING" | "FAILED" | "UNPROVEN" | null;
+                executionRef: string | null;
+                findings: {
+                  leftCanonicalId: string;
+                  rightCanonicalId: string;
+                  severity: string;
+                  mechanism?: string;
+                  clinicalEffect?: string;
+                  recommendedAction?: string;
+                  sourceRecordRef: string;
+                }[];
+              };
+              catalog: {
+                canonicalMedicationId: string;
+                preferredName: string;
+              }[];
+              primaryDdiExecutionRef: string;
+              /** Format: date-time */
+              updatedAt: string;
+            } | null;
           };
         };
       };

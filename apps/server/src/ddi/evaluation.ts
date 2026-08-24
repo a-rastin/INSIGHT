@@ -15,6 +15,7 @@ export interface DdiRegimenMedication {
   readonly kind: "CURRENT" | "PROPOSED";
   readonly normalizationState: "NORMALIZED" | "UNKNOWN";
   readonly canonicalId?: string;
+  readonly regimenDetails?: JsonValue;
 }
 
 export interface DdiPair {

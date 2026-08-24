@@ -15,6 +15,7 @@ import {
   RESEARCH_CASE_ORCHESTRATION_JOB,
   type OrchestrationStageExecutor,
 } from "./orchestration/orchestrator.js";
+import { createFinalDdiRecheckJobHandler, FINAL_DDI_RECHECK_JOB } from "./treatment-plan/review.js";
 
 const unavailableStageExecutor: OrchestrationStageExecutor = async () => {
   throw new OrchestrationUnavailableError();
@@ -40,6 +41,7 @@ export async function startWorker(
           pool,
           orchestrationStageExecutor,
         ),
+        [FINAL_DDI_RECHECK_JOB]: createFinalDdiRecheckJobHandler(pool),
       },
       signal: controller.signal,
     });

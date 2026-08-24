@@ -469,7 +469,7 @@ export function PatientProfilePage({
       <MedicalHistory patientId={patientId} csrfToken={csrfToken} />
       <BnProcessing patientId={patientId} csrfToken={csrfToken} />
       <DdiResults patientId={patientId} csrfToken={csrfToken} />
-      <PrimaryTreatmentPlan patientId={patientId} />
+      <PrimaryTreatmentPlan patientId={patientId} csrfToken={csrfToken} />
     </div>
   );
 }
