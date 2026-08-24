@@ -37,6 +37,25 @@ const identifierConfiguration = {
   pattern: "^SYNTHETIC-[0-9]{6}$",
   normalization: "NFKC_UPPERCASE",
 };
+const pharmacotherapyOnlyRouting = {
+  version: "test-pharmacotherapy-only-v1",
+  approvalRef: "TEST-ONLY-PHARMACOTHERAPY-ROUTE",
+  requiredRouteGroups: ["PRIMARY_TREATMENT"],
+  optionalRouteGroups: [],
+  rules: [
+    {
+      ref: "BN-ROUTE-PHARMACOTHERAPY-001",
+      routeGroup: "PRIMARY_TREATMENT",
+      pathwayIdentity: "PHARMACOTHERAPY",
+      all: [
+        {
+          fact: "PRESENTATION_STATUS_IN",
+          values: ["FIRST_PRESENTATION", "KNOWN_SCHIZOPHRENIA"],
+        },
+      ],
+    },
+  ],
+};
 
 test("CPT attempts and snapshots are immutable, reusable, invalidated, and Research Case scoped", async () => {
   assert.ok(adminConnectionString, "TEST_DATABASE_URL is required.");
@@ -258,6 +277,7 @@ async function prepareCase(pool, psychiatrist, seed) {
         medicationHistory: [],
         currentRegimen: [],
       },
+      artifact: pharmacotherapyOnlyRouting,
     },
   );
   await withTransaction(pool, async (client) => {

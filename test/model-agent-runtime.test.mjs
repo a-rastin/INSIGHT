@@ -129,7 +129,9 @@ test("every workflow state exposes exactly its documented model allowlist", () =
       state,
     );
     assert.ok(
-      tools.every(({ version }) => version === "1.0.0"),
+      tools.every(
+        ({ name, version }) => version === (name === "bn.get_routed_contracts" ? "2.0.0" : "1.0.0"),
+      ),
       state,
     );
   }
@@ -228,6 +230,14 @@ test("CPT agent receives structured diagnostics for two retries before exact acc
     nodes: [
       { nodeRef: "A", outcomes: ["yes", "no"], orderedParentRefs: [], requiredTableLength: 2 },
     ],
+    requestedOutputNodeRefs: ["A"],
+    evidence: {
+      clinicalReviewStatus: "NOT_ESTABLISHED",
+      clinicalReviewReference: "TEST-ONLY",
+      calibrationStatus: "UNCALIBRATED",
+      calibrationReference: "TEST-ONLY",
+      limitations: ["Synthetic test contract."],
+    },
   };
   const submitted = [];
   const gateway = new InternalMcpGateway({

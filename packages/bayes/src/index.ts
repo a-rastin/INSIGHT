@@ -1,6 +1,7 @@
 export * from "./cptTensor.js";
 export * from "./diagnostics.js";
 export * from "./hash.js";
+export * from "./inference.js";
 export * from "./inputLimits.js";
 export * from "./model.js";
 export * from "./mutations.js";

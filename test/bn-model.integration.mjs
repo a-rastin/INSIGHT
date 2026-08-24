@@ -38,6 +38,25 @@ const source = (table) => `<BIF VERSION="0.3"><NETWORK><NAME>MedicationChoice</N
   <DEFINITION><FOR>Input</FOR><TABLE>0.5 0.5</TABLE></DEFINITION>
   <DEFINITION><FOR>Choice</FOR><GIVEN>Input</GIVEN><TABLE>${table}</TABLE></DEFINITION>
 </NETWORK></BIF>`;
+const pharmacotherapyOnlyRouting = {
+  version: "test-pharmacotherapy-only-v1",
+  approvalRef: "TEST-ONLY-PHARMACOTHERAPY-ROUTE",
+  requiredRouteGroups: ["PRIMARY_TREATMENT"],
+  optionalRouteGroups: [],
+  rules: [
+    {
+      ref: "BN-ROUTE-PHARMACOTHERAPY-001",
+      routeGroup: "PRIMARY_TREATMENT",
+      pathwayIdentity: "PHARMACOTHERAPY",
+      all: [
+        {
+          fact: "PRESENTATION_STATUS_IN",
+          values: ["FIRST_PRESENTATION", "KNOWN_SCHIZOPHRENIA"],
+        },
+      ],
+    },
+  ],
+};
 
 function input(xml, fileName) {
   return {
@@ -150,6 +169,7 @@ test("BN registry assigns immutable valid and invalid versions with matching pro
               medicationHistory: [],
               currentRegimen: [],
             },
+            artifact: pharmacotherapyOnlyRouting,
           },
         );
         assert.deepEqual(routing.matchedRuleRefs, ["BN-ROUTE-PHARMACOTHERAPY-001"]);

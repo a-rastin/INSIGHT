@@ -203,7 +203,7 @@ const TOOL_DEFINITIONS = {
     ),
   },
   "bn.get_routed_contracts": {
-    version: "1.0.0",
+    version: "2.0.0",
     description: "Return only deterministically routed Bayesian generation contracts.",
     inputSchema: emptyInput("insight.mcp-bn-get-routed-contracts-input.v1"),
     outputSchema: Type.Array(
@@ -224,6 +224,21 @@ const TOOL_DEFINITIONS = {
               { additionalProperties: false },
             ),
             { minItems: 1, maxItems: 10_000 },
+          ),
+          requestedOutputNodeRefs: Type.Array(ref, {
+            minItems: 1,
+            maxItems: 10_000,
+            uniqueItems: true,
+          }),
+          evidence: Type.Object(
+            {
+              clinicalReviewStatus: Type.Literal("NOT_ESTABLISHED"),
+              clinicalReviewReference: shortText,
+              calibrationStatus: Type.Literal("UNCALIBRATED"),
+              calibrationReference: shortText,
+              limitations: Type.Array(shortText, { minItems: 1, maxItems: 100 }),
+            },
+            { additionalProperties: false },
           ),
         },
         { additionalProperties: false },

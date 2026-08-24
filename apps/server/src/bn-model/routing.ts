@@ -5,7 +5,7 @@ import type { Pool, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 
-export const BN_ROUTING_ARTIFACT_VERSION = "1.0.0";
+export const BN_ROUTING_ARTIFACT_VERSION = "2.0.0";
 
 export interface BnRoutingFacts {
   readonly demographics: { readonly age: number; readonly sex: "MALE" | "FEMALE" };
@@ -19,6 +19,9 @@ export interface BnRoutingFacts {
   readonly medicationHistory: readonly {
     readonly canonicalMedicationId?: string;
     readonly response?: string;
+    readonly adequateDose?: boolean;
+    readonly adequateDuration?: boolean;
+    readonly adequateAdherence?: boolean;
   }[];
   readonly currentRegimen: readonly { readonly canonicalMedicationId: string }[];
 }
@@ -43,12 +46,18 @@ export type BnRoutingCondition =
   | { readonly fact: "COMORBIDITY_ANY"; readonly values: readonly string[] }
   | { readonly fact: "PRIOR_MEDICATION_ANY"; readonly values: readonly string[] }
   | { readonly fact: "PRIOR_RESPONSE_IN"; readonly values: readonly string[] }
+  | {
+      readonly fact: "ADEQUATE_PRIOR_TRIAL_COUNT_AT_LEAST";
+      readonly minimum: number;
+      readonly responses: readonly string[];
+    }
   | { readonly fact: "CURRENT_MEDICATION_ANY"; readonly values: readonly string[] };
 
 export interface BnRoutingRule {
   readonly ref: string;
   readonly routeGroup: string;
   readonly pathwayIdentity: string;
+  readonly expectedContentSha256?: string;
   readonly all: readonly BnRoutingCondition[];
 }
 
@@ -56,7 +65,22 @@ export interface BnRoutingArtifact {
   readonly version: string;
   readonly approvalRef: string;
   readonly requiredRouteGroups: readonly string[];
+  readonly optionalRouteGroups?: readonly string[];
   readonly rules: readonly BnRoutingRule[];
+}
+
+export interface BnPathwayExecutionProfile {
+  readonly pathwayIdentity: string;
+  readonly artifactPath: string;
+  readonly contentSha256: string;
+  readonly requestedOutputNodeRefs: readonly string[];
+  readonly evidence: {
+    readonly clinicalReviewStatus: "NOT_ESTABLISHED";
+    readonly clinicalReviewReference: string;
+    readonly calibrationStatus: "UNCALIBRATED";
+    readonly calibrationReference: string;
+    readonly limitations: readonly string[];
+  };
 }
 
 export interface ActiveBnModel {
@@ -77,8 +101,9 @@ export interface BnRoutingDecision {
 
 export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
   version: BN_ROUTING_ARTIFACT_VERSION,
-  approvalRef: "ADR-022:ADR-023:INITIAL-PHARMACOTHERAPY-SLICE",
-  requiredRouteGroups: ["PRIMARY_TREATMENT"],
+  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24",
+  requiredRouteGroups: ["PRIMARY_TREATMENT", "TREATMENT_SETTING"],
+  optionalRouteGroups: ["CLOZAPINE_TREATMENT_RESISTANCE"],
   rules: [
     {
       ref: "BN-ROUTE-PHARMACOTHERAPY-001",
@@ -91,8 +116,98 @@ export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
         },
       ],
     },
+    {
+      ref: "BN-ROUTE-TREATMENT-SETTING-001",
+      routeGroup: "TREATMENT_SETTING",
+      pathwayIdentity: "TREATMENT_SETTING",
+      expectedContentSha256: "2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91",
+      all: [
+        {
+          fact: "PRESENTATION_STATUS_IN",
+          values: ["FIRST_PRESENTATION", "KNOWN_SCHIZOPHRENIA"],
+        },
+        { fact: "ASSESSMENT_STATE_IN", assessmentType: "DSM5TR", values: ["COMPLETED"] },
+        {
+          fact: "ASSESSMENT_RESULT_IN",
+          assessmentType: "DSM5TR",
+          values: ["SCHIZOPHRENIA_CONFIRMED"],
+        },
+      ],
+    },
+    {
+      ref: "BN-ROUTE-CLOZAPINE-TRS-001",
+      routeGroup: "CLOZAPINE_TREATMENT_RESISTANCE",
+      pathwayIdentity: "CLOZAPINE_TREATMENT_RESISTANCE",
+      expectedContentSha256: "faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb",
+      all: [
+        { fact: "PRESENTATION_STATUS_IN", values: ["KNOWN_SCHIZOPHRENIA"] },
+        { fact: "ASSESSMENT_STATE_IN", assessmentType: "DSM5TR", values: ["COMPLETED"] },
+        {
+          fact: "ASSESSMENT_RESULT_IN",
+          assessmentType: "DSM5TR",
+          values: ["SCHIZOPHRENIA_CONFIRMED"],
+        },
+        {
+          fact: "ADEQUATE_PRIOR_TRIAL_COUNT_AT_LEAST",
+          minimum: 2,
+          responses: ["NO_RESPONSE", "PARTIAL_RESPONSE"],
+        },
+      ],
+    },
   ],
 };
+
+export const BN_PATHWAY_EXECUTION_PROFILES: Readonly<Record<string, BnPathwayExecutionProfile>> =
+  Object.freeze({
+    TREATMENT_SETTING: Object.freeze({
+      pathwayIdentity: "TREATMENT_SETTING",
+      artifactPath: "Treatment-Setting/BN-Treatment-Setting.xml",
+      contentSha256: "2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91",
+      requestedOutputNodeRefs: Object.freeze([
+        "inpatient_care_priority",
+        "inpatient_service_priority",
+        "less_restrictive_care_priority",
+        "management_recommendation",
+      ]),
+      evidence: Object.freeze({
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: Object.freeze([
+          "Base CPTs are placeholder distributions and are not clinically calibrated.",
+          "Patient-specific LLM-generated CPTs have mathematical validation only.",
+          "Output is research decision support and requires psychiatrist review.",
+        ]),
+      }),
+    }),
+    CLOZAPINE_TREATMENT_RESISTANCE: Object.freeze({
+      pathwayIdentity: "CLOZAPINE_TREATMENT_RESISTANCE",
+      artifactPath:
+        "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
+      contentSha256: "faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb",
+      requestedOutputNodeRefs: Object.freeze([
+        "TreatmentResistanceStatus",
+        "ClozapineEligibility",
+        "ClozapinePriority",
+        "ClozapineImplementationMode",
+        "ECTPriority",
+        "TMSPriority",
+        "ManagementRecommendation",
+      ]),
+      evidence: Object.freeze({
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: Object.freeze([
+          "Two adequate adherent trials are a routing prerequisite, not a diagnosis of treatment resistance.",
+          "Base CPTs are qualitative placeholders and are not clinically calibrated.",
+          "Current prescribing information, monitoring rules, safety review, and psychiatrist judgment remain required.",
+        ]),
+      }),
+    }),
+  });
 
 export class BnRoutingError extends Error {
   constructor(
@@ -132,9 +247,16 @@ export function evaluateBnRouting(
     if (groupMatches.length !== 1) throw new BnRoutingError("AMBIGUOUS_ROUTE");
     return groupMatches[0]!;
   });
+  for (const routeGroup of artifact.optionalRouteGroups ?? []) {
+    const groupMatches = matched.filter((rule) => rule.routeGroup === routeGroup);
+    if (groupMatches.length > 1) throw new BnRoutingError("AMBIGUOUS_ROUTE");
+    if (groupMatches[0]) selectedRules.push(groupMatches[0]);
+  }
   const selectedModels = selectedRules.map((rule) => {
     const models = activeModels.filter(
-      ({ pathwayIdentity }) => pathwayIdentity === rule.pathwayIdentity,
+      ({ pathwayIdentity, contentSha256 }) =>
+        pathwayIdentity === rule.pathwayIdentity &&
+        (!rule.expectedContentSha256 || contentSha256 === rule.expectedContentSha256),
     );
     if (models.length !== 1) throw new BnRoutingError("MISSING_ACTIVE_MODEL");
     return models[0]!;
@@ -253,16 +375,83 @@ export async function routeAndRecordBnModels(
 
 function validateArtifact(artifact: BnRoutingArtifact): void {
   const refs = new Set(artifact.rules.map(({ ref }) => ref));
-  const groups = new Set(artifact.requiredRouteGroups);
+  const routeGroups = [...artifact.requiredRouteGroups, ...(artifact.optionalRouteGroups ?? [])];
+  const groups = new Set(routeGroups);
   if (
     !artifact.version ||
     !artifact.approvalRef ||
     refs.size !== artifact.rules.length ||
-    groups.size !== artifact.requiredRouteGroups.length ||
+    groups.size !== routeGroups.length ||
     artifact.requiredRouteGroups.length === 0 ||
-    artifact.rules.some((rule) => !groups.has(rule.routeGroup) || rule.all.length === 0)
+    artifact.rules.some(
+      (rule) =>
+        !groups.has(rule.routeGroup) ||
+        rule.all.length === 0 ||
+        rule.all.some((condition) => !validCondition(condition)) ||
+        (rule.expectedContentSha256 !== undefined &&
+          !/^[0-9a-f]{64}$/.test(rule.expectedContentSha256)),
+    )
   ) {
     throw new BnRoutingError("INVALID_ROUTING_ARTIFACT");
+  }
+}
+
+function validCondition(condition: BnRoutingCondition): boolean {
+  if (!condition || typeof condition !== "object" || typeof condition.fact !== "string") {
+    return false;
+  }
+  const tokens = (values: readonly unknown[]) =>
+    values.length > 0 &&
+    values.every(
+      (value) => typeof value === "string" && /^[A-Za-z][A-Za-z0-9._:-]{0,199}$/.test(value),
+    );
+  switch (condition.fact) {
+    case "AGE_BETWEEN":
+      return (
+        Number.isSafeInteger(condition.minimum) &&
+        Number.isSafeInteger(condition.maximum) &&
+        condition.minimum >= 0 &&
+        condition.maximum <= 130 &&
+        condition.minimum <= condition.maximum
+      );
+    case "SEX_IN":
+      return (
+        condition.values.length > 0 &&
+        condition.values.every((value) => ["MALE", "FEMALE"].includes(value))
+      );
+    case "PRESENTATION_STATUS_IN":
+      return (
+        condition.values.length > 0 &&
+        condition.values.every((value) =>
+          ["FIRST_PRESENTATION", "KNOWN_SCHIZOPHRENIA"].includes(value),
+        )
+      );
+    case "ASSESSMENT_STATE_IN":
+      return (
+        ["DSM5TR", "PANSS", "CSSRS_RECENT"].includes(condition.assessmentType) &&
+        condition.values.length > 0 &&
+        condition.values.every((value) =>
+          ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BYPASSED"].includes(value),
+        )
+      );
+    case "ASSESSMENT_RESULT_IN":
+      return (
+        ["DSM5TR", "PANSS", "CSSRS_RECENT"].includes(condition.assessmentType) &&
+        tokens(condition.values)
+      );
+    case "COMORBIDITY_ANY":
+    case "PRIOR_MEDICATION_ANY":
+    case "PRIOR_RESPONSE_IN":
+    case "CURRENT_MEDICATION_ANY":
+      return tokens(condition.values);
+    case "ADEQUATE_PRIOR_TRIAL_COUNT_AT_LEAST":
+      return (
+        Number.isSafeInteger(condition.minimum) &&
+        condition.minimum > 0 &&
+        tokens(condition.responses)
+      );
+    default:
+      return false;
   }
 }
 
@@ -291,9 +480,12 @@ function validateFacts(facts: BnRoutingFacts): void {
     facts.comorbidityTermIds.some((value) => !token(value)) ||
     !Array.isArray(facts.medicationHistory) ||
     facts.medicationHistory.some(
-      ({ canonicalMedicationId, response }) =>
+      ({ canonicalMedicationId, response, adequateDose, adequateDuration, adequateAdherence }) =>
         (canonicalMedicationId !== undefined && !token(canonicalMedicationId)) ||
-        (response !== undefined && !token(response)),
+        (response !== undefined && !token(response)) ||
+        [adequateDose, adequateDuration, adequateAdherence].some(
+          (value) => value !== undefined && typeof value !== "boolean",
+        ),
     ) ||
     !Array.isArray(facts.currentRegimen) ||
     facts.currentRegimen.some(({ canonicalMedicationId }) => !token(canonicalMedicationId))
@@ -332,6 +524,30 @@ function matches(facts: BnRoutingFacts, condition: BnRoutingCondition): boolean 
     case "PRIOR_RESPONSE_IN":
       return facts.medicationHistory.some(
         ({ response }) => response !== undefined && condition.values.includes(response),
+      );
+    case "ADEQUATE_PRIOR_TRIAL_COUNT_AT_LEAST":
+      return (
+        Number.isSafeInteger(condition.minimum) &&
+        condition.minimum > 0 &&
+        new Set(
+          facts.medicationHistory
+            .filter(
+              ({
+                canonicalMedicationId,
+                response,
+                adequateDose,
+                adequateDuration,
+                adequateAdherence,
+              }) =>
+                canonicalMedicationId !== undefined &&
+                response !== undefined &&
+                condition.responses.includes(response) &&
+                adequateDose === true &&
+                adequateDuration === true &&
+                adequateAdherence === true,
+            )
+            .map(({ canonicalMedicationId }) => canonicalMedicationId),
+        ).size >= condition.minimum
       );
     case "CURRENT_MEDICATION_ANY":
       return facts.currentRegimen.some(({ canonicalMedicationId }) =>

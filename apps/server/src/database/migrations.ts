@@ -2458,6 +2458,46 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_final_plan_version_write();
     `,
   },
+  {
+    version: 33,
+    name: "deterministic_bn_inference_results",
+    sql: `
+      CREATE TABLE insight.bn_inference_results (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        inference_ref text NOT NULL UNIQUE CHECK (
+          inference_ref ~ '^bn-inference-[0-9a-f]{64}$'
+        ),
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        snapshot_id uuid NOT NULL REFERENCES insight.bn_cpt_snapshots(id) ON DELETE CASCADE,
+        request_hash text NOT NULL CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+        requested_output_node_refs jsonb NOT NULL CHECK (
+          jsonb_typeof(requested_output_node_refs) = 'array'
+          AND jsonb_array_length(requested_output_node_refs) > 0
+        ),
+        distributions jsonb NOT NULL CHECK (
+          jsonb_typeof(distributions) = 'array' AND jsonb_array_length(distributions) > 0
+        ),
+        engine_version text NOT NULL CHECK (
+          engine_version = btrim(engine_version) AND engine_version <> ''
+        ),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL,
+        UNIQUE (snapshot_id, request_hash)
+      );
+
+      CREATE FUNCTION insight.reject_bn_inference_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'BN inference results are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER bn_inference_results_immutable
+      BEFORE UPDATE OR DELETE ON insight.bn_inference_results
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_inference_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

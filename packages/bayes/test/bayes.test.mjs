@@ -14,6 +14,7 @@ import {
   edgesOf,
   expectedTableLength,
   hashXmlBifSemantics,
+  inferMarginals,
   importBnModel,
   insertAxis,
   parseXmlBif,
@@ -240,6 +241,22 @@ test("semantic SHA-256 is stable and excludes formatting and chance alias metada
   assert.notEqual(await hashXmlBifSemantics(changed), await hashXmlBifSemantics(canonical));
 });
 
+test("exact marginal inference is deterministic and respects CPT parent order", () => {
+  const network = parse(source).networks[0];
+  const expected = [
+    {
+      nodeRef: "B",
+      outcomes: [
+        { outcome: "b0", probability: 0.6250000000000001 },
+        { outcome: "b1", probability: 0.375 },
+      ],
+    },
+  ];
+  assert.deepEqual(inferMarginals(network, ["B"]), expected);
+  assert.deepEqual(inferMarginals(network, ["B"]), expected);
+  assert.throws(() => inferMarginals(network, ["Missing"]), /unsupported/);
+});
+
 const fixtureDiagnostics = {
   "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml": [],
   "11 - Acute Dystonia & anticholinergic therapy/gemini-code-1783438905589.xml": [],
@@ -345,6 +362,27 @@ test("repository registry imports every candidate with pinned artifacts and expe
     records.find(({ pathwayIdentity }) => pathwayIdentity === "AKATHISIA").quarantineReason,
     /rather than an Akathisia pathway/,
   );
+});
+
+test("Treatment Setting and clozapine TRS full CPT inference replay is deterministic", async () => {
+  const root = new URL("../../../BNs/", import.meta.url);
+  const fixtures = [
+    ["Treatment-Setting/BN-Treatment-Setting.xml", "management_recommendation"],
+    [
+      "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
+      "ManagementRecommendation",
+    ],
+  ];
+  for (const [name, output] of fixtures) {
+    const parsed = parseXmlBif(await readFile(new URL(name, root), "utf8"));
+    assert.equal(parsed.ok, true, name);
+    const first = inferMarginals(parsed.file.networks[0], [output]);
+    assert.deepEqual(inferMarginals(parsed.file.networks[0], [output]), first, name);
+    assert.ok(
+      Math.abs(first[0].outcomes.reduce((sum, item) => sum + item.probability, 0) - 1) < 1e-12,
+      name,
+    );
+  }
 });
 
 test("registry rejects unsupported and malformed candidates", async () => {

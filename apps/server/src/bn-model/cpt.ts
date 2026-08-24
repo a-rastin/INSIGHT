@@ -6,6 +6,7 @@ import {
   PROBABILITY_TOLERANCE,
   expectedTableLength,
   findDefinition,
+  inferMarginals,
   parseXmlBif,
 } from "@insight/bayes";
 import { stableSerialize, type JsonValue } from "@insight/contracts";
@@ -18,11 +19,16 @@ import {
 } from "../deidentification/projections.js";
 import { withTransaction } from "../database/transaction.js";
 import { McpToolError, type ToolHandlers } from "../mcp/gateway.js";
-import { INITIAL_BN_ROUTING_ARTIFACT } from "./routing.js";
+import {
+  BN_PATHWAY_EXECUTION_PROFILES,
+  INITIAL_BN_ROUTING_ARTIFACT,
+  type BnPathwayExecutionProfile,
+} from "./routing.js";
 
 export const CPT_PROMPT_VERSION = "1.0.0";
 export const CPT_OUTPUT_SCHEMA_VERSION = "1.0.0";
 export const MAX_CPT_GENERATION_ATTEMPTS = 3;
+export const BN_INFERENCE_ENGINE_VERSION = "1.0.0";
 
 export interface CptNodeContract {
   readonly nodeRef: string;
@@ -37,6 +43,8 @@ export interface CptGenerationContract {
   readonly modelVersion: string;
   readonly modelHash: string;
   readonly nodes: readonly CptNodeContract[];
+  readonly requestedOutputNodeRefs: readonly string[];
+  readonly evidence: BnPathwayExecutionProfile["evidence"];
 }
 
 export interface GeneratedCptTable {
@@ -129,6 +137,24 @@ interface SnapshotRow extends QueryResultRow {
   snapshot_hash: string;
   model_version_id: string;
   tables: { nodeRef: string; probabilities: number[] }[];
+}
+
+interface InferenceSnapshotRow extends SnapshotRow {
+  id: string;
+  research_case_id: string;
+  dependency_fingerprint: string;
+  pathway_identity: string;
+  content_sha256: string;
+  artifact_path: string;
+}
+
+export interface BnInferenceResult {
+  readonly inferenceRef: string;
+  readonly snapshotRef: string;
+  readonly distributions: readonly {
+    readonly nodeRef: string;
+    readonly outcomes: readonly { readonly outcome: string; readonly probability: number }[];
+  }[];
 }
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -308,6 +334,25 @@ export async function getRoutedCptContracts(
     if (nodes.length === 0 || new Set(nodes.map(({ nodeRef }) => nodeRef)).size !== nodes.length) {
       throw new McpToolError("PROVENANCE_MISMATCH");
     }
+    const profile = BN_PATHWAY_EXECUTION_PROFILES[row.pathway_identity];
+    if (profile && profile.contentSha256 !== row.content_sha256) {
+      throw new McpToolError("PROVENANCE_MISMATCH");
+    }
+    const requestedOutputNodeRefs =
+      profile?.requestedOutputNodeRefs ??
+      nodes
+        .filter(({ nodeRef }) =>
+          parsed.file.networks.every((network) =>
+            network.definitions.every(({ given }) => !given.includes(nodeRef)),
+          ),
+        )
+        .map(({ nodeRef }) => nodeRef);
+    if (
+      requestedOutputNodeRefs.length === 0 ||
+      requestedOutputNodeRefs.some((nodeRef) => !nodes.some((node) => node.nodeRef === nodeRef))
+    ) {
+      throw new McpToolError("PROVENANCE_MISMATCH");
+    }
     const knownRule = INITIAL_BN_ROUTING_ARTIFACT.rules.find(
       ({ pathwayIdentity, ref }) =>
         pathwayIdentity === row.pathway_identity && decision.matched_rule_refs.includes(ref),
@@ -320,6 +365,14 @@ export async function getRoutedCptContracts(
       modelVersion: String(row.version),
       modelHash: row.content_sha256,
       nodes,
+      requestedOutputNodeRefs,
+      evidence: profile?.evidence ?? {
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "REPOSITORY-CANDIDATE-NO-CLINICAL-APPROVAL",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: ["Clinical validity and calibration are not established."],
+      },
     });
   }
   return contracts;
@@ -528,7 +581,109 @@ export function createBnCptToolHandlers(
         ],
       };
     },
+    "bn.run_inference": async (context, input) => {
+      const execution = await resolveExecution(context);
+      const request = input as unknown as {
+        snapshotRef: string;
+        requestedOutputNodeRefs: string[];
+      };
+      const result = await runBnInference(
+        pool,
+        execution,
+        request.snapshotRef,
+        request.requestedOutputNodeRefs,
+        artifactRoot,
+      );
+      return {
+        data: result as unknown as JsonValue,
+        knowledgeVersions: [`bn-inference:${BN_INFERENCE_ENGINE_VERSION}`],
+      };
+    },
   };
+}
+
+export async function runBnInference(
+  pool: Pool,
+  execution: CptExecution,
+  snapshotRef: string,
+  requestedOutputNodeRefs: readonly string[],
+  artifactRoot = resolve("artifacts"),
+  now = new Date(),
+): Promise<BnInferenceResult> {
+  const dependencyFingerprint = fingerprintCptDependencies(execution.dependencies);
+  const snapshot = await pool.query<InferenceSnapshotRow>(
+    `SELECT snapshot.id,snapshot.snapshot_ref,snapshot.snapshot_hash,snapshot.model_version_id,
+            snapshot.research_case_id,snapshot.dependency_fingerprint,snapshot.tables,
+            model.pathway_identity,artifact.content_sha256,artifact.artifact_path
+     FROM insight.bn_cpt_snapshots snapshot
+     JOIN insight.bn_model_versions model ON model.id=snapshot.model_version_id
+     JOIN insight.bn_model_artifacts artifact ON artifact.id=model.artifact_id
+     JOIN insight.bn_research_case_model_pins pin
+       ON pin.research_case_id=snapshot.research_case_id
+      AND pin.model_version_id=snapshot.model_version_id
+      AND pin.content_sha256=artifact.content_sha256
+     WHERE snapshot.snapshot_ref=$1 AND snapshot.research_case_id=$2
+       AND snapshot.dependency_fingerprint=$3`,
+    [snapshotRef, execution.researchCaseId, dependencyFingerprint],
+  );
+  const row = snapshot.rows[0];
+  if (!row) throw new McpToolError("CPT_SNAPSHOT_STALE");
+  const contracts = await getRoutedCptContracts(pool, execution, artifactRoot);
+  const contract = contracts.find(({ modelHash }) => modelHash === row.content_sha256);
+  if (!contract) throw new McpToolError("PROVENANCE_MISMATCH");
+  if (
+    requestedOutputNodeRefs.length !== contract.requestedOutputNodeRefs.length ||
+    requestedOutputNodeRefs.some(
+      (nodeRef, index) => nodeRef !== contract.requestedOutputNodeRefs[index],
+    )
+  ) {
+    throw new McpToolError("INVALID_TOOL_INPUT");
+  }
+  const parsed = parseXmlBif(await readFile(resolve(artifactRoot, row.artifact_path), "utf8"));
+  if (!parsed.ok || parsed.file.networks.length !== 1) {
+    throw new McpToolError("DEPENDENCY_UNAVAILABLE");
+  }
+  const tables = new Map(row.tables.map(({ nodeRef, probabilities }) => [nodeRef, probabilities]));
+  for (const definition of parsed.file.networks[0]!.definitions) {
+    const probabilities = tables.get(definition.for);
+    if (!probabilities) throw new McpToolError("PROVENANCE_MISMATCH");
+    definition.table = [...probabilities];
+  }
+  let distributions: BnInferenceResult["distributions"];
+  try {
+    distributions = inferMarginals(parsed.file.networks[0]!, requestedOutputNodeRefs);
+  } catch {
+    throw new McpToolError("PROVENANCE_MISMATCH");
+  }
+  const resultHash = sha256(
+    stableSerialize({
+      snapshotRef: row.snapshot_ref,
+      snapshotHash: row.snapshot_hash,
+      requestedOutputNodeRefs,
+      distributions,
+      engineVersion: BN_INFERENCE_ENGINE_VERSION,
+    } as unknown as JsonValue),
+  );
+  const inferenceRef = `bn-inference-${resultHash}`;
+  await pool.query(
+    `INSERT INTO insight.bn_inference_results
+       (inference_ref,research_case_id,snapshot_id,request_hash,requested_output_node_refs,
+        distributions,engine_version,created_by_user_id,created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+     ON CONFLICT (inference_ref) DO NOTHING`,
+    [
+      inferenceRef,
+      execution.researchCaseId,
+      row.id,
+      resultHash,
+      JSON.stringify(requestedOutputNodeRefs),
+      JSON.stringify(distributions),
+      BN_INFERENCE_ENGINE_VERSION,
+      execution.requestedByUserId,
+      now,
+    ],
+  );
+  return { inferenceRef, snapshotRef: row.snapshot_ref, distributions };
 }
 
 export async function loadCptExecution(

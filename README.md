@@ -40,3 +40,11 @@ Batch 3 positions 65-96 have the same frozen governed-block report and review-ga
 Batch 4 positions 97-129 reconcile the final frozen entries with the same blocked treatment.
 `docs/ddi-import/coverage-report.json` records final catalog, source, pair, omission, conflict,
 rejection, lifecycle-policy, rebuild-hash, and reviewer-sign-off status without fabricating approval.
+
+## Bayesian Pathways
+
+Treatment Setting and clozapine treatment-resistance execution use deterministic structured routing,
+exact pinned artifact hashes, complete CPT contracts, fixed requested outputs, immutable inference
+results, and fail-closed model selection. Evidence, calibration, and clinical-review limits are
+published in `docs/reviews/bn-treatment-setting-and-clozapine-pathways.md`; neither pathway has
+attributable clinical approval or calibrated probabilities.
