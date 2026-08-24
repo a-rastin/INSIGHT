@@ -147,3 +147,36 @@ test("batch 4 reconciles final frozen entries without changing prior batches", a
   assert.equal(review.status, "blocked");
   assert.equal(review.reviewerRecord, null);
 });
+
+test("final coverage report reconciles every gap and rebuild input", async () => {
+  const first = await buildDdiArchiveInventory();
+  const second = await buildDdiArchiveInventory();
+  const report = JSON.parse(first["coverage-report.json"]);
+
+  assert.equal(first["coverage-report.json"], second["coverage-report.json"]);
+  assert.deepEqual(report.counts, {
+    catalogCandidates: 129,
+    catalogMappedDrugs: 0,
+    sourceRecords: 0,
+    activeSourceRecords: 0,
+    reviewedEligibleVersions: 0,
+    evaluablePairs: 0,
+    noMatchRecords: 0,
+    unknownOrUnmappedRecords: 129,
+    conflictRecords: 0,
+    rejectedRecords: 0,
+    blockedRecords: 129,
+  });
+  assert.equal(report.omissions.length, 129);
+  assert.equal(new Set(report.omissions.map(({ path }) => path)).size, 129);
+  assert.ok(report.omissions.every(({ reasons }) => reasons.length === 5));
+  assert.deepEqual(report.activeTraceability, []);
+  assert.deepEqual(report.conflicts, []);
+  assert.deepEqual(report.rejectedRecords, []);
+  assert.equal(report.lifecyclePolicy.ageAloneExpiresSource, false);
+  assert.equal(report.lifecyclePolicy.permissionAndManifestRequired, true);
+  assert.equal(report.reviewerSignOff.status, "blocked");
+  assert.equal(report.reviewerSignOff.reviewerRecord, null);
+  assert.match(report.rebuildSha256, /^[0-9a-f]{64}$/);
+  assert.match(report.reportSha256, /^[0-9a-f]{64}$/);
+});

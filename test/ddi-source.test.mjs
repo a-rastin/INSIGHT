@@ -60,6 +60,11 @@ function manifest(permissionStatus = "granted") {
 test("manifest validation and SHA-256 reject incomplete or changed artifacts", () => {
   assert.equal(validateDdiSourceManifest(manifest()).sha256, sha256(fixture));
   assert.throws(() => validateDdiSourceManifest({ ...manifest(), title: "" }), DdiSourceInputError);
+  const missingPermission = { ...manifest(), permission: undefined };
+  assert.throws(
+    () => validateDdiSourceManifest(missingPermission),
+    /Permission record is required/,
+  );
   assert.notEqual(sha256(new TextEncoder().encode("changed")), manifest().sha256);
 });
 

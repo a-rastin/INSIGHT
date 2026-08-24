@@ -54,10 +54,10 @@ const regimen = [
 ];
 const refs = regimen.map(({ medicationEntryRef }) => medicationEntryRef);
 
-function sourceInput(drugIdentity, partner, detail) {
+function sourceInput(drugIdentity, partner, detail, severity = "Serious") {
   const artifact = new TextEncoder().encode(`${drugIdentity}
 Interactions
-Serious (1)
+${severity} (1)
 • ${partner}: ${detail}
 Adverse Effects`);
   return {
@@ -237,6 +237,114 @@ test("DDI MCP persists exact immutable executions and fails closed on source def
         assert.equal(unknownOnly.omittedPairCount, 1);
         assert.deepEqual(unknownOnly.evaluatedCanonicalIds, []);
 
+        const oldByAge = await evaluateDdiRegimen(
+          pool,
+          execution("ddi-old-by-age"),
+          "FINAL_RECHECK",
+          refs.slice(0, 2),
+          regimen.slice(0, 2),
+          new Date("2099-01-01T00:00:00.000Z"),
+        );
+        assert.equal(oldByAge.findings.length, 1);
+
+        await activate(
+          pool,
+          administrator,
+          artifactRoot,
+          sourceInput("DRUG-C", "DRUG-A", "Contraindicated pair", "Contraindicated"),
+        );
+        await activate(
+          pool,
+          administrator,
+          artifactRoot,
+          sourceInput("DRUG-D", "DRUG-A", "Monitor pair", "Monitor Closely"),
+        );
+        await activate(
+          pool,
+          administrator,
+          artifactRoot,
+          sourceInput("DRUG-E", "DRUG-A", "Minor pair", "Minor"),
+        );
+        await activate(
+          pool,
+          administrator,
+          artifactRoot,
+          sourceInput("DRUG-F", "DRUG-X", "Unrelated interaction"),
+        );
+        const coverageRegimen = ["A", "B", "C", "D", "E", "F"].map((drug, index) => ({
+          medicationEntryRef: `coverage-${index + 1}`,
+          kind: "CURRENT",
+          normalizationState: "NORMALIZED",
+          canonicalId: `DRUG-${drug}`,
+        }));
+        const coverage = await evaluateDdiRegimen(
+          pool,
+          execution("ddi-severity-and-no-match-coverage"),
+          "FINAL_RECHECK",
+          coverageRegimen.map(({ medicationEntryRef }) => medicationEntryRef),
+          coverageRegimen,
+        );
+        assert.deepEqual(
+          coverage.findings.map(({ severity }) => severity),
+          ["serious", "contraindicated", "monitor_closely", "minor"],
+        );
+        const coverageRow = await pool.query(
+          "SELECT evaluated_pairs FROM insight.ddi_executions WHERE tool_execution_id=$1",
+          ["ddi-severity-and-no-match-coverage"],
+        );
+        assert.equal(coverageRow.rows[0].evaluated_pairs.length, 15);
+        assert.equal(coverage.findings.length, 4);
+
+        const replacementB = await activate(
+          pool,
+          administrator,
+          artifactRoot,
+          sourceInput("DRUG-B", "DRUG-A", "Conflicting lower severity", "Minor"),
+        );
+        const conflicted = await evaluateDdiRegimen(
+          pool,
+          execution("ddi-conflict-after-supersession"),
+          "FINAL_RECHECK",
+          refs.slice(0, 2),
+          regimen.slice(0, 2),
+        );
+        assert.notEqual(conflicted.sourceVersion, final.sourceVersion);
+        assert.deepEqual(
+          conflicted.findings.map(({ severity }) => severity).sort(),
+          ["minor", "serious"],
+        );
+        const pinnedExecution = await pool.query(
+          `SELECT source_version,findings FROM insight.ddi_executions
+           WHERE tool_execution_id=$1 AND purpose='FINAL_RECHECK'`,
+          ["ddi-final-tool-execution"],
+        );
+        assert.equal(pinnedExecution.rows[0].source_version, final.sourceVersion);
+        assert.deepEqual(pinnedExecution.rows[0].findings, final.findings);
+
+        await reviewDdiSource(
+          pool,
+          administrator,
+          replacementB.id,
+          "rejected",
+          "review://ddi/retired-b",
+        );
+        await assert.rejects(
+          () =>
+            evaluateDdiRegimen(
+              pool,
+              execution("ddi-after-retirement"),
+              "FINAL_RECHECK",
+              refs.slice(0, 2),
+              regimen.slice(0, 2),
+            ),
+          (error) => error instanceof McpToolError && error.code === "DDI_SOURCE_DISABLED",
+        );
+        const stillPinnedExecution = await pool.query(
+          "SELECT source_version,findings FROM insight.ddi_executions WHERE tool_execution_id=$1",
+          ["ddi-final-tool-execution"],
+        );
+        assert.deepEqual(stillPinnedExecution.rows[0], pinnedExecution.rows[0]);
+
         await assert.rejects(
           () => pool.query("UPDATE insight.ddi_executions SET omitted_pair_count=0"),
           /immutable/,
@@ -264,9 +372,9 @@ test("DDI MCP persists exact immutable executions and fails closed on source def
           "ALTER TABLE insight.ddi_source_versions DISABLE TRIGGER ddi_source_versions_immutable",
         );
         await pool.query(
-          `UPDATE insight.ddi_source_versions
-           SET interactions=jsonb_set(interactions,'{0,evidenceReference,sourceSha256}',to_jsonb($1::text))
-           WHERE drug_identity='DRUG-A'`,
+           `UPDATE insight.ddi_source_versions
+            SET interactions=jsonb_set(interactions,'{0,evidenceReference,sourceSha256}',to_jsonb($1::text))
+            WHERE drug_identity='DRUG-C'`,
           ["0".repeat(64)],
         );
         await pool.query(
@@ -278,8 +386,21 @@ test("DDI MCP persists exact immutable executions and fails closed on source def
               pool,
               execution("ddi-provenance-mismatch"),
               "FINAL_RECHECK",
-              refs,
-              regimen,
+              ["current-c", "current-d"],
+              [
+                {
+                  medicationEntryRef: "current-c",
+                  kind: "CURRENT",
+                  normalizationState: "NORMALIZED",
+                  canonicalId: "DRUG-C",
+                },
+                {
+                  medicationEntryRef: "current-d",
+                  kind: "CURRENT",
+                  normalizationState: "NORMALIZED",
+                  canonicalId: "DRUG-D",
+                },
+              ],
             ),
           (error) => error instanceof McpToolError && error.code === "PROVENANCE_MISMATCH",
         );

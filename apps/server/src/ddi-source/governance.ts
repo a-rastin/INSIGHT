@@ -81,6 +81,7 @@ export function sha256(bytes: Uint8Array): string {
 }
 
 export function validateDdiSourceManifest(manifest: DdiSourceManifest): DdiSourceManifest {
+  if (!manifest.permission) throw new DdiSourceInputError("Permission record is required.");
   const normalized = {
     ...manifest,
     drugIdentity: governedId(manifest.drugIdentity, "Drug identity"),
