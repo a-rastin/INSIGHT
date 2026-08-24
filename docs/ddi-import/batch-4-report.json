@@ -1,0 +1,417 @@
+{
+  "schemaVersion": "insight.ddi-import-report.v1",
+  "contract": "INS-054",
+  "batch": 4,
+  "batchSha256": "7624e4fb9f5591427d042a54f56e75f26d71cf91f079ea4423fe73cce864004a",
+  "inventorySnapshotSha256": "7cdbbaae63b45f9e8e0a4da067537eebfed332ed7e6659874902fe0e2d92e942",
+  "evaluatedPositions": [
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129
+  ],
+  "approvedEntries": 0,
+  "importedEntries": 0,
+  "parserVersion": null,
+  "transformVersion": null,
+  "derivedRecords": [],
+  "evidenceRecords": [],
+  "conflictRecords": [],
+  "lifecycleRecords": [],
+  "omissions": [
+    {
+      "position": 97,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Ondansetron.pdf",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 98,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Pantoprazole.pdf",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 99,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Psyllium.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 100,
+      "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Simethicone.pdf",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 101,
+      "path": "medical-documentation/ddi-checker/Medscape/Lipid-Lowering Agents/Atorvastatin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 102,
+      "path": "medical-documentation/ddi-checker/Medscape/Lipid-Lowering Agents/Lovastatin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 103,
+      "path": "medical-documentation/ddi-checker/Medscape/Lipid-Lowering Agents/Pravastatin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 104,
+      "path": "medical-documentation/ddi-checker/Medscape/Lipid-Lowering Agents/Rosuvastatin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 105,
+      "path": "medical-documentation/ddi-checker/Medscape/Lipid-Lowering Agents/Simvastatin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 106,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Allopurinol.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 107,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Amphetamine-Dextroamphetamine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 108,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Dantrolene.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 109,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Lisdexamfetamine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 110,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Methylphenidate.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 111,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Oxybutynin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 112,
+      "path": "medical-documentation/ddi-checker/Medscape/Miscellaneous/Tamsulosin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 113,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Carbamazepine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 114,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Gabapentin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 115,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Lamotrigine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 116,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Lithium.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 117,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Oxcarbazepine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 118,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Pregabalin.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 119,
+      "path": "medical-documentation/ddi-checker/Medscape/Mood Stabilizers and Anticonvulsants/Topiramate.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 120,
+      "path": "medical-documentation/ddi-checker/Medscape/New Text Document.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 121,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Albuterol.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 122,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Cetirizine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 123,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Diphenhydramine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 124,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Fluticasone.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 125,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Hydroxyzine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 126,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Loratadine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 127,
+      "path": "medical-documentation/ddi-checker/Medscape/Respiratory and Allergy Medications/Montelukast.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 128,
+      "path": "medical-documentation/ddi-checker/Medscape/Substance Use and Smoking Cessation/Buprenorphine.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    },
+    {
+      "position": 129,
+      "path": "medical-documentation/ddi-checker/Medscape/Substance Use and Smoking Cessation/Varenicline.txt",
+      "reasons": [
+        "missing_source_manifest",
+        "missing_permission_record",
+        "missing_legal_approval",
+        "missing_clinical_review",
+        "missing_canonical_medication_id"
+      ]
+    }
+  ],
+  "result": "blocked",
+  "reportSha256": "a52ede2b86a8bc42d16f348be520207c2f6c94ddcf89c45d39c2f6565866b9ef"
+}

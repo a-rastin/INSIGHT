@@ -16,6 +16,8 @@ const outputNames = [
   "batch-2-review.json",
   "batch-3-report.json",
   "batch-3-review.json",
+  "batch-4-report.json",
+  "batch-4-review.json",
   "gap-report.md",
 ];
 
@@ -206,6 +208,51 @@ export async function buildDdiArchiveInventory() {
     ...batch3ReviewPayload,
     reviewSha256: hashPayload(batch3ReviewPayload),
   };
+  const batch4 = batches[3];
+  const batch4ReportPayload = {
+    schemaVersion: "insight.ddi-import-report.v1",
+    contract: "INS-054",
+    batch: 4,
+    batchSha256: batch4.batchSha256,
+    inventorySnapshotSha256: inventory.snapshotSha256,
+    evaluatedPositions: batch4.entries.map(({ position }) => position),
+    approvedEntries: 0,
+    importedEntries: 0,
+    parserVersion: null,
+    transformVersion: null,
+    derivedRecords: [],
+    evidenceRecords: [],
+    conflictRecords: [],
+    lifecycleRecords: [],
+    omissions: batch4.entries.map(({ position, path, blockedReasons }) => ({
+      position,
+      path,
+      reasons: blockedReasons,
+    })),
+    result: "blocked",
+  };
+  const batch4Report = {
+    ...batch4ReportPayload,
+    reportSha256: hashPayload(batch4ReportPayload),
+  };
+  const batch4ReviewPayload = {
+    schemaVersion: "insight.ddi-import-review.v1",
+    contract: "INS-054",
+    batch: 4,
+    reportSha256: batch4Report.reportSha256,
+    status: "blocked",
+    reviewerRecord: null,
+    reasons: [
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+    ],
+    note: "No reviewer identity or approval is inferred or fabricated.",
+  };
+  const batch4Review = {
+    ...batch4ReviewPayload,
+    reviewSha256: hashPayload(batch4ReviewPayload),
+  };
   const gapReport = `# DDI Archive Inventory and Import Gap Report
 
 - Inventory snapshot: \`${inventory.snapshotSha256}\`
@@ -245,6 +292,8 @@ ${batches.map(({ batch, range, entries, batchSha256 }) => `- Batch ${batch} (${r
     "batch-2-review.json": json(batch2Review),
     "batch-3-report.json": json(batch3Report),
     "batch-3-review.json": json(batch3Review),
+    "batch-4-report.json": json(batch4Report),
+    "batch-4-review.json": json(batch4Review),
     "gap-report.md": gapReport,
   };
 }
@@ -277,6 +326,6 @@ export async function verifyDdiArchiveInventory({ write = false } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await verifyDdiArchiveInventory({ write: process.argv.includes("--write") });
   console.log(
-    "DDI archive inventory verified: 129 files, 4 frozen batches, batches 2-3 blocked, 0 active records.",
+    "DDI archive inventory verified: 129 files, 4 frozen batches, batches 2-4 blocked, 0 active records.",
   );
 }

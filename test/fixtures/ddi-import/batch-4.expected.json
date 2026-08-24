@@ -1,0 +1,45 @@
+{
+  "batchSha256": "7624e4fb9f5591427d042a54f56e75f26d71cf91f079ea4423fe73cce864004a",
+  "reportSha256": "a52ede2b86a8bc42d16f348be520207c2f6c94ddcf89c45d39c2f6565866b9ef",
+  "reviewSha256": "cfce2f894e6284fa97a9ce16368c077cc8745f80f1cd30ac2ec71e35305c9243",
+  "firstEntry": {
+    "position": 97,
+    "batch": 4,
+    "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Ondansetron.pdf",
+    "medicationName": "Ondansetron",
+    "mediaType": "application/pdf",
+    "byteLength": 683525,
+    "sha256": "644fd153664e8990bdd59f258d5a1e4ba8f3ca68aa5c782a095b4c817f3af1d0",
+    "manifestStatus": "missing",
+    "permissionStatus": "missing",
+    "catalogMappingStatus": "missing",
+    "importStatus": "blocked",
+    "blockedReasons": [
+      "missing_source_manifest",
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+      "missing_canonical_medication_id"
+    ]
+  },
+  "lastEntry": {
+    "position": 129,
+    "batch": 4,
+    "path": "medical-documentation/ddi-checker/Medscape/Substance Use and Smoking Cessation/Varenicline.txt",
+    "medicationName": "Varenicline",
+    "mediaType": "text/plain; charset=utf-8",
+    "byteLength": 14871,
+    "sha256": "8aa3a83d38ba075788c87f9a1fbed6ca6f4c09d57ac4546fb94f81a1d69c3540",
+    "manifestStatus": "missing",
+    "permissionStatus": "missing",
+    "catalogMappingStatus": "missing",
+    "importStatus": "blocked",
+    "blockedReasons": [
+      "missing_source_manifest",
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+      "missing_canonical_medication_id"
+    ]
+  }
+}

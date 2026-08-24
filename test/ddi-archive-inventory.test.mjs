@@ -106,3 +106,44 @@ test("batch 3 evaluates every frozen entry without changing prior batches", asyn
   assert.equal(review.status, "blocked");
   assert.equal(review.reviewerRecord, null);
 });
+
+test("batch 4 reconciles final frozen entries without changing prior batches", async () => {
+  const outputs = await buildDdiArchiveInventory();
+  const expected = JSON.parse(
+    await readFile(new URL("fixtures/ddi-import/batch-4.expected.json", import.meta.url), "utf8"),
+  );
+  const batch3 = JSON.parse(outputs["import-batch-3.json"]);
+  const batch = JSON.parse(outputs["import-batch-4.json"]);
+  const report = JSON.parse(outputs["batch-4-report.json"]);
+  const review = JSON.parse(outputs["batch-4-review.json"]);
+
+  assert.equal(
+    batch3.batchSha256,
+    "d6d85daca0139a7adf8a9d683f356f437d7197343dc4980e1af8be95e60489b3",
+  );
+  assert.equal(batch.batchSha256, expected.batchSha256);
+  assert.equal(report.reportSha256, expected.reportSha256);
+  assert.equal(review.reviewSha256, expected.reviewSha256);
+  assert.deepEqual(
+    batch.entries.map(({ position }) => position),
+    Array.from({ length: 33 }, (_, index) => index + 97),
+  );
+  assert.deepEqual(batch.entries[0], expected.firstEntry);
+  assert.deepEqual(batch.entries.at(-1), expected.lastEntry);
+  assert.deepEqual(report.evaluatedPositions, batch.entries.map(({ position }) => position));
+  assert.deepEqual(
+    report.omissions,
+    batch.entries.map(({ position, path, blockedReasons }) => ({
+      position,
+      path,
+      reasons: blockedReasons,
+    })),
+  );
+  assert.equal(new Set(report.omissions.map(({ path }) => path)).size, 33);
+  assert.deepEqual(report.derivedRecords, []);
+  assert.deepEqual(report.evidenceRecords, []);
+  assert.deepEqual(report.conflictRecords, []);
+  assert.deepEqual(report.lifecycleRecords, []);
+  assert.equal(review.status, "blocked");
+  assert.equal(review.reviewerRecord, null);
+});

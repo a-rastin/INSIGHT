@@ -37,3 +37,4 @@ legal-review, and clinical-review evidence is recorded. Inventory generation nev
 activates DDI records and never uses live or LLM fallback. Batch 2 positions 33-64 have a frozen
 blocked-import report and review-gap record under `docs/ddi-import`; no reviewer identity is inferred.
 Batch 3 positions 65-96 have the same frozen governed-block report and review-gap treatment.
+Batch 4 positions 97-129 reconcile the final frozen entries with the same blocked treatment.
