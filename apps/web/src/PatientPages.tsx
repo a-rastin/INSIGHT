@@ -23,6 +23,7 @@ import { CssrsAssessment } from "./CssrsAssessment";
 import { DdiResults } from "./DdiResults";
 import { MedicalHistory } from "./MedicalHistory";
 import { PanssAssessment } from "./PanssAssessment";
+import { PrimaryTreatmentPlan } from "./PrimaryTreatmentPlan";
 import { apiClient } from "./generated/api-client";
 import type { operations } from "./generated/api-types";
 
@@ -468,6 +469,7 @@ export function PatientProfilePage({
       <MedicalHistory patientId={patientId} csrfToken={csrfToken} />
       <BnProcessing patientId={patientId} csrfToken={csrfToken} />
       <DdiResults patientId={patientId} csrfToken={csrfToken} />
+      <PrimaryTreatmentPlan patientId={patientId} />
     </div>
   );
 }

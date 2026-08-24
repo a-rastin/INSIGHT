@@ -900,6 +900,121 @@ p {
   gap: var(--space-2);
 }
 
+.primary-plan {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.primary-plan__heading,
+.primary-plan h3,
+.primary-plan h4,
+.primary-plan h5,
+.primary-plan__progress p {
+  margin: 0;
+}
+
+.primary-plan__progress,
+.primary-plan__medication-heading,
+.primary-plan__sources li > div,
+.primary-plan__provenance {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.primary-plan__progress progress {
+  width: min(320px, 100%);
+  margin-top: var(--space-2);
+  accent-color: var(--primary);
+}
+
+.primary-plan__imputation {
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+  background: var(--info-bg);
+  border-left: 4px solid var(--info);
+  border-radius: var(--radius-md);
+}
+
+.primary-plan__regimen,
+.primary-plan__sources {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  list-style: none;
+}
+
+.primary-plan__regimen > article,
+.primary-plan__sources > li {
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.primary-plan__medication-heading,
+.primary-plan__sources li > div,
+.primary-plan__provenance {
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.primary-plan__fields,
+.primary-plan__columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.primary-plan__fields {
+  margin: var(--space-4) 0;
+}
+
+.primary-plan__fields > div {
+  padding: var(--space-3);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.primary-plan__fields dt {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.primary-plan__fields dd {
+  margin: var(--space-1) 0 0;
+}
+
+.primary-plan__warnings {
+  padding: var(--space-3);
+  background: var(--warning-bg);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+}
+
+.primary-plan__sources code,
+.primary-plan__mono,
+.primary-plan__provenance {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.primary-plan__sources p {
+  margin: var(--space-2) 0;
+}
+
+.primary-plan__provenance {
+  align-items: flex-start;
+  padding: var(--space-3) 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
 .bn-processing {
   display: grid;
   gap: var(--space-4);
@@ -1689,6 +1804,11 @@ tbody tr:last-child td {
   }
 
   .ddi-regimen-list li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .primary-plan__fields,
+  .primary-plan__columns {
     grid-template-columns: minmax(0, 1fr);
   }
 
