@@ -9,8 +9,21 @@ import {
   createMedicationNormalizationJobHandler,
   MEDICATION_NORMALIZATION_JOB,
 } from "./medication/normalization.js";
+import {
+  createOrchestrationJobHandler,
+  OrchestrationUnavailableError,
+  RESEARCH_CASE_ORCHESTRATION_JOB,
+  type OrchestrationStageExecutor,
+} from "./orchestration/orchestrator.js";
 
-export async function startWorker(env: NodeJS.ProcessEnv = process.env): Promise<void> {
+const unavailableStageExecutor: OrchestrationStageExecutor = async () => {
+  throw new OrchestrationUnavailableError();
+};
+
+export async function startWorker(
+  env: NodeJS.ProcessEnv = process.env,
+  orchestrationStageExecutor: OrchestrationStageExecutor = unavailableStageExecutor,
+): Promise<void> {
   const pool = createPostgresPool(databaseConfigFromEnv(env));
   const readyFile = env.INSIGHT_WORKER_READY_FILE;
 
@@ -23,6 +36,10 @@ export async function startWorker(env: NodeJS.ProcessEnv = process.env): Promise
       workerId: `worker-${randomUUID()}`,
       handlers: {
         [MEDICATION_NORMALIZATION_JOB]: createMedicationNormalizationJobHandler(pool),
+        [RESEARCH_CASE_ORCHESTRATION_JOB]: createOrchestrationJobHandler(
+          pool,
+          orchestrationStageExecutor,
+        ),
       },
       signal: controller.signal,
     });

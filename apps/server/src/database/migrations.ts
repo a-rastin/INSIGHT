@@ -2281,6 +2281,77 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.protect_primary_plan_draft_write();
     `,
   },
+  {
+    version: 30,
+    name: "research_case_orchestration",
+    sql: `
+      CREATE TABLE insight.research_case_orchestration_runs (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        job_id uuid NOT NULL UNIQUE REFERENCES insight.jobs(id) ON DELETE CASCADE,
+        research_case_id uuid NOT NULL REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        requested_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 1 AND 200),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        dependency_fingerprint text NOT NULL CHECK (
+          dependency_fingerprint ~ '^[0-9a-f]{64}$'
+        ),
+        dependency_manifest jsonb NOT NULL CHECK (jsonb_typeof(dependency_manifest) = 'object'),
+        status text NOT NULL DEFAULT 'RUNNING' CHECK (
+          status IN ('RUNNING', 'SUCCEEDED', 'FAILED', 'CANCELLED')
+        ),
+        current_state insight.research_case_workflow_state NOT NULL,
+        failure_code text,
+        created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        completed_at timestamptz,
+        UNIQUE (requested_by_user_id, research_case_id, idempotency_key)
+      );
+
+      CREATE TABLE insight.research_case_orchestration_attempts (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        run_id uuid NOT NULL REFERENCES insight.research_case_orchestration_runs(id) ON DELETE CASCADE,
+        workflow_state insight.research_case_workflow_state NOT NULL,
+        workflow_revision bigint NOT NULL CHECK (workflow_revision > 0),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        attempt_number integer NOT NULL CHECK (attempt_number > 0),
+        status text NOT NULL CHECK (status IN ('SUCCEEDED', 'FAILED', 'CANCELLED')),
+        result_type text,
+        result_reference text,
+        dependency_fingerprint text NOT NULL CHECK (
+          dependency_fingerprint ~ '^[0-9a-f]{64}$'
+        ),
+        provenance jsonb NOT NULL CHECK (jsonb_typeof(provenance) = 'object'),
+        error_code text,
+        recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+        UNIQUE (run_id, workflow_state, workflow_revision, attempt_number),
+        CHECK (
+          (status = 'SUCCEEDED' AND result_type IS NOT NULL AND result_reference IS NOT NULL
+            AND error_code IS NULL)
+          OR (status <> 'SUCCEEDED' AND result_reference IS NULL AND error_code IS NOT NULL)
+        )
+      );
+
+      CREATE INDEX research_case_orchestration_runs_resume_idx
+        ON insight.research_case_orchestration_runs (status, updated_at, id);
+      CREATE UNIQUE INDEX research_case_orchestration_one_active_idx
+        ON insight.research_case_orchestration_runs (research_case_id)
+        WHERE status = 'RUNNING';
+      CREATE INDEX research_case_orchestration_attempts_audit_idx
+        ON insight.research_case_orchestration_attempts (run_id, recorded_at, id);
+
+      CREATE FUNCTION insight.reject_orchestration_attempt_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'Research Case orchestration attempts are immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER research_case_orchestration_attempts_immutable
+      BEFORE UPDATE OR DELETE ON insight.research_case_orchestration_attempts
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_orchestration_attempt_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

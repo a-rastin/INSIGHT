@@ -23,6 +23,7 @@ export * from "./medical-history/index.js";
 export * from "./mcp/index.js";
 export * from "./medication/index.js";
 export * from "./model-endpoint/index.js";
+export * from "./orchestration/index.js";
 export * from "./patient/index.js";
 export * from "./treatment-plan/index.js";
 
