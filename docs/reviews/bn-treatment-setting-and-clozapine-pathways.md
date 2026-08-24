@@ -1,8 +1,8 @@
-# Treatment Setting, Continuing Medication, and Clozapine Pathway Review Record
+# Treatment Setting, Long-Acting Injectable, Continuing Medication, and Clozapine Pathway Review Record
 
-- **Record date:** 2026-08-24
-- **Routing artifact:** `5.0.0`
-- **Mapping review reference:** `BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V5`
+- **Record date:** 2026-08-25
+- **Routing artifact:** `6.0.0`
+- **Mapping review reference:** `BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-25-V6`
 - **Clinical approval status:** Not established
 - **Calibration status:** Uncalibrated
 
@@ -18,6 +18,7 @@ validation record exists in the repository.
 | Pathway                        | Artifact                                                                               | SHA-256                                                            | Structural result                                                     |
 | ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | Treatment Setting              | `BNs/Treatment-Setting/BN-Treatment-Setting.xml`                                       | `2208cadaf8938ab1bb82b8f985296f3f75241002b8ca0958ce27a7b89010be91` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
+| Long-acting injectable         | `BNs/10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml`          | `2e9cef62653f687b81cbad7d5c4f6f390a8f3c1824ae5c7bf5671e4b88b3ed2d` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 | Continuing medication          | `BNs/5 - Continuing Medications/gemini-code-1783421787562.xml`                         | `9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 | Clozapine aggressive behavior  | `BNs/9 - Clozapine in Aggressive Behavior _/gemini-code-1783422744909.xml`             | `424562a955ef0def89e93f8fede10e87b7bd65b6b9e95182634baecfa1786416` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
 | Clozapine treatment resistance | `BNs/7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml` | `faf3214184fce801690bc5438c13b1e3c18ce51f917b8bdf646c69aa0b5e5eeb` | XMLBIF 0.3 parse, model validation, and deterministic round trip pass |
@@ -40,6 +41,14 @@ reference, source revision, a greater target revision, and `relationship: REVISE
 the plan relation participate in the revision-scoped routing input hash; the exact active model is
 pinned to the research case. Missing plan context, non-improved response, different medications,
 unknown relationship values, and free text cannot select the route.
+
+The long-acting injectable pathway is optional and selected only when medication history records
+`adequateAdherence: false` for a normalized medication also present in the current regimen. Missing
+adherence status, good adherence, a different historical medication, a missing normalized medication,
+or an empty regimen does not select it. Unknown fields, narrative adherence, and generated adherence
+classifications fail as `INVALID_ROUTING_FACTS`; no LLM output selects this route. This conservative
+trigger establishes only a reason to evaluate the research pathway, not LAI eligibility, formulation,
+preference, or clinical appropriateness.
 
 Clozapine suicide risk is optional and selected only for `KNOWN_SCHIZOPHRENIA` with the same
 completed confirmation and a C-SSRS routing state of `COMPLETED`, `BYPASSED`, or `IMPUTED`.
@@ -78,6 +87,14 @@ Continuing medication requests:
 - `medication_adjustment_priority`
 - `management_recommendation`
 
+Long-acting injectable requests:
+
+- `LAIIndicationStrength`
+- `LAISafetySuitability`
+- `ImplementationBarriers`
+- `NetClinicalFavorability`
+- `LAIRecommendation`
+
 Clozapine aggressive behavior requests:
 
 - `ClozapineIndicationPriority`
@@ -104,10 +121,9 @@ contract. Arbitrary model or node selection is rejected.
 
 ## Evidence and Calibration Limits
 
-- Treatment Setting and clozapine treatment resistance contain placeholder CPTs; continuing
-  medication and clozapine
-  aggressive behavior and suicide risk contain qualitative placeholder probabilities. None has a
-  calibration report.
+- Treatment Setting and clozapine treatment resistance contain placeholder CPTs; long-acting
+  injectable, continuing medication, and clozapine aggressive behavior and suicide risk contain
+  qualitative placeholder probabilities. None has a calibration report.
 - Patient-specific LLM-generated CPTs receive mathematical validation only.
 - Structural validity does not establish clinical validity, safety, fairness, or local suitability.
 - Clozapine use still requires current prescribing information, patient-specific contraindication
@@ -117,6 +133,9 @@ contract. Arbitrary model or node selection is rejected.
   applicable involuntary-treatment law.
 - Continuing-medication outputs do not replace adverse-effect, interaction, adherence, monitoring,
   patient-preference, diagnostic, or psychiatrist review of each plan revision.
+- Long-acting injectable outputs do not replace formulation and oral-tolerability checks,
+  contraindication and interaction review, access and administration feasibility, patient preference,
+  shared decision-making, or psychiatrist review.
 
 ## Clinical Review Gap
 
@@ -127,11 +146,12 @@ clinical approval.
 
 ## Verification
 
-- `test/bn-routing.test.mjs` contains reviewed diagnosis, medication/plan revision, aggression, treatment-trial, C-SSRS
-  terminal-state, free-text rejection, missing, ambiguous, inactive, duplicate-trial,
-  unsupported-semantic, and hash-mismatch vectors.
+- `test/bn-routing.test.mjs` contains reviewed diagnosis, medication/plan revision, adherence/history/regimen,
+  aggression, treatment-trial, C-SSRS terminal-state, free-text rejection, missing, ambiguous, inactive,
+  duplicate-trial, unsupported-semantic, and hash-mismatch vectors.
 - `packages/bayes/test/bayes.test.mjs` replays full artifact CPTs through exact marginal inference,
-  including Treatment Setting and continuing medication without database dependencies.
+  including Treatment Setting, long-acting injectable, and continuing medication without database
+  dependencies.
 - `test/bn-pathways.integration.mjs` imports and activates pinned artifacts, routes one synthetic
   qualifying case, validates all CPT contracts, persists snapshots, and verifies stable inference
   references and distributions on replay.

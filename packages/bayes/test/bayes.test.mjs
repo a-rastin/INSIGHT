@@ -368,6 +368,10 @@ test("reviewed pathway full CPT inference replay is deterministic", async () => 
   const root = new URL("../../../BNs/", import.meta.url);
   const fixtures = [
     ["Treatment-Setting/BN-Treatment-Setting.xml", "management_recommendation"],
+    [
+      "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml",
+      "LAIRecommendation",
+    ],
     ["5 - Continuing Medications/gemini-code-1783421787562.xml", "management_recommendation"],
     [
       "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",

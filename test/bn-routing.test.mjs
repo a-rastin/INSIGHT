@@ -49,6 +49,15 @@ const continuingMedication = {
   sourceReference: "gemini-code-1783421787562.xml",
 };
 
+const longActingAntipsychotic = {
+  modelId: "model-long-acting-antipsychotic-v1",
+  pathwayIdentity: "LONG_ACTING_ANTIPSYCHOTIC",
+  version: 1,
+  contentSha256: "2e9cef62653f687b81cbad7d5c4f6f390a8f3c1824ae5c7bf5671e4b88b3ed2d",
+  semanticSha256: "7".repeat(64),
+  sourceReference: "gemini-code-1783423101383.xml",
+};
+
 const clozapineTrs = {
   modelId: "model-clozapine-trs-v1",
   pathwayIdentity: "CLOZAPINE_TREATMENT_RESISTANCE",
@@ -289,6 +298,85 @@ test("continuing-medication route fails closed on ambiguity and pinned hash mism
         pharmacotherapy,
         treatmentSetting,
         { ...continuingMedication, contentSha256: "8".repeat(64) },
+        clozapineSuicideRisk,
+      ]),
+    (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",
+  );
+});
+
+test("long-acting injectable route uses only current-regimen nonadherence history", () => {
+  const active = [
+    pharmacotherapy,
+    treatmentSetting,
+    longActingAntipsychotic,
+    clozapineSuicideRisk,
+  ];
+  const route = (medicationHistory, currentRegimen = facts.currentRegimen) =>
+    evaluateBnRouting(
+      { ...facts, medicationHistory, currentRegimen },
+      INITIAL_BN_ROUTING_ARTIFACT,
+      active,
+    ).selectedModels.some(
+      ({ pathwayIdentity }) => pathwayIdentity === "LONG_ACTING_ANTIPSYCHOTIC",
+    );
+  assert.equal(
+    route([{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: false }]),
+    true,
+  );
+  for (const medicationHistory of [
+    [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: true }],
+    [{ canonicalMedicationId: "RX-ARIPIPRAZOLE" }],
+    [{ canonicalMedicationId: "RX-RISPERIDONE", adequateAdherence: false }],
+    [{ adequateAdherence: false }],
+  ]) {
+    assert.equal(route(medicationHistory), false);
+  }
+  assert.equal(
+    route([{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: false }], []),
+    false,
+  );
+  for (const unsupported of [
+    [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adherenceNarrative: "often misses doses" }],
+    [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: "LLM_INFERRED_FALSE" }],
+  ]) {
+    assert.throws(
+      () => route(unsupported),
+      (error) => error instanceof BnRoutingError && error.code === "INVALID_ROUTING_FACTS",
+    );
+  }
+});
+
+test("long-acting injectable route fails closed on ambiguity and pinned hash mismatch", () => {
+  const laiFacts = {
+    ...facts,
+    medicationHistory: [
+      { canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: false },
+    ],
+  };
+  const duplicateRule = INITIAL_BN_ROUTING_ARTIFACT.rules.find(
+    ({ pathwayIdentity }) => pathwayIdentity === "LONG_ACTING_ANTIPSYCHOTIC",
+  );
+  assert.throws(
+    () =>
+      evaluateBnRouting(
+        laiFacts,
+        {
+          ...INITIAL_BN_ROUTING_ARTIFACT,
+          rules: [
+            ...INITIAL_BN_ROUTING_ARTIFACT.rules,
+            { ...duplicateRule, ref: "BN-ROUTE-LONG-ACTING-ANTIPSYCHOTIC-OTHER-001" },
+          ],
+        },
+        [pharmacotherapy, treatmentSetting, longActingAntipsychotic, clozapineSuicideRisk],
+      ),
+    (error) => error instanceof BnRoutingError && error.code === "AMBIGUOUS_ROUTE",
+  );
+  assert.throws(
+    () =>
+      evaluateBnRouting(laiFacts, INITIAL_BN_ROUTING_ARTIFACT, [
+        pharmacotherapy,
+        treatmentSetting,
+        { ...longActingAntipsychotic, contentSha256: "8".repeat(64) },
         clozapineSuicideRisk,
       ]),
     (error) => error instanceof BnRoutingError && error.code === "MISSING_ACTIVE_MODEL",

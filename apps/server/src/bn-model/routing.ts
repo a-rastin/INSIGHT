@@ -5,7 +5,7 @@ import type { Pool, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 
-export const BN_ROUTING_ARTIFACT_VERSION = "5.0.0";
+export const BN_ROUTING_ARTIFACT_VERSION = "6.0.0";
 
 export interface BnRoutingFacts {
   readonly demographics: { readonly age: number; readonly sex: "MALE" | "FEMALE" };
@@ -70,7 +70,8 @@ export type BnRoutingCondition =
       >["riskAfterOtherTreatments"][];
     }
   | { readonly fact: "CURRENT_MEDICATION_ANY"; readonly values: readonly string[] }
-  | { readonly fact: "CONTINUING_MEDICATION_REVISION" };
+  | { readonly fact: "CONTINUING_MEDICATION_REVISION" }
+  | { readonly fact: "CURRENT_REGIMEN_NONADHERENCE_HISTORY" };
 
 export interface BnRoutingRule {
   readonly ref: string;
@@ -120,13 +121,14 @@ export interface BnRoutingDecision {
 
 export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
   version: BN_ROUTING_ARTIFACT_VERSION,
-  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-24-V5",
+  approvalRef: "BN-PATHWAY-STRUCTURED-MAPPING-REVIEW-2026-08-25-V6",
   requiredRouteGroups: ["PRIMARY_TREATMENT", "TREATMENT_SETTING"],
   optionalRouteGroups: [
     "CLOZAPINE_AGGRESSIVE_BEHAVIOR",
     "CLOZAPINE_TREATMENT_RESISTANCE",
     "CLOZAPINE_SUICIDE_RISK",
     "CONTINUING_MEDICATION",
+    "LONG_ACTING_ANTIPSYCHOTIC",
   ],
   rules: [
     {
@@ -173,6 +175,13 @@ export const INITIAL_BN_ROUTING_ARTIFACT: BnRoutingArtifact = {
         },
         { fact: "CONTINUING_MEDICATION_REVISION" },
       ],
+    },
+    {
+      ref: "BN-ROUTE-LONG-ACTING-ANTIPSYCHOTIC-001",
+      routeGroup: "LONG_ACTING_ANTIPSYCHOTIC",
+      pathwayIdentity: "LONG_ACTING_ANTIPSYCHOTIC",
+      expectedContentSha256: "2e9cef62653f687b81cbad7d5c4f6f390a8f3c1824ae5c7bf5671e4b88b3ed2d",
+      all: [{ fact: "CURRENT_REGIMEN_NONADHERENCE_HISTORY" }],
     },
     {
       ref: "BN-ROUTE-CLOZAPINE-AGGRESSIVE-BEHAVIOR-001",
@@ -279,6 +288,29 @@ export const BN_PATHWAY_EXECUTION_PROFILES: Readonly<Record<string, BnPathwayExe
           "Medication continuation routing requires an explicit improved response and same normalized prior/current medication; it does not establish clinical appropriateness.",
           "CPT probabilities are qualitative placeholders and are not clinically calibrated.",
           "Plan revision, adverse-effect, interaction, monitoring, patient-preference, and psychiatrist review remain required.",
+        ]),
+      }),
+    }),
+    LONG_ACTING_ANTIPSYCHOTIC: Object.freeze({
+      pathwayIdentity: "LONG_ACTING_ANTIPSYCHOTIC",
+      artifactPath: "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml",
+      contentSha256: "2e9cef62653f687b81cbad7d5c4f6f390a8f3c1824ae5c7bf5671e4b88b3ed2d",
+      requestedOutputNodeRefs: Object.freeze([
+        "LAIIndicationStrength",
+        "LAISafetySuitability",
+        "ImplementationBarriers",
+        "NetClinicalFavorability",
+        "LAIRecommendation",
+      ]),
+      evidence: Object.freeze({
+        clinicalReviewStatus: "NOT_ESTABLISHED",
+        clinicalReviewReference: "docs/reviews/bn-treatment-setting-and-clozapine-pathways.md",
+        calibrationStatus: "UNCALIBRATED",
+        calibrationReference: "REPOSITORY-CANDIDATE-NO-CALIBRATION-REPORT",
+        limitations: Object.freeze([
+          "Routing requires an explicit nonadherence record for a medication in the current regimen; it does not establish LAI eligibility or preference.",
+          "CPT probabilities are qualitative placeholders and are not clinically calibrated.",
+          "Formulation, tolerability, contraindication, access, patient preference, and psychiatrist review remain required.",
         ]),
       }),
     }),
@@ -602,6 +634,7 @@ function validCondition(condition: BnRoutingCondition): boolean {
         )
       );
     case "CONTINUING_MEDICATION_REVISION":
+    case "CURRENT_REGIMEN_NONADHERENCE_HISTORY":
       return Object.keys(condition).length === 1;
     default:
       return false;
@@ -634,15 +667,29 @@ function validateFacts(facts: BnRoutingFacts): void {
     facts.comorbidityTermIds.some((value) => !token(value)) ||
     !Array.isArray(facts.medicationHistory) ||
     facts.medicationHistory.some(
-      ({ canonicalMedicationId, response, adequateDose, adequateDuration, adequateAdherence }) =>
-        (canonicalMedicationId !== undefined && !token(canonicalMedicationId)) ||
-        (response !== undefined && !token(response)) ||
-        [adequateDose, adequateDuration, adequateAdherence].some(
+      (entry) =>
+        Object.keys(entry).some(
+          (key) =>
+            ![
+              "canonicalMedicationId",
+              "response",
+              "adequateDose",
+              "adequateDuration",
+              "adequateAdherence",
+            ].includes(key),
+        ) ||
+        (entry.canonicalMedicationId !== undefined && !token(entry.canonicalMedicationId)) ||
+        (entry.response !== undefined && !token(entry.response)) ||
+        [entry.adequateDose, entry.adequateDuration, entry.adequateAdherence].some(
           (value) => value !== undefined && typeof value !== "boolean",
         ),
     ) ||
     !Array.isArray(facts.currentRegimen) ||
-    facts.currentRegimen.some(({ canonicalMedicationId }) => !token(canonicalMedicationId)) ||
+    facts.currentRegimen.some(
+      (entry) =>
+        Object.keys(entry).some((key) => key !== "canonicalMedicationId") ||
+        !token(entry.canonicalMedicationId),
+    ) ||
     (facts.medicationPlanRevision !== undefined &&
       (facts.medicationPlanRevision === null ||
         typeof facts.medicationPlanRevision !== "object" ||
@@ -750,6 +797,18 @@ function matches(facts: BnRoutingFacts, condition: BnRoutingCondition): boolean 
       );
       return facts.currentRegimen.some(({ canonicalMedicationId }) =>
         improved.has(canonicalMedicationId),
+      );
+    }
+    case "CURRENT_REGIMEN_NONADHERENCE_HISTORY": {
+      const nonadherent = new Set(
+        facts.medicationHistory
+          .filter(({ adequateAdherence }) => adequateAdherence === false)
+          .flatMap(({ canonicalMedicationId }) =>
+            canonicalMedicationId === undefined ? [] : [canonicalMedicationId],
+          ),
+      );
+      return facts.currentRegimen.some(({ canonicalMedicationId }) =>
+        nonadherent.has(canonicalMedicationId),
       );
     }
   }

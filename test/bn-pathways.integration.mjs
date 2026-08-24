@@ -35,6 +35,10 @@ const candidates = [
   ["TREATMENT_SETTING", "Treatment-Setting/BN-Treatment-Setting.xml"],
   ["CONTINUING_MEDICATION", "5 - Continuing Medications/gemini-code-1783421787562.xml"],
   [
+    "LONG_ACTING_ANTIPSYCHOTIC",
+    "10 - Long Acting Antipsychotic Medications/gemini-code-1783423101383.xml",
+  ],
+  [
     "CLOZAPINE_TREATMENT_RESISTANCE",
     "7 - Clozapine in Treatment-Resistant Schizophrenia/gemini-code-1783422447172.xml",
   ],
@@ -120,7 +124,7 @@ test("synthetic reviewed pathway replay is pinned and deterministic", async () =
                   response: "IMPROVED",
                   adequateDose: true,
                   adequateDuration: true,
-                  adequateAdherence: true,
+                  adequateAdherence: false,
                 },
                 {
                   canonicalMedicationId: "RX-RISPERIDONE",
@@ -157,6 +161,7 @@ test("synthetic reviewed pathway replay is pinned and deterministic", async () =
             "CLOZAPINE_SUICIDE_RISK",
             "CLOZAPINE_TREATMENT_RESISTANCE",
             "CONTINUING_MEDICATION",
+            "LONG_ACTING_ANTIPSYCHOTIC",
             "PHARMACOTHERAPY",
             "TREATMENT_SETTING",
           ],
@@ -180,6 +185,10 @@ test("synthetic reviewed pathway replay is pinned and deterministic", async () =
         const continuing = contracts.find(
           ({ modelHash }) =>
             modelHash === "9527c9c7c0efdfa2caf748fb7ebceaad8715ff79b89180305ba9d0aef3e8b355",
+        );
+        const longActing = contracts.find(
+          ({ modelHash }) =>
+            modelHash === "2e9cef62653f687b81cbad7d5c4f6f390a8f3c1824ae5c7bf5671e4b88b3ed2d",
         );
         const clozapine = contracts.find(
           ({ modelHash }) =>
@@ -214,6 +223,16 @@ test("synthetic reviewed pathway replay is pinned and deterministic", async () =
         assert.equal(continuing.evidence.calibrationStatus, "UNCALIBRATED");
         assert.equal(continuing.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
         assert.match(continuing.evidence.limitations.join(" "), /plan revision/i);
+        assert.deepEqual(longActing.requestedOutputNodeRefs, [
+          "LAIIndicationStrength",
+          "LAISafetySuitability",
+          "ImplementationBarriers",
+          "NetClinicalFavorability",
+          "LAIRecommendation",
+        ]);
+        assert.equal(longActing.evidence.calibrationStatus, "UNCALIBRATED");
+        assert.equal(longActing.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
+        assert.match(longActing.evidence.limitations.join(" "), /does not establish LAI eligibility/);
         assert.deepEqual(clozapineTrs.requestedOutputNodeRefs, [
           "TreatmentResistanceStatus",
           "ClozapineEligibility",
