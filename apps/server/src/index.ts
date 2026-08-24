@@ -24,6 +24,7 @@ export * from "./mcp/index.js";
 export * from "./medication/index.js";
 export * from "./model-endpoint/index.js";
 export * from "./patient/index.js";
+export * from "./treatment-plan/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const pool = createPostgresPool(databaseConfigFromEnv(env));

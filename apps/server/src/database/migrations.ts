@@ -2237,6 +2237,50 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_cpt_mutation();
     `,
   },
+  {
+    version: 29,
+    name: "primary_treatment_plan_drafts",
+    sql: `
+      CREATE TABLE insight.primary_treatment_plan_drafts (
+        research_case_id uuid PRIMARY KEY REFERENCES insight.research_cases(id) ON DELETE CASCADE,
+        draft_ref text NOT NULL UNIQUE CHECK (
+          draft_ref ~ '^primary-plan-draft-[0-9a-f]{64}$'
+        ),
+        revision bigint NOT NULL CHECK (revision > 0),
+        schema_version text NOT NULL CHECK (schema_version = '1.0.0'),
+        plan_payload jsonb NOT NULL CHECK (jsonb_typeof(plan_payload) = 'object'),
+        plan_hash text NOT NULL CHECK (plan_hash ~ '^[0-9a-f]{64}$'),
+        source_execution_refs jsonb NOT NULL CHECK (
+          jsonb_typeof(source_execution_refs) = 'array'
+          AND jsonb_array_length(source_execution_refs) > 0
+        ),
+        primary_ddi_execution_ref text NOT NULL REFERENCES insight.ddi_executions(execution_ref),
+        ai_imputation_notice_visible boolean NOT NULL,
+        workflow_revision bigint NOT NULL CHECK (workflow_revision > 0),
+        input_revision bigint NOT NULL CHECK (input_revision > 0),
+        last_tool_execution_id text NOT NULL,
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        updated_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+
+      CREATE FUNCTION insight.protect_primary_plan_draft_write()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF current_setting('insight.primary_plan_write', true) IS DISTINCT FROM 'allowed'
+           AND NOT (TG_OP = 'DELETE' AND pg_trigger_depth() > 1)
+        THEN
+          RAISE EXCEPTION 'Primary Treatment Plan drafts are service-owned' USING ERRCODE = '55000';
+        END IF;
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+      END;
+      $function$;
+      CREATE TRIGGER primary_treatment_plan_drafts_service_owned
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.primary_treatment_plan_drafts
+      FOR EACH ROW EXECUTE FUNCTION insight.protect_primary_plan_draft_write();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

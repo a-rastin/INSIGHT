@@ -7,6 +7,8 @@ import {
   Dsm5trCalculationSchema,
   PanssAnswersSchema,
   PanssCalculationSchema,
+  PrimaryTreatmentPlanInputSchema,
+  PrimaryTreatmentPlanOutputSchema,
   stableSerialize,
   type JsonValue,
 } from "@insight/contracts";
@@ -301,45 +303,8 @@ const TOOL_DEFINITIONS = {
   "treatment_plan.submit_primary": {
     version: "1.0.0",
     description: "Validate and persist a structured Primary Treatment Plan draft.",
-    inputSchema: Type.Object(
-      {
-        schemaVersion: ref,
-        regimen: Type.Array(
-          Type.Object(
-            {
-              canonicalMedicationId: ref,
-              dose: Type.Object(
-                { value: Type.Number({ exclusiveMinimum: 0 }), unit: shortText },
-                { additionalProperties: false },
-              ),
-              route: shortText,
-              frequency: shortText,
-              titration: Type.Optional(text),
-              monitoring: Type.Array(text, { maxItems: 100 }),
-              rationale: Type.Array(
-                Type.Object({ kind: ref, sourceRef: ref, text }, { additionalProperties: false }),
-                { minItems: 1, maxItems: 100 },
-              ),
-              warningRefs: Type.Array(ref, { maxItems: 100, uniqueItems: true }),
-            },
-            { additionalProperties: false },
-          ),
-          { minItems: 1, maxItems: 100 },
-        ),
-        generalMonitoring: Type.Array(text, { maxItems: 100 }),
-        explanation: text,
-        sourceExecutionRefs: Type.Array(ref, { minItems: 1, maxItems: 100, uniqueItems: true }),
-      },
-      { additionalProperties: false },
-    ),
-    outputSchema: Type.Object(
-      {
-        draftRef: ref,
-        draftRevision: Type.Integer({ minimum: 1 }),
-        aiImputationNoticeVisible: Type.Boolean(),
-      },
-      { additionalProperties: false },
-    ),
+    inputSchema: PrimaryTreatmentPlanInputSchema,
+    outputSchema: PrimaryTreatmentPlanOutputSchema,
   },
 } as const;
 

@@ -136,6 +136,71 @@ export const ProvenanceSchema = Type.Object(
 );
 export type Provenance = Static<typeof ProvenanceSchema>;
 
+export const TREATMENT_PLAN_SCHEMA_VERSION = "1.0.0" as const;
+const TreatmentPlanRefSchema = Type.String({ pattern: "^[A-Za-z][A-Za-z0-9._:-]{0,199}$" });
+const TreatmentPlanTextSchema = Type.String({ minLength: 1, maxLength: 4000 });
+const TreatmentPlanShortTextSchema = Type.String({ minLength: 1, maxLength: 500 });
+
+export const PrimaryTreatmentPlanInputSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(TREATMENT_PLAN_SCHEMA_VERSION),
+    regimen: Type.Array(
+      Type.Object(
+        {
+          canonicalMedicationId: TreatmentPlanRefSchema,
+          dose: Type.Object(
+            {
+              value: Type.Number({ exclusiveMinimum: 0 }),
+              unit: TreatmentPlanShortTextSchema,
+            },
+            { additionalProperties: false },
+          ),
+          route: TreatmentPlanShortTextSchema,
+          frequency: TreatmentPlanShortTextSchema,
+          titration: Type.Optional(TreatmentPlanTextSchema),
+          monitoring: Type.Array(TreatmentPlanTextSchema, { maxItems: 100 }),
+          rationale: Type.Array(
+            Type.Object(
+              {
+                kind: TreatmentPlanRefSchema,
+                sourceRef: TreatmentPlanRefSchema,
+                text: TreatmentPlanTextSchema,
+              },
+              { additionalProperties: false },
+            ),
+            { minItems: 1, maxItems: 100 },
+          ),
+          warningRefs: Type.Array(TreatmentPlanRefSchema, {
+            maxItems: 100,
+            uniqueItems: true,
+          }),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 1, maxItems: 100 },
+    ),
+    generalMonitoring: Type.Array(TreatmentPlanTextSchema, { maxItems: 100 }),
+    explanation: TreatmentPlanTextSchema,
+    sourceExecutionRefs: Type.Array(TreatmentPlanRefSchema, {
+      minItems: 1,
+      maxItems: 100,
+      uniqueItems: true,
+    }),
+  },
+  { $id: "insight.treatment-plan-primary-input.v1", additionalProperties: false },
+);
+export type PrimaryTreatmentPlanInput = Static<typeof PrimaryTreatmentPlanInputSchema>;
+
+export const PrimaryTreatmentPlanOutputSchema = Type.Object(
+  {
+    draftRef: TreatmentPlanRefSchema,
+    draftRevision: Type.Integer({ minimum: 1 }),
+    aiImputationNoticeVisible: Type.Boolean(),
+  },
+  { $id: "insight.treatment-plan-primary-output.v1", additionalProperties: false },
+);
+export type PrimaryTreatmentPlanOutput = Static<typeof PrimaryTreatmentPlanOutputSchema>;
+
 export const HealthResponseSchema = Type.Object(
   { schemaVersion: SchemaVersionSchema, status: Type.Literal("ok") },
   { $id: "insight.health-response.v1", additionalProperties: false },

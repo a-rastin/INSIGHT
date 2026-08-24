@@ -13,6 +13,7 @@ import {
   AssessmentTypeSchema,
   ContractValidationError,
   PaginationQuerySchema,
+  PrimaryTreatmentPlanInputSchema,
   ProvenanceSchema,
   RoleSchema,
   TimestampSchema,
@@ -156,4 +157,52 @@ test("published JSON schemas compile at the Fastify boundary", async () => {
   app.post("/provenance", { schema: { body: ProvenanceSchema } }, async () => ({ status: "ok" }));
   await app.ready();
   await app.close();
+});
+
+test("Treatment Plan golden fixtures keep structure authoritative and versioned", async () => {
+  const valid = JSON.parse(
+    await readFile(
+      new URL("fixtures/treatment-plan/valid-primary-plan.v1.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const narrativeOnly = JSON.parse(
+    await readFile(
+      new URL("fixtures/treatment-plan/invalid-narrative-only.v1.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.equal(isContract(PrimaryTreatmentPlanInputSchema, valid), true);
+  assert.equal(isContract(PrimaryTreatmentPlanInputSchema, narrativeOnly), false);
+  assert.equal(
+    isContract(PrimaryTreatmentPlanInputSchema, { ...valid, schemaVersion: "2.0.0" }),
+    false,
+  );
+  for (const field of ["regimen", "generalMonitoring", "explanation", "sourceExecutionRefs"]) {
+    assert.equal(isContract(PrimaryTreatmentPlanInputSchema, { ...valid, [field]: undefined }), false);
+  }
+  for (const field of [
+    "canonicalMedicationId",
+    "dose",
+    "route",
+    "frequency",
+    "monitoring",
+    "rationale",
+    "warningRefs",
+  ]) {
+    assert.equal(
+      isContract(PrimaryTreatmentPlanInputSchema, {
+        ...valid,
+        regimen: [{ ...valid.regimen[0], [field]: undefined }],
+      }),
+      false,
+    );
+  }
+  assert.equal(
+    isContract(PrimaryTreatmentPlanInputSchema, {
+      ...valid,
+      regimen: [{ ...valid.regimen[0], dose: { value: 2 } }],
+    }),
+    false,
+  );
 });

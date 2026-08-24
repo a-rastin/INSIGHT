@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "regimen": [
+    {
+      "canonicalMedicationId": "rx-risperidone",
+      "dose": { "value": 2, "unit": "mg" },
+      "route": "oral",
+      "frequency": "once daily",
+      "titration": "Increase only after clinician review.",
+      "monitoring": ["Monitor tolerability."],
+      "rationale": [
+        {
+          "kind": "BN_INFERENCE",
+          "sourceRef": "bn-inference-synthetic-1",
+          "text": "Synthetic inference supports this candidate."
+        }
+      ],
+      "warningRefs": [
+        "ddi-record-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-L10"
+      ]
+    }
+  ],
+  "generalMonitoring": ["Review response at follow-up."],
+  "explanation": "Synthetic research draft for schema verification only.",
+  "sourceExecutionRefs": [
+    "bn-inference-synthetic-1",
+    "ddi-execution-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "imputation-synthetic-1"
+  ]
+}
