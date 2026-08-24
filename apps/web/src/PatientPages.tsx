@@ -21,6 +21,7 @@ import { BnProcessing } from "./BnProcessing";
 import { Dsm5trAssessment } from "./Dsm5trAssessment";
 import { CssrsAssessment } from "./CssrsAssessment";
 import { DdiResults } from "./DdiResults";
+import { FinalPlanHistory } from "./FinalPlanHistory";
 import { MedicalHistory } from "./MedicalHistory";
 import { PanssAssessment } from "./PanssAssessment";
 import { PrimaryTreatmentPlan } from "./PrimaryTreatmentPlan";
@@ -470,6 +471,7 @@ export function PatientProfilePage({
       <BnProcessing patientId={patientId} csrfToken={csrfToken} />
       <DdiResults patientId={patientId} csrfToken={csrfToken} />
       <PrimaryTreatmentPlan patientId={patientId} csrfToken={csrfToken} />
+      <FinalPlanHistory patientId={patientId} csrfToken={csrfToken} />
     </div>
   );
 }

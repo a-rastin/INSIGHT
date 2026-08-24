@@ -10,9 +10,12 @@ import {
   FinalPlanSchemaError,
   WorkflowTransitionError,
   bindFinalDdiExecution,
+  createFinalPlanRevisionDraft,
   createOrOverwritePatient,
   createUser,
   finalizeTreatmentPlan,
+  invalidateResearchCaseInputs,
+  listFinalPlanVersions,
   saveClinicianRegimen,
   saveMedicationCatalog,
   submitPrimaryPlan,
@@ -86,6 +89,81 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
       assert.equal(await versionCount(pool, sameKeyCase.researchCaseId), 1);
       assert.equal(await workflowState(pool, sameKeyCase.researchCaseId), "FINALIZED");
 
+      const originalBytes = await finalVersionBytes(pool, sameKey[0].id);
+      const revisionRace = await Promise.all([
+        createFinalPlanRevisionDraft(pool, actor, sameKeyCase.patientId, randomUUID()),
+        createFinalPlanRevisionDraft(pool, actor, sameKeyCase.patientId, randomUUID()),
+      ]);
+      assert.deepEqual(revisionRace[0], revisionRace[1]);
+      assert.equal(revisionRace[0].predecessorId, sameKey[0].id);
+      assert.equal(revisionRace[0].workflowState, "REVISION_DRAFT");
+      assert.equal(await researchCaseCount(pool, sameKeyCase.patientId), 1);
+      assert.deepEqual(
+        await draftRegimen(pool, sameKeyCase.researchCaseId),
+        sameKey[0].plan.finalRegimen,
+      );
+
+      await saveClinicianRegimen(pool, actor, sameKeyCase.patientId, sameKey[0].plan.finalRegimen);
+      const revisionRecheck = (
+        await pool.query(
+          `SELECT job_id,exact_regimen FROM insight.final_ddi_rechecks
+           WHERE research_case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1`,
+          [sameKeyCase.researchCaseId],
+        )
+      ).rows[0];
+      const revisionDdiRef = ddiRef();
+      await insertDdi(
+        pool,
+        sameKeyCase.researchCaseId,
+        actor.id,
+        revisionDdiRef,
+        "FINAL_RECHECK",
+        revisionRecheck.exact_regimen,
+        [],
+      );
+      await bindFinalDdiExecution(pool, revisionRecheck.job_id, revisionDdiRef);
+      await markRevisionReady(pool, sameKeyCase.researchCaseId, actor.id, revisionDdiRef);
+
+      const supersessionRace = await Promise.allSettled([
+        finalizeTreatmentPlan(pool, actor, sameKeyCase.patientId, "supersede-a", randomUUID()),
+        finalizeTreatmentPlan(pool, actor, sameKeyCase.patientId, "supersede-b", randomUUID()),
+      ]);
+      assert.equal(supersessionRace.filter(({ status }) => status === "fulfilled").length, 1);
+      assert.equal(supersessionRace.filter(({ status }) => status === "rejected").length, 1);
+      const fulfilled = supersessionRace.find(({ status }) => status === "fulfilled");
+      const rejected = supersessionRace.find(({ status }) => status === "rejected");
+      assert.equal(fulfilled?.status, "fulfilled");
+      assert.equal(rejected?.status, "rejected");
+      assert.ok(rejected.reason instanceof FinalPlanConflictError);
+      const successor = fulfilled.value;
+      assert.equal(successor.sequence, 2);
+      assert.equal(successor.predecessorId, sameKey[0].id);
+      assert.deepEqual(
+        await finalizeTreatmentPlan(
+          pool,
+          actor,
+          sameKeyCase.patientId,
+          successor.idempotencyKey,
+          randomUUID(),
+        ),
+        successor,
+      );
+      const versions = await listFinalPlanVersions(pool, actor, sameKeyCase.patientId);
+      assert.deepEqual(
+        versions.map(({ id, status, sequence, predecessorId }) => ({
+          id,
+          status,
+          sequence,
+          predecessorId,
+        })),
+        [
+          { id: successor.id, status: "ACTIVE", sequence: 2, predecessorId: sameKey[0].id },
+          { id: sameKey[0].id, status: "SUPERSEDED", sequence: 1, predecessorId: null },
+        ],
+      );
+      assert.equal(await activeVersionCount(pool, sameKeyCase.researchCaseId), 1);
+      assert.equal(await finalVersionBytes(pool, sameKey[0].id), originalBytes);
+
       await assert.rejects(
         pool.query("UPDATE insight.final_plan_versions SET plan_snapshot='{}' WHERE id=$1", [
           sameKey[0].id,
@@ -122,6 +200,32 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
       await assert.rejects(
         finalizeTreatmentPlan(pool, actor, invalidCase.patientId, "invalid-schema", randomUUID()),
         FinalPlanSchemaError,
+      );
+
+      const invalidationCase = await seedReadyCase(pool, actor, 985);
+      const invalidationFinal = await finalizeTreatmentPlan(
+        pool,
+        actor,
+        invalidationCase.patientId,
+        "before-input-change",
+        randomUUID(),
+      );
+      await createFinalPlanRevisionDraft(pool, actor, invalidationCase.patientId, randomUUID());
+      const revision = await workflowRevision(pool, invalidationCase.researchCaseId);
+      await invalidateResearchCaseInputs(
+        pool,
+        actor,
+        invalidationCase.patientId,
+        revision,
+        "Synthetic dependency change",
+        randomUUID(),
+      );
+      assert.equal(await workflowState(pool, invalidationCase.researchCaseId), "DATA_COLLECTION");
+      assert.equal(await activeResultCount(pool, invalidationCase.researchCaseId), 0);
+      assert.equal(await researchCaseCount(pool, invalidationCase.patientId), 1);
+      assert.equal(
+        (await listFinalPlanVersions(pool, actor, invalidationCase.patientId))[0].id,
+        invalidationFinal.id,
       );
     } finally {
       await pool.end();
@@ -379,6 +483,94 @@ async function versionCount(pool, researchCaseId) {
       [researchCaseId],
     )
   ).rows[0].count;
+}
+
+async function activeVersionCount(pool, researchCaseId) {
+  return (
+    await pool.query(
+      "SELECT count(*)::integer AS count FROM insight.final_plan_versions WHERE research_case_id=$1 AND status='ACTIVE'",
+      [researchCaseId],
+    )
+  ).rows[0].count;
+}
+
+async function researchCaseCount(pool, patientId) {
+  return (
+    await pool.query(
+      "SELECT count(*)::integer AS count FROM insight.research_cases WHERE patient_id=$1",
+      [patientId],
+    )
+  ).rows[0].count;
+}
+
+async function finalVersionBytes(pool, id) {
+  return (
+    await pool.query(
+      "SELECT plan_snapshot::text || E'\\n' || provenance::text AS bytes FROM insight.final_plan_versions WHERE id=$1",
+      [id],
+    )
+  ).rows[0].bytes;
+}
+
+async function draftRegimen(pool, researchCaseId) {
+  return (
+    await pool.query(
+      "SELECT clinician_regimen FROM insight.primary_treatment_plan_drafts WHERE research_case_id=$1",
+      [researchCaseId],
+    )
+  ).rows[0].clinician_regimen;
+}
+
+async function workflowRevision(pool, researchCaseId) {
+  return Number(
+    (
+      await pool.query("SELECT workflow_revision FROM insight.research_cases WHERE id=$1", [
+        researchCaseId,
+      ])
+    ).rows[0].workflow_revision,
+  );
+}
+
+async function activeResultCount(pool, researchCaseId) {
+  return (
+    await pool.query(
+      `SELECT count(*)::integer AS count FROM insight.research_case_domain_results
+       WHERE research_case_id=$1 AND invalidated_at IS NULL`,
+      [researchCaseId],
+    )
+  ).rows[0].count;
+}
+
+async function markRevisionReady(pool, researchCaseId, userId, finalDdiRef) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const state = (
+      await client.query(
+        "SELECT workflow_revision,input_revision FROM insight.research_cases WHERE id=$1 FOR UPDATE",
+        [researchCaseId],
+      )
+    ).rows[0];
+    await client.query("SELECT set_config('insight.workflow_transition','allowed',true)");
+    await client.query(
+      `INSERT INTO insight.research_case_domain_results
+         (research_case_id,result_type,status,workflow_revision,input_revision,
+          result_reference,provenance,recorded_by_user_id)
+       VALUES ($1,'FINAL_DDI','SUCCEEDED',$2,$3,$4,'{"accepted":true}',$5)`,
+      [researchCaseId, state.workflow_revision, state.input_revision, finalDdiRef, userId],
+    );
+    await client.query(
+      `UPDATE insight.research_cases SET workflow_state='READY_TO_FINALIZE',
+         workflow_revision=workflow_revision+1 WHERE id=$1`,
+      [researchCaseId],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function workflowState(pool, researchCaseId) {

@@ -2,6 +2,8 @@
 
 INSIGHT is an explainable research decision-support application. It uses versioned clinical inputs, governed knowledge artifacts, Bayesian inference, attributable clinician review, and immutable Final Treatment Plans.
 
+Final Treatment Plan revisions stay inside the Patient's single Research Case. A revision draft is seeded from the active version, reruns invalidated dependencies and final DDI review, then atomically creates one active successor while preserving every superseded version unchanged and readable.
+
 ## Verification
 
 Run full local checks with:

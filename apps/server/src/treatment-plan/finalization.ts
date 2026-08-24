@@ -95,6 +95,137 @@ export interface FinalPlanVersion {
   readonly idempotencyKey: string;
 }
 
+export interface FinalPlanRevisionDraft {
+  readonly researchCaseId: string;
+  readonly predecessorId: string;
+  readonly draftRef: string;
+  readonly draftRevision: number;
+  readonly workflowState: "REVISION_DRAFT";
+}
+
+export async function listFinalPlanVersions(
+  pool: Pool,
+  actor: TreatmentPlanActor,
+  patientId: string,
+): Promise<FinalPlanVersion[]> {
+  if (actor.role !== "PSYCHIATRIST") throw new FinalPlanAuthorizationError();
+  const result = await pool.query<FinalRow>(
+    `SELECT version.* FROM insight.final_plan_versions version
+     JOIN insight.research_cases research_case ON research_case.id=version.research_case_id
+     WHERE research_case.patient_id=$1 ORDER BY version.sequence DESC`,
+    [patientId],
+  );
+  if (result.rowCount === 0) {
+    const researchCase = await pool.query(
+      "SELECT 1 FROM insight.research_cases WHERE patient_id=$1",
+      [patientId],
+    );
+    if (!researchCase.rows[0]) throw new FinalPlanNotFoundError();
+  }
+  return result.rows.map(materialize);
+}
+
+export async function createFinalPlanRevisionDraft(
+  pool: Pool,
+  actor: TreatmentPlanActor,
+  patientId: string,
+  requestId: string,
+  now = new Date(),
+): Promise<FinalPlanRevisionDraft> {
+  if (actor.role !== "PSYCHIATRIST") throw new FinalPlanAuthorizationError();
+
+  return withTransaction(pool, async (client) => {
+    const researchCase = (
+      await client.query<CaseRow>(
+        `SELECT id,patient_id,workflow_state,workflow_revision,input_revision
+         FROM insight.research_cases WHERE patient_id=$1 FOR UPDATE`,
+        [patientId],
+      )
+    ).rows[0];
+    if (!researchCase) throw new FinalPlanNotFoundError();
+
+    const active = (
+      await client.query<FinalRow>(
+        `SELECT * FROM insight.final_plan_versions
+         WHERE research_case_id=$1 AND status='ACTIVE' FOR UPDATE`,
+        [researchCase.id],
+      )
+    ).rows[0];
+    if (!active) throw new FinalPlanConflictError();
+
+    const draft = (
+      await client.query<DraftRow>(
+        `SELECT draft_ref,revision,schema_version,plan_payload,clinician_regimen,
+                regimen_fingerprint,final_ddi_execution_ref
+         FROM insight.primary_treatment_plan_drafts WHERE research_case_id=$1 FOR UPDATE`,
+        [researchCase.id],
+      )
+    ).rows[0];
+    if (!draft) throw new FinalPlanDependencyError();
+    if (researchCase.workflow_state === "REVISION_DRAFT") {
+      return materializeRevision(researchCase.id, active.id, draft);
+    }
+    if (researchCase.workflow_state !== "FINALIZED") throw new FinalPlanConflictError();
+
+    const generatedPlan = active.plan_snapshot.generatedPlan;
+    const finalRegimen = active.plan_snapshot.finalRegimen;
+    if (
+      !Value.Check(PrimaryTreatmentPlanInputSchema, generatedPlan) ||
+      !Value.Check(ClinicianRegimenInputSchema, {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        regimen: finalRegimen,
+      })
+    ) {
+      throw new FinalPlanSchemaError();
+    }
+
+    await client.query("SELECT set_config('insight.primary_plan_write','allowed',true)");
+    const seeded = (
+      await client.query<DraftRow>(
+        `UPDATE insight.primary_treatment_plan_drafts
+         SET revision=revision+1,plan_payload=$2,plan_hash=$3,clinician_regimen=$4,
+             regimen_fingerprint=NULL,final_ddi_execution_ref=NULL,
+             workflow_revision=$5,updated_by_user_id=$6,updated_at=$7
+         WHERE research_case_id=$1 RETURNING *`,
+        [
+          researchCase.id,
+          JSON.stringify(generatedPlan),
+          hash(generatedPlan),
+          JSON.stringify(finalRegimen),
+          Number(researchCase.workflow_revision) + 1,
+          actor.id,
+          now,
+        ],
+      )
+    ).rows[0]!;
+
+    await client.query("SELECT set_config('insight.workflow_transition','allowed',true)");
+    await client.query(
+      `UPDATE insight.research_cases SET workflow_state='REVISION_DRAFT',
+         workflow_revision=workflow_revision+1,updated_by_user_id=$2,updated_at=$3 WHERE id=$1`,
+      [researchCase.id, actor.id, now],
+    );
+    await client.query(
+      `INSERT INTO insight.research_case_transition_events
+         (research_case_id,patient_id,command,from_state,to_state,from_revision,to_revision,
+          input_revision,actor_user_id,request_id,domain_result_ids,provenance,occurred_at)
+       VALUES ($1,$2,'CREATE_REVISION_DRAFT','FINALIZED','REVISION_DRAFT',$3::bigint,
+               $3::bigint+1,$4,$5,$6,'{}',$7,$8)`,
+      [
+        researchCase.id,
+        researchCase.patient_id,
+        Number(researchCase.workflow_revision),
+        Number(researchCase.input_revision),
+        actor.id,
+        requestId,
+        { predecessorId: active.id, sourceDraftRevision: Number(active.source_draft_revision) },
+        now,
+      ],
+    );
+    return materializeRevision(researchCase.id, active.id, seeded);
+  });
+}
+
 export async function finalizeTreatmentPlan(
   pool: Pool,
   actor: TreatmentPlanActor,
@@ -341,6 +472,20 @@ function materialize(row: FinalRow): FinalPlanVersion {
     finalizedByUserId: row.finalized_by_user_id,
     finalizedAt: row.finalized_at.toISOString(),
     idempotencyKey: row.idempotency_key,
+  };
+}
+
+function materializeRevision(
+  researchCaseId: string,
+  predecessorId: string,
+  draft: DraftRow,
+): FinalPlanRevisionDraft {
+  return {
+    researchCaseId,
+    predecessorId,
+    draftRef: draft.draft_ref,
+    draftRevision: Number(draft.revision),
+    workflowState: "REVISION_DRAFT",
   };
 }
 

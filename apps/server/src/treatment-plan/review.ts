@@ -66,6 +66,7 @@ interface DraftRow extends QueryResultRow {
   workflow_revision: string;
   input_revision: string;
   updated_at: Date;
+  workflow_state: string;
 }
 
 interface RecheckRow extends QueryResultRow {
@@ -126,6 +127,9 @@ export async function saveClinicianRegimen(
   await withTransaction(pool, async (client) => {
     const row = await loadDraft(client, patientId, true);
     if (!row) throw new TreatmentPlanNotFoundError();
+    if (row.workflow_state === "FINALIZED" || row.workflow_state === "DELETED") {
+      throw new ClinicianRegimenInputError();
+    }
     await validateCanonicalMedications(client, regimen);
     const exactRegimen = await exactDdiRegimen(client, row.research_case_id, regimen);
     const fingerprint = regimenFingerprint(exactRegimen);
@@ -159,7 +163,7 @@ export async function saveClinicianRegimen(
 
     const changedMedication =
       row.regimen_fingerprint !== null && row.regimen_fingerprint !== fingerprint;
-    const eligible = await hasEligibleRecheck(client, row.research_case_id, fingerprint);
+    const eligible = await hasEligibleRecheck(client, row.research_case_id, revision, fingerprint);
     if (changedMedication || !eligible) {
       await enqueueFinalRecheck(client, row, revision, fingerprint, exactRegimen, actor.id, now);
     }
@@ -278,7 +282,8 @@ async function loadDraft(
   lock: boolean,
 ): Promise<DraftRow | undefined> {
   const result = await database.query<DraftRow>(
-    `SELECT draft.* FROM insight.primary_treatment_plan_drafts draft
+    `SELECT draft.*,research_case.workflow_state
+     FROM insight.primary_treatment_plan_drafts draft
      JOIN insight.research_cases research_case ON research_case.id=draft.research_case_id
      WHERE research_case.patient_id=$1${lock ? " FOR UPDATE OF draft" : ""}`,
     [patientId],
@@ -344,14 +349,16 @@ async function exactDdiRegimen(
 async function hasEligibleRecheck(
   client: PoolClient,
   researchCaseId: string,
+  draftRevision: number,
   fingerprint: string,
 ): Promise<boolean> {
   const result = await client.query(
     `SELECT 1 FROM insight.final_ddi_rechecks recheck
      JOIN insight.jobs job ON job.id=recheck.job_id
-     WHERE recheck.research_case_id=$1 AND recheck.regimen_fingerprint=$2
+     WHERE recheck.research_case_id=$1 AND recheck.draft_revision=$2
+       AND recheck.regimen_fingerprint=$3
        AND job.status IN ('QUEUED','RUNNING','SUCCEEDED') LIMIT 1`,
-    [researchCaseId, fingerprint],
+    [researchCaseId, draftRevision, fingerprint],
   );
   return Boolean(result.rows[0]);
 }

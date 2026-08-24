@@ -26,7 +26,9 @@ import {
   FinalPlanInputError,
   FinalPlanNotFoundError,
   FinalPlanSchemaError,
+  createFinalPlanRevisionDraft,
   finalizeTreatmentPlan,
+  listFinalPlanVersions,
 } from "./finalization.js";
 
 const UUID_PATTERN =
@@ -142,6 +144,16 @@ const finalizationResponseSchema = Type.Object(
   },
   { additionalProperties: false },
 );
+const revisionDraftSchema = Type.Object(
+  {
+    researchCaseId: Type.String({ pattern: UUID_PATTERN }),
+    predecessorId: Type.String({ pattern: UUID_PATTERN }),
+    draftRef: Type.String({ minLength: 1, maxLength: 200 }),
+    draftRevision: Type.Integer({ minimum: 1 }),
+    workflowState: Type.Literal("REVISION_DRAFT"),
+  },
+  { additionalProperties: false },
+);
 
 export const treatmentPlanRoutes =
   (
@@ -149,6 +161,84 @@ export const treatmentPlanRoutes =
     getSession: (request: FastifyRequest) => SessionContext | undefined,
   ): FastifyPluginAsync =>
   async (api) => {
+    api.get<{ Params: { patientId: string } }>(
+      "/patients/:patientId/research-case/final-plans",
+      {
+        schema: {
+          operationId: "listFinalTreatmentPlans",
+          tags: ["treatment-plan"],
+          params: paramsSchema,
+          response: {
+            200: Type.Object(
+              {
+                schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+                finalPlans: Type.Array(finalPlanSchema),
+              },
+              { additionalProperties: false },
+            ),
+            default: ApiErrorSchema,
+          },
+        },
+      },
+      async (request, reply) => {
+        try {
+          return reply.send({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            finalPlans: await listFinalPlanVersions(
+              pool,
+              actor(getSession(request)!),
+              request.params.patientId,
+            ),
+          });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
+    api.post<{
+      Params: { patientId: string };
+      Body: { schemaVersion: typeof CURRENT_SCHEMA_VERSION };
+    }>(
+      "/patients/:patientId/research-case/final-plans/revision",
+      {
+        schema: {
+          operationId: "createFinalTreatmentPlanRevision",
+          tags: ["treatment-plan"],
+          params: paramsSchema,
+          body: Type.Object(
+            { schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION) },
+            { additionalProperties: false },
+          ),
+          response: {
+            200: Type.Object(
+              {
+                schemaVersion: Type.Literal(CURRENT_SCHEMA_VERSION),
+                revisionDraft: revisionDraftSchema,
+              },
+              { additionalProperties: false },
+            ),
+            default: ApiErrorSchema,
+          },
+        },
+      },
+      async (request, reply) => {
+        try {
+          return reply.send({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            revisionDraft: await createFinalPlanRevisionDraft(
+              pool,
+              actor(getSession(request)!),
+              request.params.patientId,
+              request.id,
+            ),
+          });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
     api.get<{ Params: { patientId: string } }>(
       "/patients/:patientId/research-case/primary-plan",
       {

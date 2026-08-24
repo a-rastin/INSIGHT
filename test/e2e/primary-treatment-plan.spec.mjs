@@ -59,6 +59,29 @@ for (const scenario of [
   });
 }
 
+test("Final Treatment Plan revision uses active predecessor without rationale", async ({
+  page,
+}) => {
+  let revisionBody;
+  await installApi(page, planState({ status: "SUCCEEDED" }), {
+    finalPlans: [finalPlan(2, "ACTIVE", "final-plan-v1"), finalPlan(1, "SUPERSEDED", null)],
+    onRevision: (body) => {
+      revisionBody = body;
+    },
+  });
+  await page.goto(`/patients/${patientId}`);
+
+  await expect(page.getByRole("heading", { name: "Final Treatment Plan history" })).toBeVisible();
+  await expect(page.getByText("ACTIVE", { exact: true })).toBeVisible();
+  await expect(page.getByText("SUPERSEDED", { exact: true })).toBeVisible();
+  await expect(page.getByText("final-plan-v1", { exact: true })).toHaveCount(2);
+  await page.getByRole("button", { name: "Create revision" }).click();
+  await expect(page.getByRole("button", { name: "Revision draft ready" })).toBeDisabled();
+  await expect(page.getByText(/seeded from active Final Treatment Plan/)).toBeVisible();
+  expect(revisionBody).toEqual({ schemaVersion: "1" });
+  await expect(page.getByLabel(/reason|acknowledgement/i)).toHaveCount(0);
+});
+
 function planState({ status, imputed = false, readiness }) {
   return {
     schemaVersion: "1",
@@ -138,7 +161,7 @@ function planState({ status, imputed = false, readiness }) {
   };
 }
 
-async function installApi(page, plan) {
+async function installApi(page, plan, finalPlanOptions = { finalPlans: [] }) {
   await page.addInitScript(
     ({ id }) => globalThis.localStorage.setItem(`insight.research-use.${id}.v1`, "acknowledged"),
     { id: userId },
@@ -152,8 +175,48 @@ async function installApi(page, plan) {
     if (path === `/api/v1/patients/${patientId}/research-case/primary-plan`) {
       return route.fulfill({ json: plan });
     }
+    if (path === `/api/v1/patients/${patientId}/research-case/final-plans`) {
+      return route.fulfill({
+        json: { schemaVersion: "1", finalPlans: finalPlanOptions.finalPlans },
+      });
+    }
+    if (path === `/api/v1/patients/${patientId}/research-case/final-plans/revision`) {
+      finalPlanOptions.onRevision?.(route.request().postDataJSON());
+      return route.fulfill({
+        json: {
+          schemaVersion: "1",
+          revisionDraft: {
+            researchCaseId,
+            predecessorId: "final-plan-v2",
+            draftRef: "primary-plan-draft-e2e",
+            draftRevision: 2,
+            workflowState: "REVISION_DRAFT",
+          },
+        },
+      });
+    }
     return route.fulfill({ status: 404, json: { schemaVersion: "1", error: {} } });
   });
+}
+
+function finalPlan(sequence, status, predecessorId) {
+  return {
+    id: `final-plan-v${sequence}`,
+    researchCaseId,
+    sequence,
+    status,
+    predecessorId,
+    schemaVersion: "1.0.0",
+    plan: { schemaVersion: "1.0.0", finalRegimen: [] },
+    planHash: "a".repeat(64),
+    sourceDraftRef: "primary-plan-draft-e2e",
+    sourceDraftRevision: sequence,
+    finalDdiExecutionRef: `ddi-final-${sequence}`,
+    provenance: {},
+    finalizedByUserId: userId,
+    finalizedAt: `2026-08-2${sequence}T12:00:00.000Z`,
+    idempotencyKey: `final-${sequence}`,
+  };
 }
 
 function patient() {
