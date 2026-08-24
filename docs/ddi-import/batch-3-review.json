@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "insight.ddi-import-review.v1",
+  "contract": "INS-055",
+  "batch": 3,
+  "reportSha256": "da0dd3d57e54e8e695e0e0bba3a5d24ba519d0d5141e7237ec738eb5de32952e",
+  "status": "blocked",
+  "reviewerRecord": null,
+  "reasons": [
+    "missing_permission_record",
+    "missing_legal_approval",
+    "missing_clinical_review"
+  ],
+  "note": "No reviewer identity or approval is inferred or fabricated.",
+  "reviewSha256": "57f9c66599b0612582848f16735c978e76745b1c082ab0980fff7c978c4e2b30"
+}

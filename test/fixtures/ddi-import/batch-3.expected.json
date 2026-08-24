@@ -1,0 +1,45 @@
+{
+  "batchSha256": "d6d85daca0139a7adf8a9d683f356f437d7197343dc4980e1af8be95e60489b3",
+  "reportSha256": "da0dd3d57e54e8e695e0e0bba3a5d24ba519d0d5141e7237ec738eb5de32952e",
+  "reviewSha256": "57f9c66599b0612582848f16735c978e76745b1c082ab0980fff7c978c4e2b30",
+  "firstEntry": {
+    "position": 65,
+    "batch": 3,
+    "path": "medical-documentation/ddi-checker/Medscape/Anxiolytics, Sedatives, and Hypnotics/Buspirone.txt",
+    "medicationName": "Buspirone",
+    "mediaType": "text/plain; charset=utf-8",
+    "byteLength": 46542,
+    "sha256": "0aed5c30cfb39f5c6059b5105ebf35bc6e1e00046b897306a6a0964de8d63bd0",
+    "manifestStatus": "missing",
+    "permissionStatus": "missing",
+    "catalogMappingStatus": "missing",
+    "importStatus": "blocked",
+    "blockedReasons": [
+      "missing_source_manifest",
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+      "missing_canonical_medication_id"
+    ]
+  },
+  "lastEntry": {
+    "position": 96,
+    "batch": 3,
+    "path": "medical-documentation/ddi-checker/Medscape/Gastrointestinal Medications/Omeprazole.pdf",
+    "medicationName": "Omeprazole",
+    "mediaType": "application/pdf",
+    "byteLength": 557423,
+    "sha256": "698113ac238a3b737ca8cd6b2fdb5d783547bf2c894f40f636b195334d72a732",
+    "manifestStatus": "missing",
+    "permissionStatus": "missing",
+    "catalogMappingStatus": "missing",
+    "importStatus": "blocked",
+    "blockedReasons": [
+      "missing_source_manifest",
+      "missing_permission_record",
+      "missing_legal_approval",
+      "missing_clinical_review",
+      "missing_canonical_medication_id"
+    ]
+  }
+}
