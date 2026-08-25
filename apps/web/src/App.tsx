@@ -5,6 +5,7 @@ import {
   type MouseEvent,
   type ReactNode,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -296,8 +297,42 @@ function NotFoundPage() {
   );
 }
 
+function ConnectivityStatus() {
+  const [status, setStatus] = useState<"offline" | "restored" | null>(() =>
+    navigator.onLine ? null : "offline",
+  );
+
+  useEffect(() => {
+    const offline = () => setStatus("offline");
+    const online = () => setStatus("restored");
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", online);
+    return () => {
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("online", online);
+    };
+  }, []);
+
+  if (status === "offline") {
+    return (
+      <Banner title="Connection unavailable" tone="warning">
+        INSIGHT cannot refresh data while this device is offline. Current information may be stale.
+      </Banner>
+    );
+  }
+  if (status === "restored") {
+    return (
+      <Banner title="Connection restored" tone="info">
+        Data can be refreshed again. Reload any page state that remained unavailable.
+      </Banner>
+    );
+  }
+  return null;
+}
+
 function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => void }) {
   const pathname = usePathname();
+  const mainRef = useRef<HTMLElement>(null);
   const routes = session.user.role === "ADMINISTRATOR" ? administratorRoutes : clinicianRoutes;
   const patientId =
     session.user.role === "PSYCHIATRIST"
@@ -316,6 +351,10 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
           page: "patient-profile" as const,
         }
       : undefined);
+
+  useEffect(() => {
+    mainRef.current?.focus();
+  }, [pathname]);
 
   async function signOut() {
     await apiClient.POST("/api/v1/logout", {
@@ -363,12 +402,13 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
           </ul>
         </nav>
       </aside>
-      <main className="app-main" id="main-content" tabIndex={-1}>
+      <main className="app-main" id="main-content" tabIndex={-1} ref={mainRef}>
         <header className="page-heading">
           <p className="kicker">INSIGHT</p>
           <h1>{route?.title ?? "Page not found"}</h1>
           {route ? <p>{route.description}</p> : null}
         </header>
+        <ConnectivityStatus />
         {route?.page === "workspace" ? (
           <WorkspacePage administrator={session.user.role === "ADMINISTRATOR"} />
         ) : null}

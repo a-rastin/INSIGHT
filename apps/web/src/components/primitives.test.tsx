@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -5,6 +6,7 @@ import {
   Banner,
   Button,
   DataTable,
+  EmptyState,
   ErrorState,
   FormField,
   LoadingState,
@@ -62,5 +64,42 @@ describe("shared primitives", () => {
     expect(screen.getByRole("region", { name: "Record summary" }).getAttribute("tabindex")).toBe(
       "0",
     );
+  });
+
+  it("has no serious accessibility violations across universal page states", async () => {
+    const { container } = render(
+      <main>
+        <h1>State inventory</h1>
+        <LoadingState label="Loading records" />
+        <EmptyState title="No records" description="No records match this view." />
+        <Banner title="Validation required" tone="urgent">
+          Correct labelled fields before continuing.
+        </Banner>
+        <Banner title="Workflow queued" tone="info">
+          Work is waiting to start.
+        </Banner>
+        <Banner title="Workflow running" tone="info">
+          Work is in progress.
+        </Banner>
+        <Banner title="Input is stale" tone="warning">
+          Refresh before continuing.
+        </Banner>
+        <ErrorState title="Access denied" description="Your account cannot access this data." />
+        <ErrorState
+          title="Dependency unavailable"
+          description="Required service could not be reached."
+        />
+        <ErrorState title="Workflow failed" description="Work did not complete." />
+        <Banner title="Workflow succeeded" tone="info">
+          Result and provenance are available.
+        </Banner>
+      </main>,
+    );
+
+    const results = await axe.run(container, {
+      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] },
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(results.violations.filter(({ impact }) => impact === "serious")).toEqual([]);
   });
 });

@@ -8,6 +8,12 @@ Psychiatrists can review and print every immutable Final Treatment Plan version 
 
 Audit access is role-separated in both backend queries and UI routes. Administrators can inspect paginated operational metadata that excludes Patient identifiers and clinical content. Psychiatrists can inspect attributable Patient and Research Case audit history, including retained history after Patient deletion, with before/after values and provenance references. Both views are read-only and state that ordinary PostgreSQL audit rows are not tamper-evident.
 
+## Accessibility and Page States
+
+`apps/web` uses semantic shell landmarks, labelled regions and forms, scoped table headers, keyboard-native controls, visible focus, reduced-motion CSS, and narrow-width layouts down to 320 px. Clinical status always includes text; C-SSRS and DDI meaning never depends on color alone. Urgent and stale-input messages remain visible until state changes.
+
+Shared loading, empty, validation, unauthorized, dependency-unavailable, and error presentation lives in `apps/web/src/components/primitives.tsx`. DDI, Bayesian processing, and Primary Treatment Plan components own their queued, running, failed, succeeded, and stale states. Shell-level connectivity state keeps disconnect warnings visible and announces reconnection. Automated WCAG A/AA scans and state coverage run with `npm test --workspace @insight/web`; browser keyboard and narrow-width flows run with `npm run test:e2e`.
+
 Server authorization is fail-closed and catalogued in `docs/security/authorization-inventory.md`. Every REST, SSE, job, MCP, audit, artifact, backup, offline restore, and workflow command has explicit role, object-access, data-class, and workflow-state classifications. HTTP role checks use the current resolved session; clinical service boundaries revalidate the current Psychiatrist account; Patient authority remains shared across active Psychiatrists.
 
 ## Artifact Storage

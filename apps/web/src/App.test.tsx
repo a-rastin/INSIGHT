@@ -62,6 +62,20 @@ describe("application shell", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Patient Registry" })).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "Application navigation" })).toBeTruthy();
     expect(screen.getByRole("main").getAttribute("id")).toBe("main-content");
+    expect(document.activeElement).toBe(screen.getByRole("main"));
+  });
+
+  it("keeps disconnect state visible and announces reconnection", async () => {
+    window.history.replaceState({}, "", "/");
+    render(<App />);
+    await screen.findByRole("heading", { level: 1, name: "Decision support workspace" });
+
+    fireEvent.offline(window);
+    expect(screen.getByRole("status", { name: "Connection unavailable" })).toBeTruthy();
+    expect(screen.getByText(/Current information may be stale/)).toBeTruthy();
+
+    fireEvent.online(window);
+    expect(screen.getByRole("status", { name: "Connection restored" })).toBeTruthy();
   });
 
   it("has no detectable WCAG A or AA violations on the shell", async () => {

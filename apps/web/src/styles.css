@@ -220,6 +220,10 @@ p {
   margin-bottom: var(--space-6);
 }
 
+.page-heading + .banner {
+  margin-bottom: var(--space-5);
+}
+
 .page-heading > p:last-child {
   max-width: 68ch;
   margin-bottom: 0;
@@ -1923,6 +1927,32 @@ tbody tr:last-child td {
   .state-card,
   .error-state {
     padding: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    flex-wrap: wrap;
+  }
+
+  .app-context {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .authentication-page,
+  .fatal-error {
+    padding: var(--space-4);
+  }
+
+  .authentication-card {
+    padding: var(--space-5);
+  }
+
+  .form-actions,
+  .primary-plan__editor-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
