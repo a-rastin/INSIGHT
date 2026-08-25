@@ -28,6 +28,10 @@ The production image supervises Fastify, one durable-job worker, and PostgreSQL 
 
 `compose.production.yml` publishes Fastify on host loopback only. Terminate HTTPS at a same-host reverse proxy and expose only that proxy; TLS is required for every non-loopback browser deployment. Do not publish port 5432 or mount the PostgreSQL socket outside the container.
 
+The reverse proxy must preserve `Host`, reject malformed forwarding headers, cap request headers at 16 KiB, and use TLS 1.2 or newer with a valid certificate. Production responses set HSTS, CSP, clickjacking, MIME-sniffing, referrer, permissions, and no-store API headers; session cookies are `Secure`, `HttpOnly`, and `SameSite=Strict`. Only `NODE_ENV=development` on `127.0.0.1`, `::1`, or `localhost` may omit `Secure` for local HTTP. Default API bodies are limited to 1 MiB; Bayesian model upload routes retain their explicit 30 MB transport cap and enforce lower decoded XML/artifact limits. Per-process limits allow 300 API requests/minute/IP and 10 login requests/minute/IP, returning `429` with `Retry-After`.
+
+Compose limits the all-in-one container to 768 MiB RAM, 1 CPU, and 256 PIDs. Raise these only after measured workload testing; retain explicit limits in any alternate orchestrator.
+
 Runtime maintenance permits health probes but blocks all ordinary API and static traffic with `503 MAINTENANCE`:
 
 ```sh
@@ -60,6 +64,14 @@ Production-shaped container checks run with:
 
 ```sh
 npm run test:container
+```
+
+Input/parser/transport abuse checks and dependency review run with:
+
+```sh
+npm run test:abuse
+npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
 ```
 
 The local Medscape archive inventory is frozen under `docs/ddi-import`. Verify source bytes,

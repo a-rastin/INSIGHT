@@ -375,6 +375,17 @@ export async function appendJobProgress(
   now = new Date(),
 ): Promise<void> {
   if (!/^[A-Z][A-Z0-9_]{0,99}$/.test(progress.code)) throw new TypeError("Invalid progress code.");
+  const units = [progress.completedUnits, progress.totalUnits].filter(
+    (value): value is number => value !== undefined,
+  );
+  if (
+    units.some((value) => !Number.isSafeInteger(value) || value < 0 || value > 1_000_000_000) ||
+    (progress.completedUnits !== undefined &&
+      progress.totalUnits !== undefined &&
+      progress.completedUnits > progress.totalUnits)
+  ) {
+    throw new TypeError("Invalid progress units.");
+  }
   await withTransaction(pool, async (client) => {
     const locked = await client.query<{ id: string }>(
       `SELECT id FROM insight.jobs

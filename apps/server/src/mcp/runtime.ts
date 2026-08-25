@@ -33,6 +33,9 @@ const SAFE_MESSAGES: Readonly<Record<ModelAgentFailureCode, string>> = Object.fr
   STALE_RESEARCH_CASE_REVISION: "Research Case revision changed during execution.",
   TOOL_CALL_REJECTED: "Model tool call was rejected.",
 });
+const MAX_TOOL_ARGUMENT_BYTES = 65_536;
+const MAX_MODEL_JSON_DEPTH = 32;
+const MAX_MODEL_JSON_NODES = 10_000;
 
 export class ModelAgentError extends Error {
   constructor(readonly code: ModelAgentFailureCode) {
@@ -290,10 +293,7 @@ async function requestModel(
           throw new ModelAgentError("ENDPOINT_EXHAUSTED");
         }
       } else {
-        const source = await response.text();
-        if (Buffer.byteLength(source) > pin.settings.maxResponseBytes) {
-          throw new ModelAgentError("BUDGET_EXHAUSTED");
-        }
+        const source = await boundedResponseText(response, pin.settings.maxResponseBytes);
         let body: unknown;
         try {
           body = JSON.parse(source) as unknown;
@@ -311,6 +311,24 @@ async function requestModel(
     if (pin.settings.retryDelayMilliseconds > 0) await delay(pin.settings.retryDelayMilliseconds);
   }
   throw new ModelAgentError("ENDPOINT_EXHAUSTED");
+}
+
+async function boundedResponseText(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new ModelAgentError("BUDGET_EXHAUSTED");
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks, total));
 }
 
 function parseAssistantMessage(
@@ -349,7 +367,13 @@ function parseAssistantMessage(
 }
 
 function parseToolArguments(value: string | JsonValue): JsonValue {
-  if (typeof value !== "string") return value;
+  if (typeof value !== "string") {
+    if (!isJsonValue(value)) throw new ModelAgentError("TOOL_CALL_REJECTED");
+    return value;
+  }
+  if (Buffer.byteLength(value) > MAX_TOOL_ARGUMENT_BYTES) {
+    throw new ModelAgentError("TOOL_CALL_REJECTED");
+  }
   try {
     const parsed = JSON.parse(value) as unknown;
     if (!isJsonValue(parsed)) throw new SyntaxError();
@@ -460,10 +484,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isJsonValue(value: unknown): value is JsonValue {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return true;
-  if (typeof value === "number") return Number.isFinite(value);
-  if (Array.isArray(value)) return value.every(isJsonValue);
-  return isRecord(value) && Object.values(value).every(isJsonValue);
+  const pending: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }];
+  let nodes = 0;
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    nodes += 1;
+    if (nodes > MAX_MODEL_JSON_NODES || current.depth > MAX_MODEL_JSON_DEPTH) return false;
+    if (
+      current.value === null ||
+      typeof current.value === "string" ||
+      typeof current.value === "boolean"
+    ) {
+      continue;
+    }
+    if (typeof current.value === "number") {
+      if (!Number.isFinite(current.value)) return false;
+      continue;
+    }
+    const entries = Array.isArray(current.value)
+      ? current.value
+      : isRecord(current.value)
+        ? Object.values(current.value)
+        : null;
+    if (!entries) return false;
+    for (const entry of entries) pending.push({ value: entry, depth: current.depth + 1 });
+  }
+  return true;
 }
 
 interface ExecutionRow extends QueryResultRow {

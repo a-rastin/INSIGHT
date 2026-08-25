@@ -47,6 +47,7 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
   const workerReadyFile = env.INSIGHT_WORKER_READY_FILE ?? "/run/insight/worker-ready";
   const maintenanceFile = env.INSIGHT_MAINTENANCE_FILE ?? "/run/insight/maintenance";
   const app = buildApp({
+    production: env.NODE_ENV === "production",
     artifactRoot: resolve(env.INSIGHT_ARTIFACT_ROOT ?? "artifacts"),
     staticRoot:
       env.NODE_ENV === "production"

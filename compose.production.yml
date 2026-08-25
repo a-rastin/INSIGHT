@@ -15,6 +15,9 @@ services:
       - insight-data:/var/lib/insight
     stop_grace_period: 30s
     restart: unless-stopped
+    mem_limit: 768m
+    cpus: 1.0
+    pids_limit: 256
 
 volumes:
   insight-data:

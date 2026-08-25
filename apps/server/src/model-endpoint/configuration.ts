@@ -478,7 +478,13 @@ async function providerRequest(
       failure: { compatible: false as const, failureCategory: category, returnedModel: null },
     };
   }
-  const parsed = (await response.json()) as Partial<ProviderResponse>;
+  const source = await boundedProviderResponse(response);
+  let parsed: Partial<ProviderResponse>;
+  try {
+    parsed = JSON.parse(source) as Partial<ProviderResponse>;
+  } catch {
+    throw new SyntaxError();
+  }
   if (
     !parsed ||
     !Array.isArray(parsed.choices) ||
@@ -488,6 +494,25 @@ async function providerRequest(
     throw new SyntaxError();
   }
   return { ok: true as const, body: parsed as ProviderResponse };
+}
+
+async function boundedProviderResponse(response: Response): Promise<string> {
+  const maximum = 1_000_000;
+  if (!response.body) throw new SyntaxError();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maximum) {
+      await reader.cancel();
+      throw new SyntaxError();
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks, total));
 }
 
 function probeArguments(nonce: string, sequence: number) {

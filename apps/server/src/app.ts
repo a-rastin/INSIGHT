@@ -51,6 +51,10 @@ import type { OfficialIdentifierConfiguration } from "./patient/patients.js";
 import { treatmentPlanRoutes } from "./treatment-plan/http.js";
 
 const API_PREFIX = "/api/v1";
+const DEFAULT_BODY_LIMIT = 1_048_576;
+const MAX_HEADER_BYTES = 16_384;
+const MAX_JSON_DEPTH = 32;
+const MAX_JSON_NODES = 10_000;
 
 const SAFE_HTTP_ERRORS: Readonly<Record<number, { code: string; message: string }>> = {
   400: { code: "BAD_REQUEST", message: "Request could not be processed." },
@@ -62,6 +66,7 @@ const SAFE_HTTP_ERRORS: Readonly<Record<number, { code: string; message: string 
   413: { code: "PAYLOAD_TOO_LARGE", message: "Request payload is too large." },
   415: { code: "UNSUPPORTED_MEDIA_TYPE", message: "Content type is not supported." },
   429: { code: "TOO_MANY_REQUESTS", message: "Too many requests." },
+  431: { code: "REQUEST_HEADERS_TOO_LARGE", message: "Request headers are too large." },
 };
 
 interface ValidationDetail {
@@ -69,6 +74,7 @@ interface ValidationDetail {
 }
 
 export interface AppOptions {
+  readonly production?: boolean;
   readonly staticRoot?: string;
   readonly artifactRoot?: string;
   readonly registerApiRoutes?: FastifyPluginAsync;
@@ -77,6 +83,11 @@ export interface AppOptions {
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
   readonly modelEndpoint?: Omit<ModelEndpointHttpOptions, "pool">;
   readonly backup?: Omit<BackupOptions, "pool">;
+  readonly rateLimit?: {
+    readonly max?: number;
+    readonly loginMax?: number;
+    readonly windowMilliseconds?: number;
+  };
   readonly patient?: {
     readonly officialIdentifier: OfficialIdentifierConfiguration;
     readonly artifactRoot?: string;
@@ -86,6 +97,24 @@ export interface AppOptions {
       readonly requestId: string;
     }) => void;
   };
+}
+
+function jsonWithinLimits(value: unknown): boolean {
+  const pending: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }];
+  let nodes = 0;
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    nodes += 1;
+    if (nodes > MAX_JSON_NODES || current.depth > MAX_JSON_DEPTH) return false;
+    if (Array.isArray(current.value)) {
+      for (const entry of current.value) pending.push({ value: entry, depth: current.depth + 1 });
+    } else if (current.value !== null && typeof current.value === "object") {
+      for (const entry of Object.values(current.value)) {
+        pending.push({ value: entry, depth: current.depth + 1 });
+      }
+    }
+  }
+  return true;
 }
 
 function errorBody(
@@ -170,12 +199,69 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const app = Fastify({
     logger: false,
     genReqId: () => randomUUID(),
+    bodyLimit: DEFAULT_BODY_LIMIT,
+    connectionTimeout: 10_000,
+    requestTimeout: 30_000,
+    keepAliveTimeout: 5_000,
+    routerOptions: { maxParamLength: 500 },
     ajv: {
       customOptions: {
         allErrors: true,
         removeAdditional: false,
       },
     },
+  });
+
+  const rateWindow = options.rateLimit?.windowMilliseconds ?? 60_000;
+  const requestBuckets = new Map<string, { count: number; startedAt: number }>();
+  app.addHook("onRequest", async (request, reply) => {
+    const headerBytes = request.raw.rawHeaders.reduce(
+      (total, header) => total + Buffer.byteLength(header),
+      0,
+    );
+    if (headerBytes > MAX_HEADER_BYTES) {
+      return reply
+        .status(431)
+        .send(
+          errorBody(request, 431, "REQUEST_HEADERS_TOO_LARGE", "Request headers are too large."),
+        );
+    }
+
+    const path = request.url.split("?", 1)[0]!;
+    if (
+      !path.startsWith(`${API_PREFIX}/`) ||
+      [`${API_PREFIX}/health`, `${API_PREFIX}/ready`].includes(path)
+    ) {
+      return;
+    }
+    const login = path === `${API_PREFIX}/login`;
+    const key = `${login ? "login" : "api"}:${request.ip}`;
+    const now = Date.now();
+    let bucket = requestBuckets.get(key);
+    if (!bucket || now - bucket.startedAt >= rateWindow) {
+      bucket = { count: 0, startedAt: now };
+      requestBuckets.set(key, bucket);
+    }
+    const maximum = login ? (options.rateLimit?.loginMax ?? 10) : (options.rateLimit?.max ?? 300);
+    if (bucket.count >= maximum) {
+      void reply.header(
+        "retry-after",
+        String(Math.max(1, Math.ceil((rateWindow - (now - bucket.startedAt)) / 1_000))),
+      );
+      return reply
+        .status(429)
+        .send(errorBody(request, 429, "TOO_MANY_REQUESTS", "Too many requests."));
+    }
+    bucket.count += 1;
+    if (requestBuckets.size > 10_000) requestBuckets.clear();
+  });
+
+  app.addHook("preValidation", async (request, reply) => {
+    if (request.body !== undefined && !jsonWithinLimits(request.body)) {
+      return reply
+        .status(413)
+        .send(errorBody(request, 413, "PAYLOAD_TOO_LARGE", "Request payload is too large."));
+    }
   });
 
   void app.register(fastifySwagger, {
@@ -289,6 +375,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
 
   app.addHook("onSend", async (request, reply, payload) => {
     void reply.header("x-request-id", request.id);
+    void reply.header(
+      "content-security-policy",
+      "default-src 'self'; base-uri 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'",
+    );
+    void reply.header("permissions-policy", "camera=(), geolocation=(), microphone=()");
+    void reply.header("referrer-policy", "no-referrer");
+    void reply.header("x-content-type-options", "nosniff");
+    void reply.header("x-frame-options", "DENY");
+    if (options.production) {
+      void reply.header("strict-transport-security", "max-age=31536000; includeSubDomains");
+    }
+    if (request.url.startsWith(`${API_PREFIX}/`)) void reply.header("cache-control", "no-store");
     return payload;
   });
 

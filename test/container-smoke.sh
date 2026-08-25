@@ -63,6 +63,7 @@ docker run --rm --entrypoint sh "$image" -c 'test ! -e /opt/insight/Bayesian-Eng
 
 mkdir -p "$success_volume"
 docker run -d --name "$success_name" \
+  --memory 768m --cpus 1 --pids-limit 256 \
   --env INSIGHT_OFFICIAL_IDENTIFIER_TYPE=RESEARCH_ID \
   --env INSIGHT_OFFICIAL_IDENTIFIER_ISSUER=INSIGHT_TEST \
   --env 'INSIGHT_OFFICIAL_IDENTIFIER_PATTERN=^SYNTHETIC-[0-9]{6}$' \
@@ -72,6 +73,12 @@ if ! wait_ready "$success_name"; then
   docker logs "$success_name" >&2 || true
   fail "fresh volume did not reach readiness"
 fi
+[ "$(docker inspect -f '{{.HostConfig.Memory}}' "$success_name")" = "805306368" ] \
+  || fail "container memory limit is missing"
+[ "$(docker inspect -f '{{.HostConfig.NanoCpus}}' "$success_name")" = "1000000000" ] \
+  || fail "container CPU limit is missing"
+[ "$(docker inspect -f '{{.HostConfig.PidsLimit}}' "$success_name")" = "256" ] \
+  || fail "container PID limit is missing"
 [ "$(docker exec -u postgres "$success_name" sh -c "tr -d '\\r\\n' < /var/lib/insight/postgres/PG_VERSION")" = "16" ] \
   || fail "fresh volume did not initialize PostgreSQL 16"
 [ -d "$success_volume/artifacts" ] || fail "artifact directory is missing"
