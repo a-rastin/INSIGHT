@@ -1,6 +1,14 @@
 #!/bin/sh
 set -eu
 
+mode=${1:-start}
+case "$mode" in
+  start) [ "$#" -eq 0 ] || { printf 'INSIGHT startup refused: start takes no arguments\n' >&2; exit 1; } ;;
+  restore) [ "$#" -eq 3 ] || { printf 'Usage: insight-entrypoint restore <dump> <manifest>\n' >&2; exit 1; } ;;
+  restore-rollback) [ "$#" -eq 2 ] || { printf 'Usage: insight-entrypoint restore-rollback <rollback-database>\n' >&2; exit 1; } ;;
+  *) printf 'INSIGHT startup refused: expected start, restore, or restore-rollback operation\n' >&2; exit 1 ;;
+esac
+
 fail() {
   printf 'INSIGHT startup refused: %s\n' "$1" >&2
   exit 1
@@ -34,11 +42,16 @@ fi
 database_dir=$volume/postgres
 artifact_dir=$volume/artifacts
 backup_dir=$volume/backups
+maintenance_marker=${INSIGHT_MAINTENANCE_MARKER:-$database_dir/.restore-maintenance}
 mkdir -p "$database_dir" "$artifact_dir" "$backup_dir" || fail "external volume is unwritable"
 chown postgres:postgres "$database_dir"
 chown insight:insight "$artifact_dir" "$backup_dir"
 chmod 0700 "$database_dir"
 chmod 0750 "$artifact_dir" "$backup_dir"
+
+if [ "$mode" = "start" ] && [ -e "$maintenance_marker" ]; then
+  fail "restore maintenance marker exists; complete restore or documented rollback before startup"
+fi
 
 gosu postgres sh -c "probe='$database_dir/.write-probe'; : > \"\$probe\" && rm -f \"\$probe\"" \
   || fail "database volume directory is unwritable"
@@ -87,6 +100,24 @@ postgres_started=1
 if [ "$fresh_database" = "1" ]; then
   gosu postgres createuser --no-createdb --no-createrole --no-superuser insight
   gosu postgres createdb --owner=insight insight
+fi
+
+if [ "$mode" = "restore" ] || [ "$mode" = "restore-rollback" ]; then
+  if [ "$mode" = "restore" ]; then
+    [ -r "$2" ] || fail "backup dump is unreadable"
+    [ -r "$3" ] || fail "backup manifest is unreadable"
+    install -o postgres -g postgres -m 0640 /dev/null "$maintenance_marker"
+    INSIGHT_RESTORE_ADMIN_DATABASE_URL='postgresql://postgres@localhost/postgres?host=%2Frun%2Fpostgresql' \
+      gosu postgres node .tsbuild/server/database/restore-cli.js restore "$2" "$3" \
+      || fail "database restore operation failed; maintenance mode remains active"
+  else
+    install -o postgres -g postgres -m 0640 /dev/null "$maintenance_marker"
+    INSIGHT_RESTORE_ADMIN_DATABASE_URL='postgresql://postgres@localhost/postgres?host=%2Frun%2Fpostgresql' \
+      gosu postgres node .tsbuild/server/database/restore-cli.js rollback "$2" \
+      || fail "database restore operation failed; maintenance mode remains active"
+  fi
+  printf 'INSIGHT restore operation completed; displaced database name is reported above\n'
+  exit 0
 fi
 
 gosu insight node .tsbuild/server/database/cli.js migrate \

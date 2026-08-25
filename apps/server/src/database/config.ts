@@ -7,6 +7,7 @@ export interface DatabaseConfig {
   maxConnections?: number;
   connectionTimeoutMs?: number;
   idleTimeoutMs?: number;
+  role?: string;
 }
 
 export function databaseConfigFromEnv(env: NodeJS.ProcessEnv = process.env): DatabaseConfig {
@@ -29,13 +30,16 @@ export function databaseConfigFromEnv(env: NodeJS.ProcessEnv = process.env): Dat
 }
 
 export function createPostgresPool(config: DatabaseConfig): Pool {
+  if (config.role && !/^[A-Za-z_][A-Za-z0-9_]{0,62}$/.test(config.role)) {
+    throw new Error("Database role must be a simple PostgreSQL identifier.");
+  }
   const poolConfig: PoolConfig = {
     application_name: "insight-server",
     connectionString: config.connectionString,
     connectionTimeoutMillis: config.connectionTimeoutMs ?? 5_000,
     idleTimeoutMillis: config.idleTimeoutMs ?? 30_000,
     max: config.maxConnections ?? 10,
-    options: "-c timezone=UTC",
+    options: `-c timezone=UTC${config.role ? ` -c role=${config.role}` : ""}`,
   };
   return new Pool(poolConfig);
 }

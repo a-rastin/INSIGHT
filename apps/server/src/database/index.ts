@@ -22,3 +22,13 @@ export {
 } from "./migrations.js";
 export { withIsolatedTestDatabase } from "./testing.js";
 export { withTransaction } from "./transaction.js";
+export {
+  RestorePostCheckError,
+  RestoreValidationError,
+  rollbackDatabaseRestore,
+  restoreDatabase,
+  type RestoreArtifactIssue,
+  type RestoreOptions,
+  type RestoreRollbackResult,
+  type RestoreResult,
+} from "./restore.js";

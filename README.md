@@ -18,6 +18,8 @@ Only an authenticated Administrator can start a backup with `POST /api/v1/admin/
 
 Backups are manual and PostgreSQL-only. They inherently contain the database-held master key and ciphertext together. INSIGHT provides no Patient preview or selective export, schedule, retention, off-site copy, archive encryption, or artifact backup. **A database backup is incomplete disaster recovery unless the matching artifact volume under `/var/lib/insight/artifacts` survives independently.** Store exported dumps, manifests, and the independently protected artifact volume outside the live PostgreSQL data directory according to deployment controls.
 
+Restore is an explicit offline maintenance operation, never part of normal startup. It validates the manifest, dump hash and readability, PostgreSQL/application/schema compatibility, and every referenced artifact already on the volume before atomically replacing the whole database. It never merges rows or recovers files. Forward migrations and integrity checks must pass before the maintenance marker is removed. See `docs/operations/database-migrations.md` for restore, rollback, and displaced-database cleanup commands.
+
 ## Verification
 
 Run full local checks with:

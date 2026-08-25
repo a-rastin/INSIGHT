@@ -31,6 +31,59 @@ After failure:
 
 Restore replaces the complete PostgreSQL database under ADR-019. It does not merge rows, restore selected patients, or recover persistent-volume artifacts.
 
+## Full-replacement restore
+
+Restore is never run by normal container startup. It runs with the HTTP server and job worker absent, restores first into a disposable database, and validates all of the following before replacement:
+
+- manifest schema and required fields;
+- dump byte length, SHA-256, PostgreSQL custom-format readability, and PostgreSQL major 16;
+- supported application version and a nonempty, nondivergent migration ledger no newer than this build;
+- every file-backed artifact path, byte length, and SHA-256 against the existing artifact volume.
+
+Missing, mismatched, non-file, symlinked, or unsafe artifact references fail validation and are reported. No artifact is copied, reconstructed, or reported as recovered. Validation failure leaves the live database unchanged and leaves the maintenance marker present.
+
+1. Export the dump and manifest from the backup API and place both in `/var/lib/insight/backups` on the external volume. Independently confirm the required artifact volume survived.
+2. Stop the service so no HTTP process, job worker, or PostgreSQL process remains:
+
+   ```sh
+   docker compose -f compose.production.yml stop insight
+   ```
+
+3. Run the one-shot maintenance operation with exact volume paths:
+
+   ```sh
+   docker compose -f compose.production.yml run --rm insight restore \
+     /var/lib/insight/backups/<backup-id>.dump \
+     /var/lib/insight/backups/<backup-id>.manifest.json
+   ```
+
+4. Record the reported `rollbackDatabase`. Replacement preserves the displaced live database under that name. Forward migrations, schema-head checks, constraint checks, and index checks run against the replacement. Any failure keeps `/var/lib/insight/postgres/.restore-maintenance`, so normal startup remains blocked.
+5. Only after status is `RESTORED`, restart and verify readiness plus key workflows, including sign-in and reads of restored encrypted records and artifacts:
+
+   ```sh
+   docker compose -f compose.production.yml up -d insight
+   ```
+
+### Recovery rollback
+
+For `RESTORE_POST_CHECK_FAILED`, or if verification after a completed restore finds a release-blocking problem, keep or return the service to a stopped state and atomically restore the reported rollback database:
+
+```sh
+docker compose -f compose.production.yml stop insight
+docker compose -f compose.production.yml run --rm insight restore-rollback <rollback-database>
+docker compose -f compose.production.yml up -d insight
+```
+
+The rollback operation also runs schema-head and integrity checks before removing the maintenance marker. It preserves the rejected replacement under the reported `displacedDatabase` name. Do not delete either displaced database until operational verification and required evidence retention are complete.
+
+For `RESTORE_VALIDATION_FAILED`, the target database was not replaced. Correct the backup, compatibility, or artifact-volume problem and retry. If recovery is cancelled, an operator may remove `/var/lib/insight/postgres/.restore-maintenance` only after confirming the failure code is `RESTORE_VALIDATION_FAILED`; then restart the unchanged service. For unclassified `RESTORE_FAILED`, do not remove the marker or start traffic. Inspect database names and escalate recovery before choosing the target or rollback database.
+
+After successful verification and retention approval, remove a displaced database from the running container with the exact reported name:
+
+```sh
+docker compose -f compose.production.yml exec --user postgres insight dropdb <displaced-database>
+```
+
 ## Integration test database
 
 `TEST_DATABASE_URL` must target PostgreSQL 16 using a dedicated test administrator role with `CREATEDB`. Run `npm run db:migrate:test`. The suite creates random `insight_test_<uuid>` databases, tests empty and repeated migrations, lock serialization, rollback and repair, startup incompatibility, closes all clients, and then drops each database. Never point this variable at production.

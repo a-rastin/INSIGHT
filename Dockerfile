@@ -34,6 +34,7 @@ LABEL org.opencontainers.image.title="INSIGHT" \
 
 RUN groupadd --gid 10001 insight \
  && useradd --uid 10001 --gid insight --groups postgres --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin insight \
+ && usermod --append --groups insight postgres \
  && install -d -o insight -g insight -m 0750 /opt/insight /run/insight \
  && install -d -o postgres -g postgres -m 0750 /var/lib/insight
 
@@ -56,6 +57,7 @@ ENV NODE_ENV=production \
     INSIGHT_VOLUME=/var/lib/insight \
     INSIGHT_ARTIFACT_ROOT=/var/lib/insight/artifacts \
     INSIGHT_BACKUP_ROOT=/var/lib/insight/backups \
+    INSIGHT_MAINTENANCE_MARKER=/var/lib/insight/postgres/.restore-maintenance \
     INSIGHT_APP_VERSION=0.1.0 \
     INSIGHT_WORKER_READY_FILE=/run/insight/worker-ready \
     DATABASE_URL=postgresql://insight@localhost/insight?host=%2Frun%2Fpostgresql

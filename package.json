@@ -30,6 +30,7 @@
     "ddi:inventory:freeze": "node scripts/ddi-archive-inventory.mjs --write",
     "db:migrate": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js migrate",
     "db:migration:head": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js status",
+    "db:restore": "npm run build --workspace @insight/server && node .tsbuild/server/database/restore-cli.js restore",
     "db:migrate:test": "npm run build --workspace @insight/server && node --test test/*.integration.mjs",
     "secret-log:scan": "npm run build --workspace @insight/server && node --test test/database.test.mjs",
     "build": "npm run build --workspaces --if-present",

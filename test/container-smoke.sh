@@ -7,13 +7,14 @@ success_name=insight-smoke-success-$run_id
 missing_name=insight-smoke-missing-$run_id
 readonly_name=insight-smoke-readonly-$run_id
 incompatible_name=insight-smoke-incompatible-$run_id
+restore_name=insight-smoke-restore-$run_id
 smoke_root=$(mktemp -d)
 success_volume=$smoke_root/success
 readonly_volume=$smoke_root/readonly
 incompatible_volume=$smoke_root/incompatible
 
 cleanup() {
-  docker rm -f "$success_name" "$missing_name" "$readonly_name" "$incompatible_name" \
+  docker rm -f "$success_name" "$missing_name" "$readonly_name" "$incompatible_name" "$restore_name" \
     >/dev/null 2>&1 || true
   for cleanup_volume in "$success_volume" "$readonly_volume" "$incompatible_volume"; do
     if [ -d "$cleanup_volume" ] && docker image inspect "$image" >/dev/null 2>&1; then
@@ -76,7 +77,7 @@ fi
 [ -d "$success_volume/artifacts" ] || fail "artifact directory is missing"
 
 docker exec -u insight "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
-  -c "CREATE TABLE container_smoke_persistence (value text PRIMARY KEY); INSERT INTO container_smoke_persistence VALUES ('preserved');" \
+  -c "CREATE TABLE insight.container_smoke_persistence (value text PRIMARY KEY); INSERT INTO insight.container_smoke_persistence VALUES ('preserved');" \
   >/dev/null
 backup_id=$(docker exec "$success_name" node -e '
 (async () => {
@@ -137,8 +138,23 @@ docker exec "$success_name" pg_restore --list "/var/lib/insight/backups/$backup_
 docker exec "$success_name" sh -c \
   "pg_restore --list '/var/lib/insight/backups/$backup_id.dump' | grep -q 'application_encryption_keys'" \
   || fail "database-held master key table is absent from backup"
+docker exec -u insight "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
+  -c "UPDATE insight.container_smoke_persistence SET value = 'modified-after-backup';" >/dev/null
 docker stop -t 20 "$success_name" >/dev/null
 docker rm "$success_name" >/dev/null
+if ! docker run --name "$restore_name" \
+  --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" \
+  restore "/var/lib/insight/backups/$backup_id.dump" \
+  "/var/lib/insight/backups/$backup_id.manifest.json" \
+  >"$smoke_root/restore.log" 2>&1; then
+  cat "$smoke_root/restore.log" >&2
+  fail "maintenance restore failed"
+fi
+docker rm "$restore_name" >/dev/null
+grep -q '"status":"RESTORED"' "$smoke_root/restore.log" \
+  || fail "maintenance restore did not report completion"
+[ ! -e "$success_volume/postgres/.restore-maintenance" ] \
+  || fail "successful restore left maintenance marker"
 docker run -d --name "$success_name" \
   --env INSIGHT_OFFICIAL_IDENTIFIER_TYPE=RESEARCH_ID \
   --env INSIGHT_OFFICIAL_IDENTIFIER_ISSUER=INSIGHT_TEST \
@@ -149,8 +165,23 @@ if ! wait_ready "$success_name"; then
   docker logs "$success_name" >&2 || true
   fail "replacement container did not reach readiness"
 fi
-[ "$(docker exec -u insight "$success_name" psql -At -d insight -c 'SELECT value FROM container_smoke_persistence')" = "preserved" ] \
-  || fail "replacement container lost database files"
+[ "$(docker exec -u insight "$success_name" psql -At -d insight -c 'SELECT value FROM insight.container_smoke_persistence')" = "preserved" ] \
+  || fail "full restore did not replace modified rows"
+rollback_database=$(grep -m 1 -o 'insight_rollback_[0-9a-f]*' "$smoke_root/restore.log")
+[ -n "$rollback_database" ] || fail "restore did not report rollback database"
+[ "$(docker exec -u postgres "$success_name" psql -At -d "$rollback_database" -c 'SELECT value FROM insight.container_smoke_persistence')" = "modified-after-backup" ] \
+  || fail "restore rollback database did not preserve displaced rows"
+docker exec -u postgres "$success_name" sh -c ': > /var/lib/insight/postgres/.restore-maintenance'
+docker stop -t 20 "$success_name" >/dev/null
+docker rm "$success_name" >/dev/null
+if docker run --name "$restore_name" \
+  --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" \
+  >"$smoke_root/maintenance.log" 2>&1; then
+  fail "normal startup ignored restore maintenance marker"
+fi
+grep -q "restore maintenance marker exists" "$smoke_root/maintenance.log" \
+  || fail "maintenance startup block was not explicit"
+docker rm "$restore_name" >/dev/null
 
 if docker run --name "$missing_name" "$image" >"$smoke_root/missing.log" 2>&1; then
   fail "startup without external volume succeeded"
