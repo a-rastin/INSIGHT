@@ -80,6 +80,39 @@ test("versioned health and readiness responses carry server UUID request IDs", a
   });
 });
 
+test("readiness reports failed components and maintenance blocks ordinary traffic", async (t) => {
+  let maintenance = false;
+  const app = buildApp({
+    readinessChecks: async () => ({
+      application: maintenance ? "not_ready" : "ready",
+      database: "not_ready",
+      worker: "ready",
+    }),
+    maintenanceCheck: async () => maintenance,
+    registerApiRoutes: validationRoutes,
+  });
+  t.after(() => app.close());
+
+  const unavailable = await app.inject({ method: "GET", url: "/api/v1/ready" });
+  assert.equal(unavailable.statusCode, 503);
+  assert.deepEqual(unavailable.json(), {
+    schemaVersion: "1",
+    status: "not_ready",
+    checks: { application: "ready", database: "not_ready", worker: "ready" },
+  });
+
+  maintenance = true;
+  const blocked = await app.inject({
+    method: "POST",
+    url: "/api/v1/validate/1?enabled=true",
+    payload: { label: "valid" },
+  });
+  assert.equal(blocked.statusCode, 503);
+  assert.equal(blocked.json().error.code, "MAINTENANCE");
+  assert.equal((await app.inject({ method: "GET", url: "/api/v1/health" })).statusCode, 200);
+  assert.equal((await app.inject({ method: "GET", url: "/api/v1/ready" })).statusCode, 503);
+});
+
 test("params, query, body, and responses are validated with safe stable errors", async (t) => {
   const app = buildApp({ registerApiRoutes: validationRoutes });
   t.after(() => app.close());

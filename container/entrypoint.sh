@@ -82,10 +82,11 @@ postgres_started=0
 cleanup() {
   trap - EXIT TERM INT
   [ -z "$server_pid" ] || kill -TERM "$server_pid" 2>/dev/null || true
-  [ -z "$worker_pid" ] || kill -TERM "$worker_pid" 2>/dev/null || true
   [ -z "$server_pid" ] || wait "$server_pid" 2>/dev/null || true
+  [ -z "$worker_pid" ] || kill -TERM "$worker_pid" 2>/dev/null || true
   [ -z "$worker_pid" ] || wait "$worker_pid" 2>/dev/null || true
   if [ "$postgres_started" = "1" ]; then
+    gosu postgres psql --dbname=postgres --no-psqlrc --command=CHECKPOINT >/dev/null 2>&1 || true
     gosu postgres pg_ctl -D "$database_dir" -m fast -w stop >/dev/null 2>&1 || true
   fi
 }

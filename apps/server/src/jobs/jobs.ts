@@ -347,6 +347,19 @@ export async function renewJobLease(
   return result.rowCount === 1;
 }
 
+export async function expireJobLease(
+  pool: Pool,
+  claim: JobClaim,
+  now = new Date(),
+): Promise<boolean> {
+  const result = await pool.query(
+    `UPDATE insight.jobs SET lease_expires_at = $4, updated_at = $4
+     WHERE id = $1 AND status = 'RUNNING' AND lease_owner = $2 AND attempt_count = $3`,
+    [claim.job.id, claim.leaseOwner, claim.attempt, now],
+  );
+  return result.rowCount === 1;
+}
+
 export async function appendJobProgress(
   pool: Pool,
   claim: JobClaim,

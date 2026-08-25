@@ -72,6 +72,7 @@ export interface AppOptions {
   readonly artifactRoot?: string;
   readonly registerApiRoutes?: FastifyPluginAsync;
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
+  readonly maintenanceCheck?: () => Promise<boolean>;
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
   readonly modelEndpoint?: Omit<ModelEndpointHttpOptions, "pool">;
   readonly backup?: Omit<BackupOptions, "pool">;
@@ -146,14 +147,21 @@ const apiRoutes =
         schema: {
           operationId: "getReadiness",
           tags: ["operations"],
-          response: { 200: ReadinessResponseSchema, default: ApiErrorSchema },
+          response: {
+            200: ReadinessResponseSchema,
+            503: ReadinessResponseSchema,
+            default: ApiErrorSchema,
+          },
         },
       },
-      async (): Promise<ReadinessResponse> => ({
-        schemaVersion: CURRENT_SCHEMA_VERSION,
-        status: "ready",
-        checks: await readinessChecks(),
-      }),
+      async (_request, reply): Promise<ReadinessResponse> => {
+        const checks = await readinessChecks();
+        const status = Object.values(checks).every((check) => check === "ready")
+          ? "ready"
+          : "not_ready";
+        void reply.status(status === "ready" ? 200 : 503);
+        return { schemaVersion: CURRENT_SCHEMA_VERSION, status, checks };
+      },
     );
   };
 
@@ -180,6 +188,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
 
   const requestSessions = new WeakMap<FastifyRequest, SessionContext>();
+  if (options.maintenanceCheck) {
+    app.addHook("onRequest", async (request, reply) => {
+      const path = request.url.split("?", 1)[0]!;
+      if ([`${API_PREFIX}/health`, `${API_PREFIX}/ready`].includes(path)) return;
+      const maintenance = await options.maintenanceCheck!().catch(() => true);
+      if (maintenance) {
+        await reply
+          .status(503)
+          .send(errorBody(request, 503, "MAINTENANCE", "Service is in maintenance mode."));
+      }
+    });
+  }
   if (options.authentication) {
     app.addHook("preHandler", async (request, reply) => {
       if (!request.url.startsWith(`${API_PREFIX}/`)) return;

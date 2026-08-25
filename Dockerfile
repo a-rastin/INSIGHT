@@ -60,6 +60,7 @@ ENV NODE_ENV=production \
     INSIGHT_MAINTENANCE_MARKER=/var/lib/insight/postgres/.restore-maintenance \
     INSIGHT_APP_VERSION=0.1.0 \
     INSIGHT_WORKER_READY_FILE=/run/insight/worker-ready \
+    INSIGHT_MAINTENANCE_FILE=/run/insight/maintenance \
     DATABASE_URL=postgresql://insight@localhost/insight?host=%2Frun%2Fpostgresql
 
 EXPOSE 3000

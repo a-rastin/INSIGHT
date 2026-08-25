@@ -8,6 +8,7 @@ import {
   claimNextJob,
   createSession,
   enqueueJob,
+  expireJobLease,
   getOwnedJob,
   releaseJobAfterFailure,
   revokeSession,
@@ -171,6 +172,21 @@ test("durable jobs concurrency, restart, idempotency, and resumable SSE", async 
           null,
         );
         assert.equal((await getOwnedJob(pool, job.id, identities.ownerId)).status, "FAILED");
+      });
+
+      await suite.test("shutdown expires a newly claimed lease for immediate restart", async () => {
+        const job = await enqueueJob(
+          pool,
+          command(identities.caseId, identities.ownerId, "shutdown-handoff", 3),
+        );
+        const now = new Date("2030-02-02T00:00:00.000Z");
+        const abandoned = await claimNextJob(pool, "worker-stopping", 30_000, now);
+        assert.equal(abandoned.job.id, job.id);
+        assert.equal(await expireJobLease(pool, abandoned, now), true);
+        const recovered = await claimNextJob(pool, "worker-restarted", 30_000, now);
+        assert.equal(recovered.job.id, job.id);
+        assert.equal(recovered.attempt, 2);
+        await releaseJobAfterFailure(pool, recovered, "EXECUTION_FAILED", 0, now);
       });
 
       await suite.test("worker return cannot substitute for accepted domain result", async () => {

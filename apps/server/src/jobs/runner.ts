@@ -5,6 +5,7 @@ import type { Pool, PoolClient } from "pg";
 import {
   appendJobProgress,
   claimNextJob,
+  expireJobLease,
   releaseJobAfterFailure,
   renewJobLease,
   settleJobFromDomainResult,
@@ -37,6 +38,10 @@ export async function runJobWorker(options: RunWorkerOptions): Promise<void> {
     if (!claim) {
       await delay(pollMilliseconds, undefined, { signal: options.signal }).catch(() => undefined);
       continue;
+    }
+    if (options.signal.aborted) {
+      await expireJobLease(options.pool, claim).catch(() => undefined);
+      break;
     }
 
     const handler = options.handlers[claim.job.jobType];

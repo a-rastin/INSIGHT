@@ -76,6 +76,42 @@ fi
   || fail "fresh volume did not initialize PostgreSQL 16"
 [ -d "$success_volume/artifacts" ] || fail "artifact directory is missing"
 
+docker exec "$success_name" sh -c ': > /run/insight/maintenance'
+docker exec "$success_name" node -e '
+Promise.all([
+  fetch("http://127.0.0.1:3000/api/v1/login", { method: "POST" }),
+  fetch("http://127.0.0.1:3000/api/v1/ready"),
+]).then(async ([ordinary, ready]) => {
+  const ordinaryBody = await ordinary.json();
+  const readyBody = await ready.json();
+  if (ordinary.status !== 503 || ordinaryBody.error?.code !== "MAINTENANCE") process.exit(1);
+  if (ready.status !== 503 || readyBody.checks?.application !== "not_ready") process.exit(1);
+}).catch(() => process.exit(1));
+' || fail "runtime maintenance did not block ordinary traffic"
+docker exec "$success_name" rm /run/insight/maintenance
+wait_ready "$success_name" || fail "container did not leave runtime maintenance"
+
+docker exec -u postgres "$success_name" pg_ctl -D /var/lib/insight/postgres -m immediate -w stop \
+  >/dev/null
+database_crash_wait=0
+while [ "$(docker inspect -f '{{.State.Running}}' "$success_name")" = "true" ] \
+  && [ "$database_crash_wait" -lt 20 ]; do
+  database_crash_wait=$((database_crash_wait + 1))
+  sleep 1
+done
+[ "$(docker inspect -f '{{.State.Running}}' "$success_name")" = "false" ] \
+  || fail "database outage did not make container unhealthy"
+[ "$(docker inspect -f '{{.State.ExitCode}}' "$success_name")" != "0" ] \
+  || fail "database outage produced a successful container exit"
+docker rm "$success_name" >/dev/null
+docker run -d --name "$success_name" \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_TYPE=RESEARCH_ID \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_ISSUER=INSIGHT_TEST \
+  --env 'INSIGHT_OFFICIAL_IDENTIFIER_PATTERN=^SYNTHETIC-[0-9]{6}$' \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION=NFKC_UPPERCASE \
+  --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" >/dev/null
+wait_ready "$success_name" || fail "container did not recover after database crash"
+
 docker exec -u insight "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
   -c "CREATE TABLE insight.container_smoke_persistence (value text PRIMARY KEY); INSERT INTO insight.container_smoke_persistence VALUES ('preserved');" \
   >/dev/null
@@ -142,6 +178,11 @@ docker exec -u insight "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
   -c "UPDATE insight.container_smoke_persistence SET value = 'modified-after-backup';" >/dev/null
 docker stop -t 20 "$success_name" >/dev/null
 docker rm "$success_name" >/dev/null
+docker run --rm --entrypoint gosu \
+  --mount "type=bind,src=$success_volume,dst=/var/lib/insight" \
+  "$image" postgres pg_controldata /var/lib/insight/postgres \
+  | grep -q 'Database cluster state:.*shut down' \
+  || fail "SIGTERM did not leave PostgreSQL cleanly shut down"
 if ! docker run --name "$restore_name" \
   --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" \
   restore "/var/lib/insight/backups/$backup_id.dump" \
@@ -171,6 +212,35 @@ rollback_database=$(grep -m 1 -o 'insight_rollback_[0-9a-f]*' "$smoke_root/resto
 [ -n "$rollback_database" ] || fail "restore did not report rollback database"
 [ "$(docker exec -u postgres "$success_name" psql -At -d "$rollback_database" -c 'SELECT value FROM insight.container_smoke_persistence')" = "modified-after-backup" ] \
   || fail "restore rollback database did not preserve displaced rows"
+
+docker exec "$success_name" node -e '
+const fs = require("node:fs");
+for (const entry of fs.readdirSync("/proc")) {
+  if (!/^\d+$/.test(entry)) continue;
+  try {
+    const command = fs.readFileSync(`/proc/${entry}/cmdline`, "utf8");
+    if (command.includes(".tsbuild/server/worker.js")) process.kill(Number(entry), "SIGKILL");
+  } catch {}
+}
+'
+crash_wait=0
+while [ "$(docker inspect -f '{{.State.Running}}' "$success_name")" = "true" ] \
+  && [ "$crash_wait" -lt 20 ]; do
+  crash_wait=$((crash_wait + 1))
+  sleep 1
+done
+[ "$(docker inspect -f '{{.State.Running}}' "$success_name")" = "false" ] \
+  || fail "supervisor did not stop after worker crash"
+[ "$(docker inspect -f '{{.State.ExitCode}}' "$success_name")" != "0" ] \
+  || fail "worker crash produced a successful container exit"
+docker rm "$success_name" >/dev/null
+docker run -d --name "$success_name" \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_TYPE=RESEARCH_ID \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_ISSUER=INSIGHT_TEST \
+  --env 'INSIGHT_OFFICIAL_IDENTIFIER_PATTERN=^SYNTHETIC-[0-9]{6}$' \
+  --env INSIGHT_OFFICIAL_IDENTIFIER_NORMALIZATION=NFKC_UPPERCASE \
+  --mount "type=bind,src=$success_volume,dst=/var/lib/insight" "$image" >/dev/null
+wait_ready "$success_name" || fail "container did not recover after worker crash"
 docker exec -u postgres "$success_name" sh -c ': > /var/lib/insight/postgres/.restore-maintenance'
 docker stop -t 20 "$success_name" >/dev/null
 docker rm "$success_name" >/dev/null

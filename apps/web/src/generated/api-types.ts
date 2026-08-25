@@ -991,15 +991,32 @@ export interface operations {
              * @enum {string}
              */
             schemaVersion: "1";
-            /** @enum {string} */
-            status: "ready";
+            status: "ready" | "not_ready";
             checks: {
-              /** @enum {string} */
-              application: "ready";
-              /** @enum {string} */
-              database: "ready";
-              /** @enum {string} */
-              worker: "ready";
+              application: "ready" | "not_ready";
+              database: "ready" | "not_ready";
+              worker: "ready" | "not_ready";
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            status: "ready" | "not_ready";
+            checks: {
+              application: "ready" | "not_ready";
+              database: "ready" | "not_ready";
+              worker: "ready" | "not_ready";
             };
           };
         };

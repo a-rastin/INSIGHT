@@ -235,15 +235,17 @@ export const HealthResponseSchema = Type.Object(
 );
 export type HealthResponse = Static<typeof HealthResponseSchema>;
 
+const ReadinessCheckSchema = Type.Union([Type.Literal("ready"), Type.Literal("not_ready")]);
+
 export const ReadinessResponseSchema = Type.Object(
   {
     schemaVersion: SchemaVersionSchema,
-    status: Type.Literal("ready"),
+    status: Type.Union([Type.Literal("ready"), Type.Literal("not_ready")]),
     checks: Type.Object(
       {
-        application: Type.Literal("ready"),
-        database: Type.Literal("ready"),
-        worker: Type.Literal("ready"),
+        application: ReadinessCheckSchema,
+        database: ReadinessCheckSchema,
+        worker: ReadinessCheckSchema,
       },
       { additionalProperties: false },
     ),

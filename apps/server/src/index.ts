@@ -29,10 +29,22 @@ export * from "./orchestration/index.js";
 export * from "./patient/index.js";
 export * from "./treatment-plan/index.js";
 
+async function exists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const database = databaseConfigFromEnv(env);
   const pool = createPostgresPool(database);
   const host = env.HOST ?? "127.0.0.1";
+  const workerReadyFile = env.INSIGHT_WORKER_READY_FILE ?? "/run/insight/worker-ready";
+  const maintenanceFile = env.INSIGHT_MAINTENANCE_FILE ?? "/run/insight/maintenance";
   const app = buildApp({
     artifactRoot: resolve(env.INSIGHT_ARTIFACT_ROOT ?? "artifacts"),
     staticRoot:
@@ -40,10 +52,21 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
         ? resolve(env.INSIGHT_STATIC_ROOT ?? "apps/web/dist")
         : undefined,
     readinessChecks: async () => {
-      await pool.query("SELECT 1");
-      await access(env.INSIGHT_WORKER_READY_FILE ?? "/run/insight/worker-ready");
-      return { application: "ready", database: "ready", worker: "ready" };
+      const [databaseReady, workerReady, maintenance] = await Promise.all([
+        pool.query("SELECT 1").then(
+          () => true,
+          () => false,
+        ),
+        exists(workerReadyFile).catch(() => false),
+        exists(maintenanceFile).catch(() => true),
+      ]);
+      return {
+        application: maintenance ? "not_ready" : "ready",
+        database: databaseReady ? "ready" : "not_ready",
+        worker: workerReady ? "ready" : "not_ready",
+      };
     },
+    maintenanceCheck: () => exists(maintenanceFile),
     authentication: {
       pool,
       allowInsecureLoopbackCookie:

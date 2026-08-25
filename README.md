@@ -20,6 +20,23 @@ Backups are manual and PostgreSQL-only. They inherently contain the database-hel
 
 Restore is an explicit offline maintenance operation, never part of normal startup. It validates the manifest, dump hash and readability, PostgreSQL/application/schema compatibility, and every referenced artifact already on the volume before atomically replacing the whole database. It never merges rows or recovers files. Forward migrations and integrity checks must pass before the maintenance marker is removed. See `docs/operations/database-migrations.md` for restore, rollback, and displaced-database cleanup commands.
 
+## Production Deployment
+
+The production image supervises Fastify, one durable-job worker, and PostgreSQL 16. Startup requires a mounted, writable, compatible `/var/lib/insight` volume, starts PostgreSQL on loopback and its Unix socket only, runs schema migrations under the database advisory lock, then starts the worker and Fastify. Readiness reports application, database, and worker separately. `SIGTERM` stops new HTTP work, drains active requests, stops new job claims while allowing active work to settle, checkpoints PostgreSQL, and exits. Expired job leases are reclaimed after restart.
+
+`compose.production.yml` publishes Fastify on host loopback only. Terminate HTTPS at a same-host reverse proxy and expose only that proxy; TLS is required for every non-loopback browser deployment. Do not publish port 5432 or mount the PostgreSQL socket outside the container.
+
+Runtime maintenance permits health probes but blocks all ordinary API and static traffic with `503 MAINTENANCE`:
+
+```sh
+docker exec insight sh -c ': > /run/insight/maintenance'
+docker exec insight rm /run/insight/maintenance
+```
+
+Allow runtime egress only from the container to the hostname and HTTPS port in the active OpenAI-compatible model endpoint configuration. Enforce this with the deployment firewall or egress proxy, update the allowlist when an Administrator changes the configured host, and deny general internet egress. DDI, Bayesian models, assessments, PostgreSQL, artifacts, and browser traffic require no outbound internet access.
+
+This all-in-one deployment is single-instance only. Do not horizontally scale it: each replica would own an independent PostgreSQL server and volume. Recovery uses the supervisor restart policy and durable leases, not replicas.
+
 ## Verification
 
 Run full local checks with:

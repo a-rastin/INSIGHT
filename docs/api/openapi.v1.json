@@ -107,15 +107,85 @@
                       "type": "string",
                       "enum": ["1"]
                     },
-                    "status": { "type": "string", "enum": ["ready"] },
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["ready"] },
+                        { "type": "string", "enum": ["not_ready"] }
+                      ]
+                    },
                     "checks": {
                       "additionalProperties": false,
                       "type": "object",
                       "required": ["application", "database", "worker"],
                       "properties": {
-                        "application": { "type": "string", "enum": ["ready"] },
-                        "database": { "type": "string", "enum": ["ready"] },
-                        "worker": { "type": "string", "enum": ["ready"] }
+                        "application": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["ready"] },
+                            { "type": "string", "enum": ["not_ready"] }
+                          ]
+                        },
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["ready"] },
+                            { "type": "string", "enum": ["not_ready"] }
+                          ]
+                        },
+                        "worker": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["ready"] },
+                            { "type": "string", "enum": ["not_ready"] }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "status", "checks"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["ready"] },
+                        { "type": "string", "enum": ["not_ready"] }
+                      ]
+                    },
+                    "checks": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["application", "database", "worker"],
+                      "properties": {
+                        "application": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["ready"] },
+                            { "type": "string", "enum": ["not_ready"] }
+                          ]
+                        },
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["ready"] },
+                            { "type": "string", "enum": ["not_ready"] }
+                          ]
+                        },
+                        "worker": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["ready"] },
+                            { "type": "string", "enum": ["not_ready"] }
+                          ]
+                        }
                       }
                     }
                   }
