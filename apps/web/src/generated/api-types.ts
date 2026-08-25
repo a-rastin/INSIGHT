@@ -756,6 +756,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/patients/{patientId}/research-case/final-plans/{finalPlanId}/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["exportFinalTreatmentPlan"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/patients/{patientId}/research-case/final-plans/revision": {
     parameters: {
       query?: never;
@@ -7199,6 +7215,17 @@ export interface operations {
               /** Format: date-time */
               finalizedAt: string;
               idempotencyKey: string;
+              exportArtifact?: {
+                id: string;
+                /** @enum {string} */
+                mediaType: "application/json";
+                byteLength: number;
+                contentHash: string;
+                /** @enum {string} */
+                schemaVersion: "1";
+                /** Format: date-time */
+                createdAt: string;
+              };
             }[];
           };
         };
@@ -7284,8 +7311,72 @@ export interface operations {
               /** Format: date-time */
               finalizedAt: string;
               idempotencyKey: string;
+              exportArtifact?: {
+                id: string;
+                /** @enum {string} */
+                mediaType: "application/json";
+                byteLength: number;
+                contentHash: string;
+                /** @enum {string} */
+                schemaVersion: "1";
+                /** Format: date-time */
+                createdAt: string;
+              };
             };
           };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  exportFinalTreatmentPlan: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        patientId: string;
+        finalPlanId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string;
         };
       };
       /** @description Default Response */

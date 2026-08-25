@@ -4,6 +4,8 @@ INSIGHT is an explainable research decision-support application. It uses version
 
 Final Treatment Plan revisions stay inside the Patient's single Research Case. A revision draft is seeded from the active version, reruns invalidated dependencies and final DDI review, then atomically creates one active successor while preserving every superseded version unchanged and readable.
 
+Psychiatrists can review and print every immutable Final Treatment Plan version and download its hash-pinned JSON export. Final artifacts use masked Patient identifiers, calculate age at Research Case start, retain permitted reproducibility provenance, and remain unavailable to Administrators.
+
 ## Verification
 
 Run full local checks with:

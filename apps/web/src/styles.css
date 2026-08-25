@@ -922,6 +922,34 @@ p {
   gap: var(--space-3);
 }
 
+.final-plan {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.final-plan h4,
+.final-plan h5,
+.final-plan__summary p:last-child {
+  margin-bottom: 0;
+}
+
+.final-plan__subject {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.final-plan__provenance pre,
+.final-plan__summary pre {
+  max-height: 28rem;
+  padding: var(--space-4);
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
 .primary-plan__progress progress {
   width: min(320px, 100%);
   margin-top: var(--space-2);
@@ -1862,5 +1890,53 @@ tbody tr:last-child td {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  :root,
+  html,
+  body {
+    color: #000;
+    background: #fff;
+  }
+
+  .app-shell {
+    display: block;
+  }
+
+  .app-header,
+  .app-sidebar,
+  .page-heading,
+  .print-hidden {
+    display: none !important;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .app-main > .page-stack > :not(.final-plan-history) {
+    display: none !important;
+  }
+
+  .final-plan {
+    break-after: page;
+    box-shadow: none;
+  }
+
+  .final-plan:last-child {
+    break-after: auto;
+  }
+
+  .final-plan__provenance pre {
+    display: block;
+    max-height: none;
+    overflow: visible;
   }
 }

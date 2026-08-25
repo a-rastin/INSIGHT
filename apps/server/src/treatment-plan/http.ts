@@ -21,6 +21,7 @@ import {
 } from "./review.js";
 import {
   FinalPlanAuthorizationError,
+  FinalPlanArtifactError,
   FinalPlanConflictError,
   FinalPlanDependencyError,
   FinalPlanInputError,
@@ -28,6 +29,7 @@ import {
   FinalPlanSchemaError,
   createFinalPlanRevisionDraft,
   finalizeTreatmentPlan,
+  getFinalPlanExport,
   listFinalPlanVersions,
 } from "./finalization.js";
 
@@ -35,6 +37,13 @@ const UUID_PATTERN =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$";
 const paramsSchema = Type.Object(
   { patientId: Type.String({ pattern: UUID_PATTERN }) },
+  { additionalProperties: false },
+);
+const finalPlanParamsSchema = Type.Object(
+  {
+    patientId: Type.String({ pattern: UUID_PATTERN }),
+    finalPlanId: Type.String({ pattern: UUID_PATTERN }),
+  },
   { additionalProperties: false },
 );
 const medicationOrNull = Type.Union([ClinicianRegimenMedicationSchema, Type.Null()]);
@@ -134,6 +143,19 @@ const finalPlanSchema = Type.Object(
     finalizedByUserId: Type.String({ pattern: UUID_PATTERN }),
     finalizedAt: Type.String({ format: "date-time" }),
     idempotencyKey: Type.String({ minLength: 1, maxLength: 200 }),
+    exportArtifact: Type.Optional(
+      Type.Object(
+        {
+          id: Type.String({ pattern: UUID_PATTERN }),
+          mediaType: Type.Literal("application/json"),
+          byteLength: Type.Integer({ minimum: 1 }),
+          contentHash: Type.String({ pattern: "^[0-9a-f]{64}$" }),
+          schemaVersion: Type.Literal("1"),
+          createdAt: Type.String({ format: "date-time" }),
+        },
+        { additionalProperties: false },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -159,6 +181,7 @@ export const treatmentPlanRoutes =
   (
     pool: Pool,
     getSession: (request: FastifyRequest) => SessionContext | undefined,
+    artifactRoot: string,
   ): FastifyPluginAsync =>
   async (api) => {
     api.get<{ Params: { patientId: string } }>(
@@ -188,8 +211,42 @@ export const treatmentPlanRoutes =
               pool,
               actor(getSession(request)!),
               request.params.patientId,
+              artifactRoot,
             ),
           });
+        } catch (error) {
+          return sendError(error, request, reply);
+        }
+      },
+    );
+
+    api.get<{ Params: { patientId: string; finalPlanId: string } }>(
+      "/patients/:patientId/research-case/final-plans/:finalPlanId/export",
+      {
+        schema: {
+          operationId: "exportFinalTreatmentPlan",
+          tags: ["treatment-plan"],
+          params: finalPlanParamsSchema,
+          response: {
+            200: Type.String({ format: "binary" }),
+            default: ApiErrorSchema,
+          },
+        },
+      },
+      async (request, reply) => {
+        try {
+          const artifact = await getFinalPlanExport(
+            pool,
+            actor(getSession(request)!),
+            request.params.patientId,
+            request.params.finalPlanId,
+            artifactRoot,
+          );
+          return reply
+            .type(artifact.metadata.mediaType)
+            .header("content-disposition", `attachment; filename="${artifact.filename}"`)
+            .header("x-content-sha256", artifact.metadata.contentHash)
+            .send(artifact.bytes);
         } catch (error) {
           return sendError(error, request, reply);
         }
@@ -317,6 +374,8 @@ export const treatmentPlanRoutes =
               request.params.patientId,
               request.body.idempotencyKey,
               request.id,
+              new Date(),
+              artifactRoot,
             ),
           });
         } catch (error) {
@@ -356,6 +415,11 @@ function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply)
     return reply
       .status(409)
       .send(body(409, "FINALIZATION_BLOCKED", "Treatment plan cannot be finalized."));
+  }
+  if (error instanceof FinalPlanArtifactError) {
+    return reply
+      .status(409)
+      .send(body(409, "EXPORT_UNAVAILABLE", "Export artifact is unavailable."));
   }
   throw error;
 }

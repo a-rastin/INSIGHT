@@ -1,4 +1,6 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { link, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 
 import {
   ClinicianRegimenInputSchema,
@@ -15,6 +17,7 @@ import type { Pool, PoolClient, QueryResultRow } from "pg";
 
 import { withTransaction } from "../database/transaction.js";
 import type { DdiRegimenMedication } from "../ddi/evaluation.js";
+import { getPatient } from "../patient/patients.js";
 import { regimenFingerprint, type TreatmentPlanActor } from "./review.js";
 
 interface CaseRow extends QueryResultRow {
@@ -66,6 +69,16 @@ interface FinalRow extends QueryResultRow {
   idempotency_key: string;
 }
 
+interface ExportRow extends QueryResultRow {
+  id: string;
+  artifact_path: string;
+  media_type: "application/json";
+  byte_length: string;
+  content_hash: string;
+  schema_version: "1";
+  created_at: Date;
+}
+
 const REQUIRED_RESULTS = [
   "DATA_COLLECTION_VALIDATED",
   "MEDICATION_NORMALIZATION",
@@ -93,6 +106,22 @@ export interface FinalPlanVersion {
   readonly finalizedByUserId: string;
   readonly finalizedAt: string;
   readonly idempotencyKey: string;
+  readonly exportArtifact?: FinalPlanExportMetadata;
+}
+
+export interface FinalPlanExportMetadata {
+  readonly id: string;
+  readonly mediaType: "application/json";
+  readonly byteLength: number;
+  readonly contentHash: string;
+  readonly schemaVersion: "1";
+  readonly createdAt: string;
+}
+
+export interface FinalPlanExport {
+  readonly bytes: Buffer;
+  readonly metadata: FinalPlanExportMetadata;
+  readonly filename: string;
 }
 
 export interface FinalPlanRevisionDraft {
@@ -107,6 +136,7 @@ export async function listFinalPlanVersions(
   pool: Pool,
   actor: TreatmentPlanActor,
   patientId: string,
+  artifactRoot?: string,
 ): Promise<FinalPlanVersion[]> {
   if (actor.role !== "PSYCHIATRIST") throw new FinalPlanAuthorizationError();
   const result = await pool.query<FinalRow>(
@@ -122,7 +152,36 @@ export async function listFinalPlanVersions(
     );
     if (!researchCase.rows[0]) throw new FinalPlanNotFoundError();
   }
-  return result.rows.map(materialize);
+  const versions = result.rows.map(materialize);
+  if (!artifactRoot) return versions;
+  return Promise.all(
+    versions.map(async (version) => ({
+      ...version,
+      provenance: permittedProvenance(version.provenance),
+      exportArtifact: (await ensureFinalPlanExport(pool, actor, patientId, version, artifactRoot))
+        .metadata,
+    })),
+  );
+}
+
+export async function getFinalPlanExport(
+  pool: Pool,
+  actor: TreatmentPlanActor,
+  patientId: string,
+  finalPlanId: string,
+  artifactRoot: string,
+): Promise<FinalPlanExport> {
+  if (actor.role !== "PSYCHIATRIST") throw new FinalPlanAuthorizationError();
+  const row = (
+    await pool.query<FinalRow>(
+      `SELECT version.* FROM insight.final_plan_versions version
+       JOIN insight.research_cases research_case ON research_case.id=version.research_case_id
+       WHERE research_case.patient_id=$1 AND version.id=$2`,
+      [patientId, finalPlanId],
+    )
+  ).rows[0];
+  if (!row) throw new FinalPlanNotFoundError();
+  return ensureFinalPlanExport(pool, actor, patientId, materialize(row), artifactRoot);
 }
 
 export async function createFinalPlanRevisionDraft(
@@ -233,6 +292,7 @@ export async function finalizeTreatmentPlan(
   idempotencyKey: string,
   requestId: string,
   now = new Date(),
+  artifactRoot?: string,
 ): Promise<FinalPlanVersion> {
   if (actor.role !== "PSYCHIATRIST") throw new FinalPlanAuthorizationError();
   if (
@@ -243,7 +303,8 @@ export async function finalizeTreatmentPlan(
     throw new FinalPlanInputError();
   }
 
-  return withTransaction(pool, async (client) => {
+  const patient = await getPatient(pool, actor, patientId, now);
+  const version = await withTransaction(pool, async (client) => {
     const researchCase = (
       await client.query<CaseRow>(
         `SELECT id,patient_id,workflow_state,workflow_revision,input_revision
@@ -318,6 +379,17 @@ export async function finalizeTreatmentPlan(
 
     const plan = {
       schemaVersion: TREATMENT_PLAN_SCHEMA_VERSION,
+      subject: {
+        maskedName: `${maskName(patient.firstName)} ${maskName(patient.lastName)}`,
+        identifier: {
+          type: patient.officialIdentifier.type,
+          issuingAuthority: patient.officialIdentifier.issuingAuthority,
+          maskedValue: maskIdentifier(patient.officialIdentifier.value),
+        },
+        ageAtResearchCaseStart: patient.researchCase.ageAtStart,
+        sex: patient.sex,
+        researchCaseStartedAt: patient.researchCase.startedAt,
+      },
       generatedPlan: draft.plan_payload,
       finalRegimen: regimen,
     };
@@ -396,6 +468,30 @@ export async function finalizeTreatmentPlan(
     );
     return materialize(saved);
   });
+  if (!artifactRoot) return version;
+  try {
+    const exportArtifact = await ensureFinalPlanExport(
+      pool,
+      actor,
+      patientId,
+      version,
+      artifactRoot,
+    );
+    if (version.predecessorId) {
+      const predecessor = (
+        await pool.query<FinalRow>("SELECT * FROM insight.final_plan_versions WHERE id=$1", [
+          version.predecessorId,
+        ])
+      ).rows[0];
+      if (predecessor) {
+        await ensureFinalPlanExport(pool, actor, patientId, materialize(predecessor), artifactRoot);
+      }
+    }
+    return { ...version, exportArtifact: exportArtifact.metadata };
+  } catch {
+    // Finalization already committed; artifact generation remains safely retryable from history/export GETs.
+    return version;
+  }
 }
 
 const generatedRegimen = (plan: PrimaryTreatmentPlanInput): ClinicianRegimenMedication[] =>
@@ -415,6 +511,137 @@ const hash = (value: unknown): string =>
   createHash("sha256")
     .update(stableSerialize(value as JsonValue))
     .digest("hex");
+
+const maskName = (value: string): string =>
+  `${value.slice(0, 1)}${"*".repeat(Math.max(3, value.length - 1))}`;
+
+const maskIdentifier = (value: string): string => {
+  const visible = value.slice(-4);
+  return `${"*".repeat(Math.max(4, value.length - visible.length))}${visible}`;
+};
+
+function permittedProvenance(provenance: Readonly<Record<string, unknown>>) {
+  const domainResults = Array.isArray(provenance.domainResults)
+    ? provenance.domainResults.filter(
+        (result) =>
+          typeof result !== "object" ||
+          result === null ||
+          (result as { result_type?: string }).result_type !== "ASSESSMENT_IMPUTATION",
+      )
+    : [];
+  return {
+    sourceDraft: provenance.sourceDraft,
+    finalDdi: provenance.finalDdi,
+    domainResults,
+    assessments: provenance.assessments,
+    bnRouting: provenance.bnRouting,
+    bnModels: provenance.bnModels,
+    cptSnapshots: provenance.cptSnapshots,
+  };
+}
+
+async function ensureFinalPlanExport(
+  pool: Pool,
+  actor: TreatmentPlanActor,
+  patientId: string,
+  version: FinalPlanVersion,
+  artifactRoot: string,
+): Promise<FinalPlanExport> {
+  if (actor.role !== "PSYCHIATRIST") throw new FinalPlanAuthorizationError();
+  const existing = (
+    await pool.query<ExportRow>(
+      `SELECT * FROM insight.final_plan_export_artifacts
+       WHERE final_plan_version_id=$1 AND plan_status=$2`,
+      [version.id, version.status],
+    )
+  ).rows[0];
+  if (existing) return loadExport(existing, version, artifactRoot);
+
+  const content = `${stableSerialize({
+    schemaVersion: "1",
+    artifactType: "FINAL_TREATMENT_PLAN",
+    version: {
+      id: version.id,
+      sequence: version.sequence,
+      status: version.status,
+      predecessorId: version.predecessorId,
+      planHash: version.planHash,
+      finalizedByUserId: version.finalizedByUserId,
+      finalizedAt: version.finalizedAt,
+    },
+    subject: version.plan.subject,
+    plan: {
+      generatedPlan: version.plan.generatedPlan,
+      finalRegimen: version.plan.finalRegimen,
+    },
+    provenance: permittedProvenance(version.provenance),
+  } as JsonValue)}\n`;
+  const bytes = Buffer.from(content);
+  const contentHash = createHash("sha256").update(bytes).digest("hex");
+  const artifactPath = `patients/${patientId}/final-plan-exports/${version.id}/${version.status.toLowerCase()}-${contentHash}.json`;
+  const path = resolve(artifactRoot, artifactPath);
+  await mkdir(dirname(path), { recursive: true, mode: 0o750 });
+  const temporaryPath = `${path}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporaryPath, bytes, { flag: "wx", mode: 0o640 });
+    await link(temporaryPath, path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    if (
+      createHash("sha256")
+        .update(await readFile(path))
+        .digest("hex") !== contentHash
+    ) {
+      throw new FinalPlanArtifactError();
+    }
+  } finally {
+    await unlink(temporaryPath).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+    });
+  }
+  await pool.query(
+    `INSERT INTO insight.final_plan_export_artifacts
+       (final_plan_version_id,plan_status,artifact_path,media_type,byte_length,content_hash,
+        schema_version,created_by_user_id,created_at)
+     VALUES ($1,$2,$3,'application/json',$4,$5,'1',$6,$7)
+     ON CONFLICT (final_plan_version_id,plan_status) DO NOTHING`,
+    [version.id, version.status, artifactPath, bytes.length, contentHash, actor.id, new Date()],
+  );
+  const saved = (
+    await pool.query<ExportRow>(
+      `SELECT * FROM insight.final_plan_export_artifacts
+       WHERE final_plan_version_id=$1 AND plan_status=$2`,
+      [version.id, version.status],
+    )
+  ).rows[0]!;
+  return loadExport(saved, version, artifactRoot);
+}
+
+async function loadExport(
+  row: ExportRow,
+  version: FinalPlanVersion,
+  artifactRoot: string,
+): Promise<FinalPlanExport> {
+  const bytes = await readFile(resolve(artifactRoot, row.artifact_path));
+  if (
+    bytes.length !== Number(row.byte_length) ||
+    createHash("sha256").update(bytes).digest("hex") !== row.content_hash
+  ) {
+    throw new FinalPlanArtifactError();
+  }
+  return {
+    bytes,
+    metadata: {
+      id: row.id,
+      mediaType: row.media_type,
+      byteLength: Number(row.byte_length),
+      contentHash: row.content_hash,
+      schemaVersion: row.schema_version,
+      createdAt: row.created_at.toISOString(),
+    },
+    filename: `final-treatment-plan-v${version.sequence}-${version.id}.json`,
+  };
+}
 
 async function rows(client: PoolClient, table: string, researchCaseId: string) {
   const result = await client.query(
@@ -495,3 +722,4 @@ export class FinalPlanNotFoundError extends Error {}
 export class FinalPlanConflictError extends Error {}
 export class FinalPlanDependencyError extends Error {}
 export class FinalPlanSchemaError extends Error {}
+export class FinalPlanArtifactError extends Error {}

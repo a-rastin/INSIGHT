@@ -1,23 +1,45 @@
 import { useEffect, useState } from "react";
 
-import {
-  Badge,
-  Banner,
-  Button,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-} from "./components/primitives";
+import { Badge, Button, EmptyState, ErrorState, LoadingState } from "./components/primitives";
 
 interface FinalPlan {
   id: string;
   sequence: number;
   status: "ACTIVE" | "SUPERSEDED";
   predecessorId: string | null;
-  plan: Readonly<Record<string, unknown>>;
+  plan: {
+    subject?: {
+      maskedName: string;
+      identifier: { type: string; issuingAuthority: string; maskedValue: string };
+      ageAtResearchCaseStart: number;
+      sex: "MALE" | "FEMALE";
+      researchCaseStartedAt: string;
+    };
+    generatedPlan?: {
+      generalMonitoring?: string[];
+      explanation?: string;
+    };
+    finalRegimen?: Medication[];
+  };
   planHash: string;
+  provenance: Readonly<Record<string, unknown>>;
   finalizedByUserId: string;
   finalizedAt: string;
+  exportArtifact?: {
+    byteLength: number;
+    contentHash: string;
+    mediaType: "application/json";
+    createdAt: string;
+  };
+}
+
+interface Medication {
+  canonicalMedicationId: string;
+  dose: { value: number; unit: string };
+  route: string;
+  frequency: string;
+  titration?: string;
+  monitoring: string[];
 }
 
 async function loadFinalPlans(patientId: string): Promise<FinalPlan[]> {
@@ -26,17 +48,9 @@ async function loadFinalPlans(patientId: string): Promise<FinalPlan[]> {
   return (await response.json()).finalPlans;
 }
 
-export function FinalPlanHistory({
-  patientId,
-  csrfToken,
-}: {
-  patientId: string;
-  csrfToken: string;
-}) {
+export function FinalPlanHistory({ patientId }: { patientId: string; csrfToken?: string }) {
   const [plans, setPlans] = useState<FinalPlan[] | null>(null);
   const [error, setError] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [revisionReady, setRevisionReady] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -53,27 +67,6 @@ export function FinalPlanHistory({
       active = false;
     };
   }, [patientId]);
-
-  async function createRevision() {
-    setCreating(true);
-    setError(false);
-    try {
-      const response = await fetch(
-        `/api/v1/patients/${patientId}/research-case/final-plans/revision`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
-          body: JSON.stringify({ schemaVersion: "1" }),
-        },
-      );
-      if (!response.ok) throw new Error("UNAVAILABLE");
-      setRevisionReady(true);
-    } catch {
-      setError(true);
-    } finally {
-      setCreating(false);
-    }
-  }
 
   if (!plans && !error) return <LoadingState label="Loading Final Treatment Plan history" />;
   if (error) {
@@ -96,29 +89,29 @@ export function FinalPlanHistory({
     );
   }
 
+  return <FinalPlanHistoryView patientId={patientId} plans={plans} />;
+}
+
+export function FinalPlanHistoryView({
+  patientId,
+  plans,
+}: {
+  patientId: string;
+  plans: FinalPlan[];
+}) {
   return (
-    <section className="page-stack" aria-labelledby="final-plan-history-title">
+    <section className="page-stack final-plan-history" aria-labelledby="final-plan-history-title">
       <div className="section-heading">
         <div>
           <p className="kicker">Immutable history</p>
           <h2 id="final-plan-history-title">Final Treatment Plan history</h2>
         </div>
-        <Button disabled={creating || revisionReady} onClick={() => void createRevision()}>
-          {creating
-            ? "Creating revision..."
-            : revisionReady
-              ? "Revision draft ready"
-              : "Create revision"}
+        <Button className="print-hidden" variant="secondary" onClick={() => window.print()}>
+          Print selected history
         </Button>
       </div>
-      {revisionReady ? (
-        <Banner title="Revision draft created" tone="info">
-          Draft was seeded from active Final Treatment Plan in this Research Case. Required checks
-          must complete before finalization.
-        </Banner>
-      ) : null}
       {plans.map((plan) => (
-        <article className="card" key={plan.id}>
+        <article className="card final-plan" key={plan.id}>
           <div className="section-heading">
             <div>
               <p className="kicker">Version {plan.sequence}</p>
@@ -150,13 +143,109 @@ export function FinalPlanHistory({
               <dd>{new Date(plan.finalizedAt).toLocaleString()}</dd>
             </div>
           </dl>
-          <details>
-            <summary>Read immutable plan snapshot</summary>
-            <pre>{JSON.stringify(plan.plan, null, 2)}</pre>
-            <code>SHA-256 {plan.planHash}</code>
-          </details>
+          {plan.plan.subject ? (
+            <dl className="profile-grid final-plan__subject">
+              <div>
+                <dt>Patient</dt>
+                <dd>{plan.plan.subject.maskedName}</dd>
+              </div>
+              <div>
+                <dt>Masked identifier</dt>
+                <dd>{plan.plan.subject.identifier.maskedValue}</dd>
+              </div>
+              <div>
+                <dt>Age at Research Case start</dt>
+                <dd>{plan.plan.subject.ageAtResearchCaseStart}</dd>
+              </div>
+              <div>
+                <dt>Sex</dt>
+                <dd>{plan.plan.subject.sex === "MALE" ? "Male" : "Female"}</dd>
+              </div>
+            </dl>
+          ) : null}
+          <section aria-labelledby={`final-plan-regimen-${plan.id}`}>
+            <p className="kicker">Immutable snapshot</p>
+            <h4 id={`final-plan-regimen-${plan.id}`}>Exact structured regimen</h4>
+            <div className="primary-plan__regimen">
+              {(plan.plan.finalRegimen ?? []).map((medication, index) => (
+                <article key={`${medication.canonicalMedicationId}-${index}`}>
+                  <h5>{medication.canonicalMedicationId}</h5>
+                  <dl className="primary-plan__fields">
+                    <div>
+                      <dt>Dose</dt>
+                      <dd>
+                        {medication.dose.value} {medication.dose.unit}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Route</dt>
+                      <dd>{medication.route}</dd>
+                    </div>
+                    <div>
+                      <dt>Frequency</dt>
+                      <dd>{medication.frequency}</dd>
+                    </div>
+                    <div>
+                      <dt>Titration</dt>
+                      <dd>{medication.titration ?? "Not recorded"}</dd>
+                    </div>
+                  </dl>
+                  <h5>Monitoring</h5>
+                  <ul>
+                    {medication.monitoring.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+          {plan.plan.generatedPlan ? (
+            <section className="final-plan__summary" aria-label="Final plan summary">
+              <h4>General monitoring</h4>
+              <ul>
+                {(plan.plan.generatedPlan.generalMonitoring ?? []).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <p>{plan.plan.generatedPlan.explanation}</p>
+              <h4>Original generated plan</h4>
+              <pre>{JSON.stringify(plan.plan.generatedPlan, null, 2)}</pre>
+            </section>
+          ) : null}
+          <section className="final-plan__provenance" aria-label="Permitted provenance">
+            <h4>Permitted provenance</h4>
+            <pre>{JSON.stringify(permittedProvenance(plan.provenance), null, 2)}</pre>
+          </section>
+          <footer className="primary-plan__provenance">
+            <code>Plan SHA-256 {plan.planHash}</code>
+            {plan.exportArtifact ? (
+              <>
+                <code>Export SHA-256 {plan.exportArtifact.contentHash}</code>
+                <span>{plan.exportArtifact.byteLength} bytes</span>
+              </>
+            ) : null}
+            <a
+              className="button print-hidden"
+              href={`/api/v1/patients/${patientId}/research-case/final-plans/${plan.id}/export`}
+            >
+              Export JSON
+            </a>
+          </footer>
         </article>
       ))}
     </section>
   );
+}
+
+function permittedProvenance(provenance: Readonly<Record<string, unknown>>) {
+  const domainResults = Array.isArray(provenance.domainResults)
+    ? provenance.domainResults.filter(
+        (result) =>
+          typeof result !== "object" ||
+          result === null ||
+          (result as { result_type?: string }).result_type !== "ASSESSMENT_IMPUTATION",
+      )
+    : [];
+  return { ...provenance, domainResults };
 }

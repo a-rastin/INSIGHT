@@ -59,27 +59,29 @@ for (const scenario of [
   });
 }
 
-test("Final Treatment Plan revision uses active predecessor without rationale", async ({
-  page,
-}) => {
-  let revisionBody;
+test("Final Treatment Plan history prints immutable structured snapshots", async ({ page }) => {
   await installApi(page, planState({ status: "SUCCEEDED" }), {
     finalPlans: [finalPlan(2, "ACTIVE", "final-plan-v1"), finalPlan(1, "SUPERSEDED", null)],
-    onRevision: (body) => {
-      revisionBody = body;
-    },
   });
   await page.goto(`/patients/${patientId}`);
 
   await expect(page.getByRole("heading", { name: "Final Treatment Plan history" })).toBeVisible();
   await expect(page.getByText("ACTIVE", { exact: true })).toBeVisible();
   await expect(page.getByText("SUPERSEDED", { exact: true })).toBeVisible();
-  await expect(page.getByText("final-plan-v1", { exact: true })).toHaveCount(2);
-  await page.getByRole("button", { name: "Create revision" }).click();
-  await expect(page.getByRole("button", { name: "Revision draft ready" })).toBeDisabled();
-  await expect(page.getByText(/seeded from active Final Treatment Plan/)).toBeVisible();
-  expect(revisionBody).toEqual({ schemaVersion: "1" });
-  await expect(page.getByLabel(/reason|acknowledgement/i)).toHaveCount(0);
+  await expect(page.getByText("S******* P*****", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("2 mg", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/Export SHA-256/).first()).toBeVisible();
+  await expect(page.getByText(/AI imputation|UNKNOWN|must stay hidden/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /revision|save|finalize/i })).toHaveCount(0);
+
+  await page.emulateMedia({ media: "print" });
+  await expect(page.locator(".app-header")).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Plan States" })).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "Exact structured regimen" }).first(),
+  ).toBeVisible();
+  await expect(page.locator(".final-plan__provenance pre").first()).toContainText("bn-safe");
+  expect((await page.pdf()).byteLength).toBeGreaterThan(10_000);
 });
 
 function planState({ status, imputed = false, readiness }) {
@@ -180,21 +182,6 @@ async function installApi(page, plan, finalPlanOptions = { finalPlans: [] }) {
         json: { schemaVersion: "1", finalPlans: finalPlanOptions.finalPlans },
       });
     }
-    if (path === `/api/v1/patients/${patientId}/research-case/final-plans/revision`) {
-      finalPlanOptions.onRevision?.(route.request().postDataJSON());
-      return route.fulfill({
-        json: {
-          schemaVersion: "1",
-          revisionDraft: {
-            researchCaseId,
-            predecessorId: "final-plan-v2",
-            draftRef: "primary-plan-draft-e2e",
-            draftRevision: 2,
-            workflowState: "REVISION_DRAFT",
-          },
-        },
-      });
-    }
     return route.fulfill({ status: 404, json: { schemaVersion: "1", error: {} } });
   });
 }
@@ -207,15 +194,54 @@ function finalPlan(sequence, status, predecessorId) {
     status,
     predecessorId,
     schemaVersion: "1.0.0",
-    plan: { schemaVersion: "1.0.0", finalRegimen: [] },
+    plan: {
+      schemaVersion: "1.0.0",
+      subject: {
+        maskedName: "S******* P*****",
+        identifier: {
+          type: "SYNTHETIC",
+          issuingAuthority: "E2E",
+          maskedValue: "*****-E2E",
+        },
+        ageAtResearchCaseStart: 36,
+        sex: "FEMALE",
+        researchCaseStartedAt: "2026-08-24T10:00:00.000Z",
+      },
+      generatedPlan: {
+        generalMonitoring: ["Review response."],
+        explanation: "Immutable generated explanation.",
+      },
+      finalRegimen: [
+        {
+          canonicalMedicationId: "rx-synthetic-e2e",
+          dose: { value: 2, unit: "mg" },
+          route: "oral",
+          frequency: "once daily",
+          monitoring: ["Review tolerability."],
+        },
+      ],
+    },
     planHash: "a".repeat(64),
     sourceDraftRef: "primary-plan-draft-e2e",
     sourceDraftRevision: sequence,
     finalDdiExecutionRef: `ddi-final-${sequence}`,
-    provenance: {},
+    provenance: {
+      domainResults: [
+        { result_type: "BN_INFERENCE", result_reference: "bn-safe" },
+        { result_type: "ASSESSMENT_IMPUTATION", details: "must stay hidden" },
+      ],
+    },
     finalizedByUserId: userId,
     finalizedAt: `2026-08-2${sequence}T12:00:00.000Z`,
     idempotencyKey: `final-${sequence}`,
+    exportArtifact: {
+      id: `export-artifact-${sequence}`,
+      mediaType: "application/json",
+      byteLength: 1024,
+      contentHash: "b".repeat(64),
+      schemaVersion: "1",
+      createdAt: `2026-08-2${sequence}T12:00:01.000Z`,
+    },
   };
 }
 

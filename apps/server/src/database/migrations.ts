@@ -2498,6 +2498,41 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_bn_inference_mutation();
     `,
   },
+  {
+    version: 34,
+    name: "immutable_final_plan_export_artifacts",
+    sql: `
+      CREATE TABLE insight.final_plan_export_artifacts (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        final_plan_version_id uuid NOT NULL REFERENCES insight.final_plan_versions(id) ON DELETE CASCADE,
+        plan_status text NOT NULL CHECK (plan_status IN ('ACTIVE', 'SUPERSEDED')),
+        artifact_path text NOT NULL CHECK (
+          artifact_path = btrim(artifact_path) AND artifact_path <> ''
+          AND artifact_path !~ '(^/|(^|/)\\.\\.(/|$))'
+        ),
+        media_type text NOT NULL CHECK (media_type = 'application/json'),
+        byte_length bigint NOT NULL CHECK (byte_length > 0),
+        content_hash text NOT NULL CHECK (content_hash ~ '^[0-9a-f]{64}$'),
+        schema_version text NOT NULL CHECK (schema_version = '1'),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL,
+        UNIQUE (final_plan_version_id, plan_status),
+        UNIQUE (artifact_path)
+      );
+
+      CREATE FUNCTION insight.reject_final_plan_export_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'Final Treatment Plan export metadata is immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER final_plan_export_artifacts_immutable
+      BEFORE UPDATE OR DELETE ON insight.final_plan_export_artifacts
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_final_plan_export_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

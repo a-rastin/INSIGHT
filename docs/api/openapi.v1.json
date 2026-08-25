@@ -13406,7 +13406,30 @@
                             "type": "string"
                           },
                           "finalizedAt": { "format": "date-time", "type": "string" },
-                          "idempotencyKey": { "minLength": 1, "maxLength": 200, "type": "string" }
+                          "idempotencyKey": { "minLength": 1, "maxLength": 200, "type": "string" },
+                          "exportArtifact": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "mediaType",
+                              "byteLength",
+                              "contentHash",
+                              "schemaVersion",
+                              "createdAt"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                                "type": "string"
+                              },
+                              "mediaType": { "type": "string", "enum": ["application/json"] },
+                              "byteLength": { "minimum": 1, "type": "integer" },
+                              "contentHash": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                              "schemaVersion": { "type": "string", "enum": ["1"] },
+                              "createdAt": { "format": "date-time", "type": "string" }
+                            }
+                          }
                         }
                       }
                     }
@@ -13576,12 +13599,126 @@
                           "type": "string"
                         },
                         "finalizedAt": { "format": "date-time", "type": "string" },
-                        "idempotencyKey": { "minLength": 1, "maxLength": 200, "type": "string" }
+                        "idempotencyKey": { "minLength": 1, "maxLength": 200, "type": "string" },
+                        "exportArtifact": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "mediaType",
+                            "byteLength",
+                            "contentHash",
+                            "schemaVersion",
+                            "createdAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            "mediaType": { "type": "string", "enum": ["application/json"] },
+                            "byteLength": { "minimum": 1, "type": "integer" },
+                            "contentHash": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                            "schemaVersion": { "type": "string", "enum": ["1"] },
+                            "createdAt": { "format": "date-time", "type": "string" }
+                          }
+                        }
                       }
                     }
                   }
                 }
               }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/patients/{patientId}/research-case/final-plans/{finalPlanId}/export": {
+      "get": {
+        "operationId": "exportFinalTreatmentPlan",
+        "tags": ["treatment-plan"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patientId",
+            "required": true
+          },
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "finalPlanId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": { "schema": { "format": "binary", "type": "string" } }
             }
           },
           "default": {

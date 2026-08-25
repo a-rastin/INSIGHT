@@ -356,7 +356,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
         { prefix: API_PREFIX },
       );
       void app.register(
-        treatmentPlanRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
+        treatmentPlanRoutes(
+          options.authentication.pool,
+          (request) => requestSessions.get(request),
+          options.artifactRoot ?? resolve("artifacts"),
+        ),
         { prefix: API_PREFIX },
       );
     }

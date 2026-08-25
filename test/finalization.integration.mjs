@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
-import { randomBytes, randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
@@ -14,6 +16,7 @@ import {
   createOrOverwritePatient,
   createUser,
   finalizeTreatmentPlan,
+  getFinalPlanExport,
   invalidateResearchCaseInputs,
   listFinalPlanVersions,
   saveClinicianRegimen,
@@ -40,6 +43,7 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
   assert.ok(adminConnectionString, "TEST_DATABASE_URL is required.");
   await withIsolatedTestDatabase(adminConnectionString, async (connectionString) => {
     const pool = createPostgresPool({ connectionString });
+    const artifactRoot = await mkdtemp(join(tmpdir(), "insight-final-plan-"));
     try {
       await migrateToHead(pool);
       const administrator = await createUser(pool, {
@@ -88,6 +92,44 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
       );
       assert.equal(await versionCount(pool, sameKeyCase.researchCaseId), 1);
       assert.equal(await workflowState(pool, sameKeyCase.researchCaseId), "FINALIZED");
+
+      const firstExport = await getFinalPlanExport(
+        pool,
+        actor,
+        sameKeyCase.patientId,
+        sameKey[0].id,
+        artifactRoot,
+      );
+      const firstExportContent = JSON.parse(firstExport.bytes.toString("utf8"));
+      assert.deepEqual(firstExportContent.plan.finalRegimen, sameKey[0].plan.finalRegimen);
+      assert.equal(
+        firstExportContent.subject.ageAtResearchCaseStart,
+        ageOnDate("1990-01-01", firstExportContent.subject.researchCaseStartedAt),
+      );
+      assert.match(firstExportContent.subject.maskedName, /^S\*+ F\*+$/);
+      assert.match(firstExportContent.subject.identifier.maskedValue, /^\*+0981$/);
+      assert.equal(JSON.stringify(firstExportContent).includes("ASSESSMENT_IMPUTATION"), false);
+      assert.equal(JSON.stringify(firstExportContent).includes("aiImputationNotice"), false);
+      assert.equal(
+        createHash("sha256").update(firstExport.bytes).digest("hex"),
+        firstExport.metadata.contentHash,
+      );
+      await assert.rejects(
+        getFinalPlanExport(
+          pool,
+          { id: administrator.id, role: administrator.role },
+          sameKeyCase.patientId,
+          sameKey[0].id,
+          artifactRoot,
+        ),
+        FinalPlanAuthorizationError,
+      );
+      await assert.rejects(
+        pool.query("UPDATE insight.final_plan_export_artifacts SET byte_length=1 WHERE id=$1", [
+          firstExport.metadata.id,
+        ]),
+        /immutable/,
+      );
 
       const originalBytes = await finalVersionBytes(pool, sameKey[0].id);
       const revisionRace = await Promise.all([
@@ -148,7 +190,13 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
         ),
         successor,
       );
-      const versions = await listFinalPlanVersions(pool, actor, sameKeyCase.patientId);
+      const versions = await listFinalPlanVersions(
+        pool,
+        actor,
+        sameKeyCase.patientId,
+        artifactRoot,
+      );
+      assert.equal(JSON.stringify(versions).includes("ASSESSMENT_IMPUTATION"), false);
       assert.deepEqual(
         versions.map(({ id, status, sequence, predecessorId }) => ({
           id,
@@ -163,6 +211,18 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
       );
       assert.equal(await activeVersionCount(pool, sameKeyCase.researchCaseId), 1);
       assert.equal(await finalVersionBytes(pool, sameKey[0].id), originalBytes);
+      const supersededExport = await getFinalPlanExport(
+        pool,
+        actor,
+        sameKeyCase.patientId,
+        sameKey[0].id,
+        artifactRoot,
+      );
+      assert.equal(
+        JSON.parse(supersededExport.bytes.toString("utf8")).version.status,
+        "SUPERSEDED",
+      );
+      assert.notEqual(supersededExport.metadata.id, firstExport.metadata.id);
 
       await assert.rejects(
         pool.query("UPDATE insight.final_plan_versions SET plan_snapshot='{}' WHERE id=$1", [
@@ -229,6 +289,7 @@ test("Final Treatment Plan finalization is transactional, idempotent, and immuta
       );
     } finally {
       await pool.end();
+      await rm(artifactRoot, { recursive: true, force: true });
     }
   });
 });
@@ -338,6 +399,19 @@ async function seedReadyCase(pool, actor, sequence, options = {}) {
     options.finalDdiStatus ?? "SUCCEEDED",
   );
   return { patientId, researchCaseId };
+}
+
+function ageOnDate(dateOfBirth, referenceDate) {
+  const birth = new Date(`${dateOfBirth}T00:00:00.000Z`);
+  const reference = new Date(referenceDate);
+  return (
+    reference.getUTCFullYear() -
+    birth.getUTCFullYear() -
+    (reference.getUTCMonth() < birth.getUTCMonth() ||
+    (reference.getUTCMonth() === birth.getUTCMonth() && reference.getUTCDate() < birth.getUTCDate())
+      ? 1
+      : 0)
+  );
 }
 
 async function seedReadyState(pool, researchCaseId, userId, finalDdiRef, finalDdiStatus) {
