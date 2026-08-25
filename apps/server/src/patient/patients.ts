@@ -372,9 +372,9 @@ export async function deletePatient(
   now = new Date(),
 ): Promise<PatientDeletionResult> {
   requirePsychiatrist(actor);
-  await withTransaction(pool, async (client) => {
+  const deleted = await withTransaction(pool, async (client) => {
     const existing = await patientById(client, patientId);
-    if (!existing) return;
+    if (!existing) return false;
 
     const keyMaterial = await encryptionKey(client, existing.encryption_key_version);
     const demographics = decryptDemographics(existing, keyMaterial);
@@ -400,8 +400,13 @@ export async function deletePatient(
     ]) {
       await client.query("SELECT set_config($1,'allowed',true)", [setting]);
     }
+    await client.query("SELECT set_config('insight.patient_artifact_delete','allowed',true)");
+    await client.query("DELETE FROM insight.artifacts WHERE owner_id = $1", [patientId]);
     await client.query("DELETE FROM insight.patients WHERE id = $1", [patientId]);
+    return true;
   });
+
+  if (!deleted) return { databaseStatus: "DELETED", artifactRemoval: "SUCCEEDED" };
 
   try {
     const removeArtifacts =

@@ -2533,6 +2533,52 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_final_plan_export_mutation();
     `,
   },
+  {
+    version: 35,
+    name: "module_owned_artifacts",
+    sql: `
+      CREATE TABLE insight.artifacts (
+        id uuid PRIMARY KEY,
+        kind text NOT NULL CHECK (kind IN ('XMLBIF','DDI_SOURCE','EXPORT','PROVENANCE')),
+        owner_id uuid NOT NULL,
+        relative_path text NOT NULL UNIQUE CHECK (
+          relative_path ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        ),
+        media_type text NOT NULL CHECK (media_type = btrim(media_type) AND media_type <> ''),
+        byte_length bigint NOT NULL CHECK (byte_length > 0),
+        sha256 text NOT NULL CHECK (sha256 ~ '^[0-9a-f]{64}$'),
+        access_class text NOT NULL CHECK (
+          access_class IN ('ADMINISTRATOR','PSYCHIATRIST','OWNER')
+        ),
+        artifact_version text NOT NULL CHECK (
+          artifact_version = btrim(artifact_version)
+          AND length(artifact_version) BETWEEN 1 AND 128
+        ),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        created_at timestamptz NOT NULL,
+        CHECK (relative_path = owner_id::text || '/' || id::text)
+      );
+      CREATE INDEX artifacts_owner_idx ON insight.artifacts (owner_id, created_at, id);
+
+      CREATE FUNCTION insight.reject_artifact_metadata_mutation()
+      RETURNS trigger LANGUAGE plpgsql AS $function$
+      BEGIN
+        IF TG_OP = 'INSERT'
+           AND current_setting('insight.artifact_write', true) = 'allowed'
+        THEN RETURN NEW;
+        END IF;
+        IF TG_OP = 'DELETE'
+           AND current_setting('insight.patient_artifact_delete', true) = 'allowed'
+        THEN RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'Artifact metadata is immutable' USING ERRCODE = '55000';
+      END;
+      $function$;
+      CREATE TRIGGER artifacts_immutable
+      BEFORE INSERT OR UPDATE OR DELETE ON insight.artifacts
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_artifact_metadata_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

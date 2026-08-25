@@ -8,6 +8,10 @@ Psychiatrists can review and print every immutable Final Treatment Plan version 
 
 Audit access is role-separated in both backend queries and UI routes. Administrators can inspect paginated operational metadata that excludes Patient identifiers and clinical content. Psychiatrists can inspect attributable Patient and Research Case audit history, including retained history after Patient deletion, with before/after values and provenance references. Both views are read-only and state that ordinary PostgreSQL audit rows are not tamper-evident.
 
+## Artifact Storage
+
+`apps/server/src/artifact` owns file-backed XMLBIF, DDI source, export, and large provenance metadata. It accepts only UUID owner/artifact relative paths, validates type and size, writes each final file once, then records byte length, SHA-256, access class, and version. Reads are internal service calls, authorize access, reject traversal or symlink escape, and verify content integrity. A metadata failure after a successful file write can leave an orphan by design; there is no staging, atomic rename, or orphan scanner. Patient deletion removes owned metadata transactionally and makes one post-commit best-effort file removal attempt; repeated deletion requests do not retry cleanup.
+
 ## Verification
 
 Run full local checks with:

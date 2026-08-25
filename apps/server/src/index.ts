@@ -10,6 +10,7 @@ import { officialIdentifierConfigurationFromEnv } from "./patient/patients.js";
 export { buildApp } from "./app.js";
 export * from "./adverse-effect-catalog/index.js";
 export * from "./assessment/index.js";
+export * from "./artifact/index.js";
 export * from "./bn-model/index.js";
 export * from "./comorbidity-knowledge/index.js";
 export * from "./audit/index.js";

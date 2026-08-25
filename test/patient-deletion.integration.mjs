@@ -224,8 +224,8 @@ test("immediate Patient hard deletion with surviving audit", async (suite) => {
           });
           assert.equal(retry.statusCode, 200);
           assert.equal(retry.json().deletion.databaseStatus, "DELETED");
-          assert.equal(removalPaths.length, 2);
-          assert.equal(loggedFailures.length, 2);
+          assert.equal(removalPaths.length, 1);
+          assert.equal(loggedFailures.length, 1);
           assert.equal(
             (await listPatientAuditEvents(pool, { id: user.id, role: user.role }, patient.id))
               .length,
