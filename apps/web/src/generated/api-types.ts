@@ -68,6 +68,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/operational-audit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listOperationalAudit"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/clinical-audit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listClinicalAudit"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/login": {
     parameters: {
       query?: never;
@@ -1203,6 +1235,185 @@ export interface operations {
             } | null;
             /** @enum {string} */
             notice: "INSIGHT records external deployment evidence; it does not grant ethics or legal approval.";
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  listOperationalAudit: {
+    parameters: {
+      query?: {
+        offset?: number;
+        limit?: number;
+        eventType?: string;
+        from?: string;
+        to?: string;
+        targetType?: "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            events: {
+              id: string;
+              eventType: string;
+              actorUserId: string | null;
+              target: null | {
+                /** @enum {string} */
+                type: "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
+                id: string;
+                version: string | null;
+              };
+              beforeMetadata: null | {
+                [key: string]: string | number | boolean | null;
+              };
+              afterMetadata: null | {
+                [key: string]: string | number | boolean | null;
+              };
+              requestId: string | null;
+              /** Format: date-time */
+              occurredAt: string;
+            }[];
+            page: {
+              offset: number;
+              limit: number;
+              total: number;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  listClinicalAudit: {
+    parameters: {
+      query: {
+        offset?: number;
+        limit?: number;
+        eventType?: string;
+        from?: string;
+        to?: string;
+        patientId: string;
+        kind?: "PATIENT" | "WORKFLOW";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            events: {
+              id: string;
+              /** @enum {string} */
+              kind: "PATIENT" | "WORKFLOW";
+              eventType: string;
+              patientLink: {
+                patientId: string;
+                researchCaseId: string;
+              };
+              targetVersion: number;
+              before: null | {
+                [key: string]: unknown;
+              };
+              after: null | {
+                [key: string]: unknown;
+              };
+              provenance: {
+                payloadReference: string | null;
+                domainResultIds: string[];
+                details: null | {
+                  [key: string]: unknown;
+                };
+              };
+              actorUserId: string | null;
+              requestId: string;
+              /** Format: date-time */
+              occurredAt: string;
+            }[];
+            page: {
+              offset: number;
+              limit: number;
+              total: number;
+            };
           };
         };
       };

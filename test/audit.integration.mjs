@@ -4,11 +4,14 @@ import test from "node:test";
 import {
   OperationalAuditAuthorizationError,
   PatientAuthorizationError,
+  buildApp,
   createManagedUser,
   createOrOverwritePatient,
   createUser,
   listOperationalAuditEvents,
   listPatientAuditEvents,
+  queryClinicalAuditEvents,
+  queryOperationalAuditEvents,
 } from "../.tsbuild/server/index.js";
 import {
   createPostgresPool,
@@ -118,6 +121,24 @@ test("operational and clinical audit persistence", async (suite) => {
           "00000000-0000-4000-8000-000000000411",
           new Date("2026-08-22T10:00:00.000Z"),
         );
+        await pool.query(
+          `INSERT INTO insight.security_audit_events
+             (event_type, actor_user_id, request_id, after_metadata)
+           VALUES ('SIGN_IN', $1, $2, $3)`,
+          [
+            administrator.id,
+            "00000000-0000-4000-8000-000000000412",
+            {
+              role: "ADMINISTRATOR",
+              patientId: saved.patient.id,
+              patientName: synthetic.firstName,
+              officialIdentifier: synthetic.officialIdentifier,
+              freeText: "synthetic clinical narrative",
+              clinicalValue: 7,
+              plan: "synthetic plan",
+            },
+          ],
+        );
 
         const operational = await listOperationalAuditEvents(pool, {
           id: administrator.id,
@@ -127,7 +148,18 @@ test("operational and clinical audit persistence", async (suite) => {
         assert.doesNotMatch(serializedOperational, /secret-never-audited/);
         assert.doesNotMatch(serializedOperational, new RegExp(synthetic.firstName, "i"));
         assert.doesNotMatch(serializedOperational, new RegExp(synthetic.birthDate));
+        assert.doesNotMatch(serializedOperational, new RegExp(saved.patient.id, "i"));
+        assert.doesNotMatch(serializedOperational, new RegExp(synthetic.officialIdentifier, "i"));
+        assert.doesNotMatch(serializedOperational, /synthetic clinical narrative|synthetic plan/);
         assert.ok(operational.some(({ eventType }) => eventType === "USER_CREATED"));
+        const operationalPage = await queryOperationalAuditEvents(
+          pool,
+          { id: administrator.id, role: "ADMINISTRATOR" },
+          { eventType: "SIGN_IN", offset: 0, limit: 1 },
+        );
+        assert.equal(operationalPage.events.length, 1);
+        assert.equal(operationalPage.events[0].eventType, "SIGN_IN");
+        assert.ok(operationalPage.total >= 1);
         await assert.rejects(
           () =>
             listOperationalAuditEvents(pool, {
@@ -152,6 +184,19 @@ test("operational and clinical audit persistence", async (suite) => {
               saved.patient.id,
             ),
           PatientAuthorizationError,
+        );
+        await assert.rejects(
+          () =>
+            queryClinicalAuditEvents(
+              pool,
+              { id: administrator.id, role: "ADMINISTRATOR" },
+              { patientId: saved.patient.id },
+            ),
+          PatientAuthorizationError,
+        );
+        await assert.rejects(
+          () => queryOperationalAuditEvents(pool, { id: psychiatrist.id, role: "ADMINISTRATOR" }),
+          OperationalAuditAuthorizationError,
         );
         await assert.rejects(
           () =>
@@ -182,6 +227,77 @@ test("operational and clinical audit persistence", async (suite) => {
           saved.patient.id,
         );
         assert.deepEqual(retained, clinical);
+        const retainedPage = await queryClinicalAuditEvents(
+          pool,
+          { id: psychiatrist.id, role: "PSYCHIATRIST" },
+          {
+            patientId: saved.patient.id,
+            eventType: "PATIENT_CREATED",
+            offset: 0,
+            limit: 1,
+            from: "2026-08-22T09:59:00.000Z",
+            to: "2026-08-22T10:01:00.000Z",
+          },
+        );
+        assert.equal(retainedPage.total, 1);
+        assert.equal(retainedPage.events[0].patientLink.patientId, saved.patient.id);
+        assert.equal(retainedPage.events[0].after.firstName, synthetic.firstName);
+
+        const app = buildApp({
+          authentication: { pool, allowInsecureLoopbackCookie: true, loginDelay: async () => {} },
+        });
+        try {
+          const administratorCookie = await login(app, "admin", "admin");
+          const psychiatristCookie = await login(
+            app,
+            psychiatrist.username,
+            "secret-never-audited",
+          );
+          assert.equal(
+            (await app.inject({ method: "GET", url: "/api/v1/admin/operational-audit" }))
+              .statusCode,
+            401,
+          );
+          assert.equal(
+            (
+              await app.inject({
+                method: "GET",
+                url: "/api/v1/admin/operational-audit",
+                headers: { cookie: psychiatristCookie },
+              })
+            ).statusCode,
+            403,
+          );
+          assert.equal(
+            (
+              await app.inject({
+                method: "GET",
+                url: "/api/v1/admin/operational-audit?limit=1",
+                headers: { cookie: administratorCookie },
+              })
+            ).statusCode,
+            200,
+          );
+          assert.equal(
+            (
+              await app.inject({
+                method: "GET",
+                url: `/api/v1/clinical-audit?patientId=${saved.patient.id}`,
+                headers: { cookie: administratorCookie },
+              })
+            ).statusCode,
+            403,
+          );
+          const authorizedClinical = await app.inject({
+            method: "GET",
+            url: `/api/v1/clinical-audit?patientId=${saved.patient.id}&limit=1`,
+            headers: { cookie: psychiatristCookie },
+          });
+          assert.equal(authorizedClinical.statusCode, 200);
+          assert.equal(authorizedClinical.json().page.total, 1);
+        } finally {
+          await app.close();
+        }
 
         await assert.rejects(
           () =>
@@ -222,4 +338,14 @@ async function withAuditDatabase(operation) {
       await pool.end();
     }
   });
+}
+
+async function login(app, username, password) {
+  const response = await app.inject({
+    method: "POST",
+    url: "/api/v1/login",
+    payload: { username, password },
+  });
+  assert.equal(response.statusCode, 200);
+  return response.headers["set-cookie"].split(";", 1)[0];
 }

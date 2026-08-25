@@ -48,6 +48,111 @@ test("Administrator session exposes only operational navigation", async ({ page 
   await expect(page.getByRole("link", { name: "Patient Registry" })).toHaveCount(0);
 });
 
+test("role-separated audit views stay read-only and show deleted-Patient history", async ({
+  browser,
+}) => {
+  const patientId = "20000000-0000-4000-8000-000000000099";
+  const researchCaseId = "30000000-0000-4000-8000-000000000099";
+
+  async function auditPage(role) {
+    const context = await browser.newContext();
+    const currentSession = session(role);
+    if (role === "PSYCHIATRIST") {
+      await context.addInitScript(
+        ({ userId }) =>
+          globalThis.localStorage.setItem(`insight.research-use.${userId}.v1`, "acknowledged"),
+        { userId: currentSession.user.id },
+      );
+    }
+    const page = await context.newPage();
+    await page.route("**/api/v1/**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname === "/api/v1/session") {
+        return route.fulfill({ json: currentSession });
+      }
+      if (url.pathname === "/api/v1/admin/operational-audit") {
+        expect(role).toBe("ADMINISTRATOR");
+        return route.fulfill({
+          json: {
+            schemaVersion: "1",
+            events: [
+              {
+                id: "40000000-0000-4000-8000-000000000001",
+                eventType: "USER_CREATED",
+                actorUserId: currentSession.user.id,
+                target: {
+                  type: "USER",
+                  id: "50000000-0000-4000-8000-000000000001",
+                  version: "1",
+                },
+                beforeMetadata: null,
+                afterMetadata: { role: "PSYCHIATRIST", status: "ENABLED" },
+                requestId: null,
+                occurredAt: "2026-08-22T10:00:00.000Z",
+              },
+            ],
+            page: { offset: 0, limit: 25, total: 1 },
+          },
+        });
+      }
+      if (url.pathname === "/api/v1/clinical-audit") {
+        expect(role).toBe("PSYCHIATRIST");
+        expect(url.searchParams.get("patientId")).toBe(patientId);
+        return route.fulfill({
+          json: {
+            schemaVersion: "1",
+            events: [
+              {
+                id: "patient:request:2",
+                kind: "PATIENT",
+                eventType: "PATIENT_DELETED",
+                patientLink: { patientId, researchCaseId },
+                targetVersion: 2,
+                before: { firstName: "Deleted", lastName: "Researcher" },
+                after: null,
+                provenance: {
+                  payloadReference: "audit/payload.json",
+                  domainResultIds: [],
+                  details: null,
+                },
+                actorUserId: currentSession.user.id,
+                requestId: "60000000-0000-4000-8000-000000000001",
+                occurredAt: "2026-08-22T10:00:00.000Z",
+              },
+            ],
+            page: { offset: 0, limit: 25, total: 1 },
+          },
+        });
+      }
+      return route.fulfill({ status: 404 });
+    });
+    return { context, page };
+  }
+
+  const administrator = await auditPage("ADMINISTRATOR");
+  await administrator.page.goto("/administration/operational-audit");
+  await expect(administrator.page.getByText("Operational metadata only")).toBeVisible();
+  await expect(administrator.page.getByText("USER_CREATED")).toBeVisible();
+  await expect(administrator.page.getByText(patientId)).toHaveCount(0);
+  await expect(administrator.page.getByRole("button", { name: /edit|delete/i })).toHaveCount(0);
+
+  const psychiatrist = await auditPage("PSYCHIATRIST");
+  await psychiatrist.page.goto("/clinical-audit");
+  await psychiatrist.page.getByLabel("Patient UUID").fill(patientId);
+  await psychiatrist.page.getByRole("button", { name: "Inspect history" }).click();
+  await expect(psychiatrist.page.getByText("PATIENT_DELETED")).toBeVisible();
+  await expect(psychiatrist.page.getByText(researchCaseId)).toBeVisible();
+  await psychiatrist.page.getByText("Before and after").click();
+  await expect(
+    psychiatrist.page.locator("pre").filter({ hasText: '"firstName": "Deleted"' }),
+  ).toBeVisible();
+  await psychiatrist.page.getByText("References", { exact: true }).click();
+  await expect(psychiatrist.page.getByText(/audit\/payload.json/)).toBeVisible();
+  await expect(psychiatrist.page.getByRole("button", { name: /edit|delete/i })).toHaveCount(0);
+
+  await Promise.all([administrator.context.close(), psychiatrist.context.close()]);
+});
+
 test("Administrator replaces write-only model credential and sees compatibility risk", async ({
   page,
 }) => {

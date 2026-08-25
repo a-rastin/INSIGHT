@@ -714,6 +714,441 @@
         }
       }
     },
+    "/api/v1/admin/operational-audit": {
+      "get": {
+        "operationId": "listOperationalAudit",
+        "tags": ["audit"],
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 0, "default": 0 },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "in": "query",
+            "name": "eventType",
+            "required": false
+          },
+          {
+            "schema": { "type": "string", "format": "date-time" },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": { "type": "string", "format": "date-time" },
+            "in": "query",
+            "name": "to",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT"]
+            },
+            "in": "query",
+            "name": "targetType",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "events", "page"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "eventType",
+                          "actorUserId",
+                          "target",
+                          "beforeMetadata",
+                          "afterMetadata",
+                          "requestId",
+                          "occurredAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                          },
+                          "eventType": { "type": "string" },
+                          "actorUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                              },
+                              { "type": "null" }
+                            ]
+                          },
+                          "target": {
+                            "anyOf": [
+                              { "type": "null" },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["type", "id", "version"],
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT"]
+                                  },
+                                  "id": { "type": "string" },
+                                  "version": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+                                }
+                              }
+                            ]
+                          },
+                          "beforeMetadata": {
+                            "anyOf": [
+                              { "type": "null" },
+                              {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": ["string", "number", "boolean", "null"]
+                                }
+                              }
+                            ]
+                          },
+                          "afterMetadata": {
+                            "anyOf": [
+                              { "type": "null" },
+                              {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": ["string", "number", "boolean", "null"]
+                                }
+                              }
+                            ]
+                          },
+                          "requestId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                              },
+                              { "type": "null" }
+                            ]
+                          },
+                          "occurredAt": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["offset", "limit", "total"],
+                      "properties": {
+                        "offset": { "type": "integer", "minimum": 0 },
+                        "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clinical-audit": {
+      "get": {
+        "operationId": "listClinicalAudit",
+        "tags": ["audit"],
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 0, "default": 0 },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "in": "query",
+            "name": "eventType",
+            "required": false
+          },
+          {
+            "schema": { "type": "string", "format": "date-time" },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": { "type": "string", "format": "date-time" },
+            "in": "query",
+            "name": "to",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "in": "query",
+            "name": "patientId",
+            "required": true
+          },
+          {
+            "schema": { "type": "string", "enum": ["PATIENT", "WORKFLOW"] },
+            "in": "query",
+            "name": "kind",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schemaVersion", "events", "page"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "eventType",
+                          "patientLink",
+                          "targetVersion",
+                          "before",
+                          "after",
+                          "provenance",
+                          "actorUserId",
+                          "requestId",
+                          "occurredAt"
+                        ],
+                        "properties": {
+                          "id": { "type": "string" },
+                          "kind": { "type": "string", "enum": ["PATIENT", "WORKFLOW"] },
+                          "eventType": { "type": "string" },
+                          "patientLink": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["patientId", "researchCaseId"],
+                            "properties": {
+                              "patientId": {
+                                "type": "string",
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                              },
+                              "researchCaseId": {
+                                "type": "string",
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                              }
+                            }
+                          },
+                          "targetVersion": { "type": "integer", "minimum": 1 },
+                          "before": {
+                            "anyOf": [
+                              { "type": "null" },
+                              { "type": "object", "additionalProperties": true }
+                            ]
+                          },
+                          "after": {
+                            "anyOf": [
+                              { "type": "null" },
+                              { "type": "object", "additionalProperties": true }
+                            ]
+                          },
+                          "provenance": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["payloadReference", "domainResultIds", "details"],
+                            "properties": {
+                              "payloadReference": {
+                                "anyOf": [{ "type": "string" }, { "type": "null" }]
+                              },
+                              "domainResultIds": { "type": "array", "items": { "type": "string" } },
+                              "details": {
+                                "anyOf": [
+                                  { "type": "null" },
+                                  { "type": "object", "additionalProperties": true }
+                                ]
+                              }
+                            }
+                          },
+                          "actorUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                              },
+                              { "type": "null" }
+                            ]
+                          },
+                          "requestId": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+                          },
+                          "occurredAt": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["offset", "limit", "total"],
+                      "properties": {
+                        "offset": { "type": "integer", "minimum": 0 },
+                        "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/login": {
       "post": {
         "operationId": "login",

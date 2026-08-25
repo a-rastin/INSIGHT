@@ -5,7 +5,7 @@ export interface OperationalAuditActor {
   readonly role: "ADMINISTRATOR" | "PSYCHIATRIST";
 }
 
-type OperationalTargetType = "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
+export type OperationalTargetType = "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
 
 export interface OperationalAuditEvent {
   readonly id: string;
@@ -22,6 +22,21 @@ export interface OperationalAuditEvent {
   readonly occurredAt: string;
 }
 
+export interface AuditQuery {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly eventType?: string;
+  readonly from?: string;
+  readonly to?: string;
+}
+
+export interface AuditPage<Event> {
+  readonly events: readonly Event[];
+  readonly offset: number;
+  readonly limit: number;
+  readonly total: number;
+}
+
 interface OperationalAuditRow extends QueryResultRow {
   id: string;
   event_type: string;
@@ -33,6 +48,11 @@ interface OperationalAuditRow extends QueryResultRow {
   after_metadata: Record<string, unknown> | null;
   request_id: string | null;
   occurred_at: Date;
+  total_count: string;
+}
+
+export interface OperationalAuditQuery extends AuditQuery {
+  readonly targetType?: OperationalTargetType;
 }
 
 export class OperationalAuditAuthorizationError extends Error {
@@ -46,6 +66,14 @@ export async function listOperationalAuditEvents(
   pool: Pool,
   actor: OperationalAuditActor,
 ): Promise<readonly OperationalAuditEvent[]> {
+  return (await queryOperationalAuditEvents(pool, actor, { limit: 10_000 })).events;
+}
+
+export async function queryOperationalAuditEvents(
+  pool: Pool,
+  actor: OperationalAuditActor,
+  query: OperationalAuditQuery = {},
+): Promise<AuditPage<OperationalAuditEvent>> {
   if (actor.role !== "ADMINISTRATOR") throw new OperationalAuditAuthorizationError();
   const authorization = await pool.query(
     `SELECT 1 FROM insight.users
@@ -54,29 +82,63 @@ export async function listOperationalAuditEvents(
   );
   if (authorization.rowCount !== 1) throw new OperationalAuditAuthorizationError();
 
-  const result = await pool.query<OperationalAuditRow>(`
-    SELECT id, event_type, actor_user_id, 'USER' AS target_type,
-           subject_user_id::text AS target_id, target_version::text,
-           before_metadata, after_metadata, request_id, occurred_at
-    FROM insight.security_audit_events
-    UNION ALL
-    SELECT id, event_type, actor_user_id, 'DEPLOYMENT_EVIDENCE' AS target_type,
-           evidence_version::text AS target_id, evidence_version::text AS target_version,
-           NULL::jsonb AS before_metadata,
-           jsonb_build_object('environmentStatus', environment_status) AS after_metadata,
-           request_id, occurred_at
-    FROM insight.operational_audit_events
-    UNION ALL
-    SELECT id, event_type, actor_user_id, 'MODEL_ENDPOINT' AS target_type,
-           configuration_id::text AS target_id, configuration_version::text AS target_version,
-           NULL::jsonb AS before_metadata,
-           jsonb_build_object('baseUrl', base_url, 'model', model) AS after_metadata,
-           request_id, occurred_at
-    FROM insight.model_endpoint_audit_events
-    ORDER BY occurred_at, id
-  `);
+  const offset = query.offset ?? 0;
+  const limit = query.limit ?? 25;
+  const result = await pool.query<OperationalAuditRow>(
+    `WITH events AS (
+       SELECT id, event_type, actor_user_id, 'USER'::text AS target_type,
+              subject_user_id::text AS target_id, target_version::text,
+              CASE WHEN before_metadata IS NULL THEN NULL ELSE jsonb_strip_nulls(jsonb_build_object(
+                'role', before_metadata->'role', 'status', before_metadata->'status',
+                'passwordPolicyVersion', before_metadata->'passwordPolicyVersion',
+                'bootstrapCredentialActive', before_metadata->'bootstrapCredentialActive'
+              )) END AS before_metadata,
+              CASE WHEN after_metadata IS NULL THEN NULL ELSE jsonb_strip_nulls(jsonb_build_object(
+                'role', after_metadata->'role', 'status', after_metadata->'status',
+                'passwordPolicyVersion', after_metadata->'passwordPolicyVersion',
+                'bootstrapCredentialActive', after_metadata->'bootstrapCredentialActive'
+              )) END AS after_metadata,
+              request_id, occurred_at
+       FROM insight.security_audit_events
+       UNION ALL
+       SELECT id, event_type, actor_user_id, 'DEPLOYMENT_EVIDENCE',
+              evidence_version::text, evidence_version::text, NULL::jsonb,
+              jsonb_build_object('environmentStatus', environment_status), request_id, occurred_at
+       FROM insight.operational_audit_events
+       UNION ALL
+       SELECT id, event_type, actor_user_id, 'MODEL_ENDPOINT',
+              configuration_id::text, configuration_version::text,
+              NULL::jsonb, NULL::jsonb, request_id, occurred_at
+       FROM insight.model_endpoint_audit_events
+     )
+     SELECT *, count(*) OVER()::text AS total_count
+     FROM events
+     WHERE ($1::text IS NULL OR event_type = $1)
+       AND ($2::text IS NULL OR target_type = $2)
+       AND ($3::timestamptz IS NULL OR occurred_at >= $3)
+       AND ($4::timestamptz IS NULL OR occurred_at <= $4)
+     ORDER BY occurred_at DESC, id DESC
+     OFFSET $5 LIMIT $6`,
+    [
+      query.eventType ?? null,
+      query.targetType ?? null,
+      query.from ?? null,
+      query.to ?? null,
+      offset,
+      limit,
+    ],
+  );
 
-  return result.rows.map((row) => ({
+  return {
+    events: result.rows.map(materializeOperationalEvent),
+    offset,
+    limit,
+    total: Number(result.rows[0]?.total_count ?? 0),
+  };
+}
+
+function materializeOperationalEvent(row: OperationalAuditRow): OperationalAuditEvent {
+  return {
     id: row.id,
     eventType: row.event_type,
     actorUserId: row.actor_user_id,
@@ -87,5 +149,5 @@ export async function listOperationalAuditEvents(
     afterMetadata: row.after_metadata,
     requestId: row.request_id,
     occurredAt: row.occurred_at.toISOString(),
-  }));
+  };
 }

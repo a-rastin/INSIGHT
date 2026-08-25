@@ -22,6 +22,7 @@ import type { Pool } from "pg";
 
 import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
 import { assessmentRoutes } from "./assessment/http.js";
+import { auditRoutes } from "./audit/http.js";
 import { bnModelRoutes } from "./bn-model/http.js";
 import { comorbidityKnowledgeRoutes } from "./comorbidity-knowledge/http.js";
 import { ddiSourceRoutes } from "./ddi-source/http.js";
@@ -270,6 +271,10 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       deploymentEvidenceRoutes(options.authentication.pool, (request) =>
         requestSessions.get(request),
       ),
+      { prefix: API_PREFIX },
+    );
+    void app.register(
+      auditRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
       { prefix: API_PREFIX },
     );
     void app.register(

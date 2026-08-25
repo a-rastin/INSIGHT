@@ -379,6 +379,50 @@ p {
   gap: var(--space-5);
 }
 
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.audit-json {
+  max-width: 36rem;
+  padding: var(--space-3);
+  overflow: auto;
+  color: var(--ink);
+  font: 0.75rem/1.5 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.audit-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.audit-pagination span {
+  margin-right: auto;
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 760px) {
+  .audit-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-pagination {
+    flex-wrap: wrap;
+  }
+}
+
 .form-actions {
   display: flex;
   align-items: end;

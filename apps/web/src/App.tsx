@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { AdminUsersPage } from "./AdminUsersPage";
+import { ClinicalAuditPage, OperationalAuditPage } from "./AuditPages";
 import { BnManagerPage } from "./BnManagerPage";
 import { ModelEndpointPage } from "./ModelEndpointPage";
 import { CreatePatientPage, PatientProfilePage, PatientRegistryPage } from "./PatientPages";
@@ -39,6 +40,8 @@ type Route = {
     | "users"
     | "model-endpoint"
     | "bn-manager"
+    | "clinical-audit"
+    | "operational-audit"
     | "placeholder";
 };
 
@@ -85,7 +88,7 @@ const clinicianRoutes: Route[] = [
     label: "Clinical Audit History",
     title: "Authorized Clinical Audit History",
     description: "Review attributable clinical events for the selected patient.",
-    page: "placeholder",
+    page: "clinical-audit",
   },
 ];
 
@@ -144,7 +147,7 @@ const administratorRoutes: Route[] = [
     label: "Operational Audit",
     title: "Operational Audit",
     description: "Review system and security operations without clinical payloads.",
-    page: "placeholder",
+    page: "operational-audit",
   },
   {
     path: "/administration/backup-restore",
@@ -385,6 +388,8 @@ function Shell({ session, onSignedOut }: { session: Session; onSignedOut: () => 
           <ModelEndpointPage csrfToken={session.csrfToken} />
         ) : null}
         {route?.page === "bn-manager" ? <BnManagerPage csrfToken={session.csrfToken} /> : null}
+        {route?.page === "clinical-audit" ? <ClinicalAuditPage /> : null}
+        {route?.page === "operational-audit" ? <OperationalAuditPage /> : null}
         {route?.page === "placeholder" ? <PlaceholderPage title={route.title} /> : null}
         {!route ? <NotFoundPage /> : null}
       </main>

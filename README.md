@@ -6,6 +6,8 @@ Final Treatment Plan revisions stay inside the Patient's single Research Case. A
 
 Psychiatrists can review and print every immutable Final Treatment Plan version and download its hash-pinned JSON export. Final artifacts use masked Patient identifiers, calculate age at Research Case start, retain permitted reproducibility provenance, and remain unavailable to Administrators.
 
+Audit access is role-separated in both backend queries and UI routes. Administrators can inspect paginated operational metadata that excludes Patient identifiers and clinical content. Psychiatrists can inspect attributable Patient and Research Case audit history, including retained history after Patient deletion, with before/after values and provenance references. Both views are read-only and state that ordinary PostgreSQL audit rows are not tamper-evident.
+
 ## Verification
 
 Run full local checks with:
