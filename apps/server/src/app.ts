@@ -21,6 +21,7 @@ import Fastify, {
 import type { Pool } from "pg";
 
 import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
+import { isSurfaceAuthorized } from "./authorization.js";
 import { assessmentRoutes } from "./assessment/http.js";
 import { auditRoutes } from "./audit/http.js";
 import { databaseBackupRoutes, type BackupOptions } from "./backup.js";
@@ -237,6 +238,15 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
         return;
       }
 
+      const operationId = (request.routeOptions.schema as { operationId?: string } | undefined)
+        ?.operationId;
+      if (operationId && !isSurfaceAuthorized(operationId, context.user.role)) {
+        await reply
+          .status(403)
+          .send(errorBody(request, 403, "FORBIDDEN", "Request is not permitted."));
+        return;
+      }
+
       const patientScoped =
         path === `${API_PREFIX}/patients` || path.startsWith(`${API_PREFIX}/patients/`);
       if (patientScoped && context.user.role === "ADMINISTRATOR") {
@@ -405,6 +415,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     `${API_PREFIX}/openapi.json`,
     {
       schema: {
+        operationId: "getOpenApiDocument",
         hide: true,
         response: {
           200: {

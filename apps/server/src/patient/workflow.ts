@@ -306,7 +306,7 @@ export async function getResearchCaseWorkflow(
   actor: PatientActor,
   patientId: string,
 ): Promise<ResearchCaseWorkflow> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const row = await caseByPatient(pool, patientId);
   if (!row) throw new ResearchCaseNotFoundError();
   return materializeWorkflow(pool, row);
@@ -317,7 +317,7 @@ export async function listResearchCaseTransitionAuditEvents(
   actor: PatientActor,
   patientId: string,
 ): Promise<readonly ResearchCaseTransitionAuditEvent[]> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const authorization = await pool.query(
     `SELECT 1 FROM insight.users
      WHERE id = $1 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'`,
@@ -358,7 +358,7 @@ export async function transitionResearchCase(
   requestId: string,
   now = new Date(),
 ): Promise<ResearchCaseWorkflow> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   if (command === "FINALIZE") {
     throw new WorkflowTransitionError("Use Treatment Plan finalization.");
   }
@@ -421,7 +421,7 @@ export async function recordAssessmentState(
   expectedRevision: number,
   now = new Date(),
 ): Promise<void> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   if (assessmentType === "DSM5TR") {
     throw new WorkflowTransitionError("DSM-5-TR state is owned by its assessment service.");
   }
@@ -455,7 +455,7 @@ export async function recordDomainResult(
   },
   now = new Date(),
 ): Promise<string> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   if (
     input.resultReference.trim() !== input.resultReference ||
     input.resultReference.length === 0
@@ -499,7 +499,7 @@ export async function invalidateResearchCaseInputs(
   requestId: string,
   now = new Date(),
 ): Promise<ResearchCaseWorkflow> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const normalizedReason = reason.trim();
   if (normalizedReason.length === 0 || normalizedReason.length > 500) {
     throw new WorkflowTransitionError("Input invalidation reason is invalid.");
@@ -520,7 +520,7 @@ export async function invalidateResearchCaseInputsInTransaction(
   requestId: string,
   now = new Date(),
 ): Promise<void> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(client, actor);
   const row = await caseByPatient(client, patientId, true);
   if (!row) throw new ResearchCaseNotFoundError();
   await invalidateLockedCase(client, row, actor, reason, requestId, now);
@@ -712,6 +712,12 @@ function assertRevision(row: CaseRow, expectedRevision: number): void {
   }
 }
 
-function requirePsychiatrist(actor: PatientActor): void {
+async function requirePsychiatrist(database: Queryable, actor: PatientActor): Promise<void> {
   if (actor.role !== "PSYCHIATRIST") throw new WorkflowTransitionError("Psychiatrist required.");
+  const current = await database.query(
+    `SELECT 1 FROM insight.users
+     WHERE id = $1 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'`,
+    [actor.id],
+  );
+  if (current.rowCount !== 1) throw new WorkflowTransitionError("Psychiatrist required.");
 }

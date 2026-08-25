@@ -264,7 +264,8 @@ test("durable jobs concurrency, restart, idempotency, and resumable SSE", async 
             url: `/api/v1/jobs/${job.id}`,
             headers: { cookie: sessionCookie(otherSession.token, false) },
           });
-          assert.equal(other.statusCode, 404);
+          assert.equal(other.statusCode, 200);
+          assert.equal(other.json().job.id, job.id);
           const administrator = await app.inject({
             method: "GET",
             url: `/api/v1/jobs/${job.id}`,

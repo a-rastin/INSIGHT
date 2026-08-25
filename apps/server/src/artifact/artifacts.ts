@@ -103,6 +103,7 @@ export async function storeArtifact(
   now = new Date(),
 ): Promise<ArtifactMetadata> {
   validateInput(actor, input);
+  await assertCurrentActor(pool, actor);
   const id = randomUUID();
   const ownerId = input.ownerId.toLowerCase();
   const relativePath = `${ownerId}/${id}`;
@@ -146,6 +147,7 @@ export async function readArtifact(
   artifactId: string,
   artifactRoot: string,
 ): Promise<StoredArtifact> {
+  await assertCurrentActor(pool, actor);
   if (!UUID.test(artifactId)) throw new ArtifactNotFoundError();
   const row = (
     await pool.query<ArtifactRow>("SELECT * FROM insight.artifacts WHERE id=$1", [artifactId])
@@ -196,6 +198,15 @@ function authorize(actor: ArtifactActor, row: ArtifactRow): void {
     (row.access_class === "OWNER" && actor.id.toLowerCase() === row.owner_id.toLowerCase()) ||
     (row.access_class !== "OWNER" && actor.role === row.access_class);
   if (!allowed) throw new ArtifactAuthorizationError();
+}
+
+async function assertCurrentActor(pool: Pool, actor: ArtifactActor): Promise<void> {
+  const current = await pool.query(
+    `SELECT 1 FROM insight.users
+     WHERE id = $1 AND role = $2 AND status <> 'DISABLED'`,
+    [actor.id, actor.role],
+  );
+  if (current.rowCount !== 1) throw new ArtifactAuthorizationError();
 }
 
 async function canonicalRoot(artifactRoot: string): Promise<string> {

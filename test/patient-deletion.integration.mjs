@@ -170,6 +170,9 @@ test("immediate Patient hard deletion with surviving audit", async (suite) => {
         try {
           const psychiatristSession = await login(app, user.username, "research-password");
           const administratorSession = await login(app, "admin", "admin");
+          const administratorId = (
+            await pool.query("SELECT id FROM insight.users WHERE username_normalized = 'admin'")
+          ).rows[0].id;
           const url = `/api/v1/patients/${patient.id}`;
 
           const unauthenticated = await app.inject({ method: "DELETE", url });
@@ -193,6 +196,10 @@ test("immediate Patient hard deletion with surviving audit", async (suite) => {
                 requestId(9021),
                 { artifactRoot },
               ),
+            PatientAuthorizationError,
+          );
+          await assert.rejects(
+            () => getPatient(pool, { id: administratorId, role: "PSYCHIATRIST" }, patient.id),
             PatientAuthorizationError,
           );
           await assert.rejects(() =>

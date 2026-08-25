@@ -224,7 +224,7 @@ export async function createOrOverwritePatient(
   requestId: string,
   now = new Date(),
 ): Promise<PatientSaveResult> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const demographics = validateDemographics(input, now);
   const identifier = validateIdentifier(input.officialIdentifier, configuration);
 
@@ -291,7 +291,7 @@ export async function savePatientDemographics(
   requestId: string,
   now = new Date(),
 ): Promise<PatientRecord> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const demographics = validateDemographics(demographicsInput, now);
   return withTransaction(pool, async (client) => {
     const key = await activeKey(client);
@@ -331,7 +331,7 @@ export async function listPatients(
   actor: PatientActor,
   now = new Date(),
 ): Promise<readonly PatientRecord[]> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const result = await pool.query<PatientRow>(
     `${patientSelect()} ORDER BY p.updated_at DESC, p.id`,
   );
@@ -355,7 +355,7 @@ export async function getPatient(
   patientId: string,
   now = new Date(),
 ): Promise<PatientRecord> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const result = await pool.query<PatientRow>(`${patientSelect()} WHERE p.id = $1`, [patientId]);
   const row = result.rows[0];
   if (!row) throw new PatientNotFoundError();
@@ -371,7 +371,7 @@ export async function deletePatient(
   options: PatientDeletionOptions,
   now = new Date(),
 ): Promise<PatientDeletionResult> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const deleted = await withTransaction(pool, async (client) => {
     const existing = await patientById(client, patientId);
     if (!existing) return false;
@@ -423,7 +423,7 @@ export async function listPatientAuditEvents(
   actor: PatientActor,
   patientId: string,
 ): Promise<readonly PatientAuditEvent[]> {
-  requirePsychiatrist(actor);
+  await requirePsychiatrist(pool, actor);
   const authorization = await pool.query(
     `SELECT 1 FROM insight.users
      WHERE id = $1 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'`,
@@ -559,8 +559,14 @@ function assertBirthBeforeCase(dateOfBirth: string, startedAt: Date): void {
   calculateAge(dateOfBirth, localCalendarDate(startedAt));
 }
 
-function requirePsychiatrist(actor: PatientActor): void {
+async function requirePsychiatrist(database: Queryable, actor: PatientActor): Promise<void> {
   if (actor.role !== "PSYCHIATRIST") throw new PatientAuthorizationError();
+  const current = await database.query(
+    `SELECT 1 FROM insight.users
+     WHERE id = $1 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'`,
+    [actor.id],
+  );
+  if (current.rowCount !== 1) throw new PatientAuthorizationError();
 }
 
 async function activeKey(database: Queryable): Promise<EncryptionKeyRow> {

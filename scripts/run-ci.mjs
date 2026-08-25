@@ -5,6 +5,7 @@ const checks = [
   "lint",
   "typecheck",
   "test:unit",
+  "authorization:check",
   "test:integration",
   "api:check",
   "db:migrate",

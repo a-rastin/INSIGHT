@@ -123,6 +123,12 @@ export async function startResearchCaseOrchestration(
     throw new OrchestrationUnavailableError();
   }
   return withTransaction(pool, async (client) => {
+    const currentActor = await client.query(
+      `SELECT 1 FROM insight.users
+       WHERE id=$1 AND role='PSYCHIATRIST' AND status <> 'DISABLED'`,
+      [actor.id],
+    );
+    if (currentActor.rowCount !== 1) throw new OrchestrationUnavailableError();
     const found = await client.query<CaseRow>(
       `SELECT id,workflow_state,workflow_revision,input_revision
        FROM insight.research_cases WHERE patient_id=$1 FOR UPDATE`,
@@ -149,15 +155,12 @@ export async function startResearchCaseOrchestration(
          AND job.status IN ('FAILED','CANCELLED')`,
       [researchCase.id],
     );
-    const active = await client.query<{ job_id: string; requested_by_user_id: string }>(
-      `SELECT job_id,requested_by_user_id FROM insight.research_case_orchestration_runs
+    const active = await client.query<{ job_id: string }>(
+      `SELECT job_id FROM insight.research_case_orchestration_runs
        WHERE research_case_id=$1 AND status='RUNNING'`,
       [researchCase.id],
     );
     if (active.rows[0]) {
-      if (active.rows[0].requested_by_user_id !== actor.id) {
-        throw new OrchestrationUnavailableError();
-      }
       return (await getResearchCaseJob(client, active.rows[0].job_id, researchCase.id))!;
     }
 

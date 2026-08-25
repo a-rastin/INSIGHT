@@ -237,7 +237,11 @@ export async function getOwnedJob(
   userId: string,
 ): Promise<JobRecord | null> {
   const result = await database.query<JobRow>(
-    `SELECT * FROM insight.jobs WHERE id = $1 AND requested_by_user_id = $2`,
+    `SELECT job.* FROM insight.jobs job
+     WHERE job.id = $1 AND EXISTS (
+       SELECT 1 FROM insight.users
+       WHERE id = $2 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'
+     )`,
     [jobId, userId],
   );
   return result.rows[0] ? toJob(result.rows[0]) : null;
@@ -262,7 +266,11 @@ export async function listOwnedJobEvents(
   afterSequence: string | number = 0,
 ): Promise<readonly JobEvent[] | null> {
   const owned = await database.query<{ status: JobStatus }>(
-    `SELECT status FROM insight.jobs WHERE id = $1 AND requested_by_user_id = $2`,
+    `SELECT job.status FROM insight.jobs job
+     WHERE job.id = $1 AND EXISTS (
+       SELECT 1 FROM insight.users
+       WHERE id = $2 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'
+     )`,
     [jobId, userId],
   );
   if (!owned.rows[0]) return null;
@@ -470,7 +478,10 @@ export async function cancelOwnedJob(
        SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,
            error_code = 'CANCELLED', error_message = $3,
            completed_at = $4, updated_at = $4
-       WHERE id = $1 AND requested_by_user_id = $2 AND status IN ('QUEUED', 'RUNNING')
+        WHERE id = $1 AND status IN ('QUEUED', 'RUNNING') AND EXISTS (
+          SELECT 1 FROM insight.users
+          WHERE id = $2 AND role = 'PSYCHIATRIST' AND status <> 'DISABLED'
+        )
        RETURNING *`,
       [jobId, userId, SAFE_FAILURES.CANCELLED, now],
     );

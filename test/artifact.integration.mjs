@@ -145,12 +145,17 @@ test("artifact storage boundary", async (suite) => {
       try {
         const blockedRoot = join(root, "file-not-directory");
         await writeFile(blockedRoot, "blocked");
-        let queries = 0;
-        const countingPool = { query: async () => queries++ };
+        let metadataQueries = 0;
+        const countingPool = {
+          query: async (sql) => {
+            if (sql.includes("INSERT INTO insight.artifacts")) metadataQueries += 1;
+            return { rowCount: 1, rows: [{}] };
+          },
+        };
         await assert.rejects(() =>
           storeArtifact(countingPool, admin, xmlInput(admin.id), blockedRoot),
         );
-        assert.equal(queries, 0);
+        assert.equal(metadataQueries, 0);
 
         const failingPool = failingMetadataPool();
         await assert.rejects(
@@ -180,24 +185,27 @@ function xmlInput(ownerId) {
 
 function fakeReadPool(overrides) {
   return {
-    query: async () => ({
-      rows: [
-        {
-          id: "00000000-0000-4000-8000-000000000003",
-          kind: "PROVENANCE",
-          owner_id: owner.id,
-          relative_path: `${owner.id}/00000000-0000-4000-8000-000000000003`,
-          media_type: "application/json",
-          byte_length: "7",
-          sha256: "00".repeat(32),
-          access_class: "OWNER",
-          artifact_version: "1",
-          created_by_user_id: owner.id,
-          created_at: new Date("2026-08-25T00:00:00.000Z"),
-          ...overrides,
-        },
-      ],
-    }),
+    query: async (sql) =>
+      sql.includes("FROM insight.users")
+        ? { rowCount: 1, rows: [{}] }
+        : {
+            rows: [
+              {
+                id: "00000000-0000-4000-8000-000000000003",
+                kind: "PROVENANCE",
+                owner_id: owner.id,
+                relative_path: `${owner.id}/00000000-0000-4000-8000-000000000003`,
+                media_type: "application/json",
+                byte_length: "7",
+                sha256: "00".repeat(32),
+                access_class: "OWNER",
+                artifact_version: "1",
+                created_by_user_id: owner.id,
+                created_at: new Date("2026-08-25T00:00:00.000Z"),
+                ...overrides,
+              },
+            ],
+          },
   };
 }
 
@@ -211,7 +219,10 @@ function failingMetadataPool() {
     },
     release() {},
   };
-  return { connect: async () => client };
+  return {
+    query: async () => ({ rowCount: 1, rows: [{}] }),
+    connect: async () => client,
+  };
 }
 
 async function withArtifactDatabase(operation) {

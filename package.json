@@ -15,6 +15,8 @@
   "scripts": {
     "api:generate": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node scripts/generate-api.mjs",
     "api:check": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node scripts/generate-api.mjs --check",
+    "authorization:generate": "npm run build --workspace @insight/server && node scripts/generate-authorization-inventory.mjs",
+    "authorization:check": "npm run build --workspace @insight/server && node scripts/generate-authorization-inventory.mjs --check",
     "format": "prettier --check .github apps packages scripts test docs/api docs/operations README.md compose.production.yml package.json playwright.config.mjs playwright.role-navigation.config.mjs tsconfig.base.json tsconfig.json eslint.config.mjs prettier.config.mjs",
     "lint": "eslint apps packages scripts test playwright.config.mjs playwright.role-navigation.config.mjs",
     "typecheck": "tsc -b",
