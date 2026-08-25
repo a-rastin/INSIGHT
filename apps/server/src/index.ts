@@ -14,6 +14,7 @@ export * from "./artifact/index.js";
 export * from "./bn-model/index.js";
 export * from "./comorbidity-knowledge/index.js";
 export * from "./audit/index.js";
+export * from "./backup.js";
 export * from "./deployment/index.js";
 export * from "./ddi-source/index.js";
 export * from "./ddi/index.js";
@@ -29,7 +30,8 @@ export * from "./patient/index.js";
 export * from "./treatment-plan/index.js";
 
 export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise<void> {
-  const pool = createPostgresPool(databaseConfigFromEnv(env));
+  const database = databaseConfigFromEnv(env);
+  const pool = createPostgresPool(database);
   const host = env.HOST ?? "127.0.0.1";
   const app = buildApp({
     artifactRoot: resolve(env.INSIGHT_ARTIFACT_ROOT ?? "artifacts"),
@@ -46,6 +48,11 @@ export async function startServer(env: NodeJS.ProcessEnv = process.env): Promise
       pool,
       allowInsecureLoopbackCookie:
         env.NODE_ENV === "development" && ["127.0.0.1", "::1", "localhost"].includes(host),
+    },
+    backup: {
+      root: resolve(env.INSIGHT_BACKUP_ROOT ?? "backups"),
+      databaseUrl: database.connectionString,
+      applicationVersion: env.INSIGHT_APP_VERSION ?? "0.1.0",
     },
     modelEndpoint: {
       allowDevelopmentLoopbackHttp: env.NODE_ENV === "development",

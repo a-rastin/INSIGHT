@@ -145,6 +145,11 @@ test("not-found and unsupported-version responses stay inside the API envelope",
 test("published OpenAPI matches the checked-in contract", async (t) => {
   const app = buildApp({
     authentication: { pool: {} },
+    backup: {
+      root: "backups",
+      databaseUrl: "postgresql://localhost/insight",
+      applicationVersion: "0.1.0",
+    },
     patient: {
       officialIdentifier: {
         type: "CONFIGURED_OFFICIAL_ID",
@@ -164,6 +169,10 @@ test("published OpenAPI matches the checked-in contract", async (t) => {
   assert.ok(published.paths["/api/v1/admin/users/{userId}/reset-password"]);
   assert.ok(published.paths["/api/v1/admin/deployment-evidence"]);
   assert.ok(published.paths["/api/v1/admin/deployment-evidence/{version}/activate"]);
+  assert.ok(published.paths["/api/v1/admin/backups"]);
+  assert.ok(published.paths["/api/v1/admin/backups/{backupId}"]);
+  assert.ok(published.paths["/api/v1/admin/backups/{backupId}/download"]);
+  assert.ok(published.paths["/api/v1/admin/backups/{backupId}/manifest"]);
   assert.ok(published.paths["/api/v1/patients"]);
   assert.ok(published.paths["/api/v1/patients/{patientId}"]);
   assert.ok(published.paths["/api/v1/patients/{patientId}/research-case"]);

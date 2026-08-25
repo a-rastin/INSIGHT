@@ -75,9 +75,68 @@ fi
   || fail "fresh volume did not initialize PostgreSQL 16"
 [ -d "$success_volume/artifacts" ] || fail "artifact directory is missing"
 
-docker exec -u postgres "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
+docker exec -u insight "$success_name" psql -v ON_ERROR_STOP=1 -d insight \
   -c "CREATE TABLE container_smoke_persistence (value text PRIMARY KEY); INSERT INTO container_smoke_persistence VALUES ('preserved');" \
   >/dev/null
+backup_id=$(docker exec "$success_name" node -e '
+(async () => {
+const base = "http://127.0.0.1:3000/api/v1";
+const request = async (path, options = {}) => {
+  const response = await fetch(base + path, options);
+  const body = await response.json();
+  if (!response.ok) throw new Error(`${path}: ${response.status} ${JSON.stringify(body)}`);
+  return { response, body };
+};
+const denied = await fetch(base + "/admin/backups", { method: "POST" });
+if (denied.status !== 401) throw new Error(`unauthenticated backup returned ${denied.status}`);
+let login = await request("/login", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ username: "admin", password: "admin" }),
+});
+let cookie = login.response.headers.get("set-cookie").split(";", 1)[0];
+let changed = await request("/session/password", {
+  method: "POST",
+  headers: {
+    cookie,
+    "content-type": "application/json",
+    "x-csrf-token": login.body.csrfToken,
+  },
+  body: JSON.stringify({ password: "container-backup-password" }),
+});
+cookie = changed.response.headers.get("set-cookie").split(";", 1)[0];
+const started = await request("/admin/backups", {
+  method: "POST",
+  headers: { cookie, "x-csrf-token": changed.body.csrfToken },
+});
+for (let attempt = 0; attempt < 100; attempt += 1) {
+  const status = await request(`/admin/backups/${started.body.backup.id}`, { headers: { cookie } });
+  if (status.body.backup.status === "COMPLETED") {
+    process.stdout.write(started.body.backup.id);
+    process.exit(0);
+  }
+  if (status.body.backup.status === "FAILED") throw new Error("production backup failed");
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+throw new Error("production backup timed out");
+})().catch(error => { console.error(error.message); process.exit(1); });
+')
+docker exec "$success_name" node -e '
+const { createHash } = require("node:crypto");
+const { readFileSync, statSync } = require("node:fs");
+const id = process.argv[1];
+const root = "/var/lib/insight/backups";
+const manifest = JSON.parse(readFileSync(`${root}/${id}.manifest.json`, "utf8"));
+const dump = readFileSync(`${root}/${id}.dump`);
+if (manifest.applicationVersion !== "0.1.0" || manifest.postgresMajor !== 16 || manifest.migrationHead !== 36) process.exit(1);
+if (manifest.byteLength !== statSync(`${root}/${id}.dump`).size) process.exit(1);
+if (manifest.sha256 !== createHash("sha256").update(dump).digest("hex")) process.exit(1);
+' "$backup_id" || fail "backup manifest or SHA-256 is invalid"
+docker exec "$success_name" pg_restore --list "/var/lib/insight/backups/$backup_id.dump" >/dev/null \
+  || fail "PostgreSQL custom-format backup could not be inspected"
+docker exec "$success_name" sh -c \
+  "pg_restore --list '/var/lib/insight/backups/$backup_id.dump' | grep -q 'application_encryption_keys'" \
+  || fail "database-held master key table is absent from backup"
 docker stop -t 20 "$success_name" >/dev/null
 docker rm "$success_name" >/dev/null
 docker run -d --name "$success_name" \
@@ -90,7 +149,7 @@ if ! wait_ready "$success_name"; then
   docker logs "$success_name" >&2 || true
   fail "replacement container did not reach readiness"
 fi
-[ "$(docker exec -u postgres "$success_name" psql -At -d insight -c 'SELECT value FROM container_smoke_persistence')" = "preserved" ] \
+[ "$(docker exec -u insight "$success_name" psql -At -d insight -c 'SELECT value FROM container_smoke_persistence')" = "preserved" ] \
   || fail "replacement container lost database files"
 
 if docker run --name "$missing_name" "$image" >"$smoke_root/missing.log" 2>&1; then

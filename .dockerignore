@@ -29,5 +29,9 @@
 !packages/contracts/src/**
 !packages/bayes/
 !packages/bayes/package.json
+!packages/bayes/tsconfig.json
+!packages/bayes/tsconfig.build.json
+!packages/bayes/src/
+!packages/bayes/src/**
 !container/
 !container/**

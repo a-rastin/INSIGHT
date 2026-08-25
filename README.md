@@ -12,6 +12,12 @@ Audit access is role-separated in both backend queries and UI routes. Administra
 
 `apps/server/src/artifact` owns file-backed XMLBIF, DDI source, export, and large provenance metadata. It accepts only UUID owner/artifact relative paths, validates type and size, writes each final file once, then records byte length, SHA-256, access class, and version. Reads are internal service calls, authorize access, reject traversal or symlink escape, and verify content integrity. A metadata failure after a successful file write can leave an orphan by design; there is no staging, atomic rename, or orphan scanner. Patient deletion removes owned metadata transactionally and makes one post-commit best-effort file removal attempt; repeated deletion requests do not retry cleanup.
 
+## Database Backup
+
+Only an authenticated Administrator can start a backup with `POST /api/v1/admin/backups`, read its status and JSON manifest with `GET /api/v1/admin/backups/{backupId}`, or download its PostgreSQL custom-format dump and manifest. Each manifest records application version, PostgreSQL major version, migration head, creation timestamp, byte length, and SHA-256. Downloads reverify byte length and SHA-256 before serving. Backup actions and operational metadata are audited without Patient identifiers or clinical content.
+
+Backups are manual and PostgreSQL-only. They inherently contain the database-held master key and ciphertext together. INSIGHT provides no Patient preview or selective export, schedule, retention, off-site copy, archive encryption, or artifact backup. **A database backup is incomplete disaster recovery unless the matching artifact volume under `/var/lib/insight/artifacts` survives independently.** Store exported dumps, manifests, and the independently protected artifact volume outside the live PostgreSQL data directory according to deployment controls.
+
 ## Verification
 
 Run full local checks with:

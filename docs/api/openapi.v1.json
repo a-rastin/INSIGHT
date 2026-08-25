@@ -752,7 +752,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT"]
+              "enum": ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT", "BACKUP"]
             },
             "in": "query",
             "name": "targetType",
@@ -810,7 +810,12 @@
                                 "properties": {
                                   "type": {
                                     "type": "string",
-                                    "enum": ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT"]
+                                    "enum": [
+                                      "USER",
+                                      "DEPLOYMENT_EVIDENCE",
+                                      "MODEL_ENDPOINT",
+                                      "BACKUP"
+                                    ]
                                   },
                                   "id": { "type": "string" },
                                   "version": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
@@ -1084,6 +1089,509 @@
                         "total": { "type": "integer", "minimum": 0 }
                       }
                     }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups": {
+      "post": {
+        "operationId": "startDatabaseBackup",
+        "tags": ["backup"],
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "backup"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "backup": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "status",
+                        "createdAt",
+                        "completedAt",
+                        "manifest",
+                        "failureCode"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["RUNNING"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["FAILED"] }
+                          ]
+                        },
+                        "createdAt": { "format": "date-time", "type": "string" },
+                        "completedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "manifest": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "schemaVersion",
+                                "backupId",
+                                "applicationVersion",
+                                "postgresMajor",
+                                "migrationHead",
+                                "createdAt",
+                                "byteLength",
+                                "sha256",
+                                "dumpFilename"
+                              ],
+                              "properties": {
+                                "schemaVersion": { "type": "string", "enum": ["1"] },
+                                "backupId": {
+                                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                                  "type": "string"
+                                },
+                                "applicationVersion": { "type": "string" },
+                                "postgresMajor": { "type": "integer" },
+                                "migrationHead": { "type": "integer" },
+                                "createdAt": { "format": "date-time", "type": "string" },
+                                "byteLength": { "minimum": 1, "type": "integer" },
+                                "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                                "dumpFilename": { "type": "string" }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "failureCode": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["BACKUP_FAILED"] },
+                            { "type": "null" }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups/{backupId}": {
+      "get": {
+        "operationId": "getDatabaseBackupStatus",
+        "tags": ["backup"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "backupId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "backup"],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "backup": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "status",
+                        "createdAt",
+                        "completedAt",
+                        "manifest",
+                        "failureCode"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "status": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["RUNNING"] },
+                            { "type": "string", "enum": ["COMPLETED"] },
+                            { "type": "string", "enum": ["FAILED"] }
+                          ]
+                        },
+                        "createdAt": { "format": "date-time", "type": "string" },
+                        "completedAt": {
+                          "anyOf": [{ "format": "date-time", "type": "string" }, { "type": "null" }]
+                        },
+                        "manifest": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "schemaVersion",
+                                "backupId",
+                                "applicationVersion",
+                                "postgresMajor",
+                                "migrationHead",
+                                "createdAt",
+                                "byteLength",
+                                "sha256",
+                                "dumpFilename"
+                              ],
+                              "properties": {
+                                "schemaVersion": { "type": "string", "enum": ["1"] },
+                                "backupId": {
+                                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                                  "type": "string"
+                                },
+                                "applicationVersion": { "type": "string" },
+                                "postgresMajor": { "type": "integer" },
+                                "migrationHead": { "type": "integer" },
+                                "createdAt": { "format": "date-time", "type": "string" },
+                                "byteLength": { "minimum": 1, "type": "integer" },
+                                "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                                "dumpFilename": { "type": "string" }
+                              }
+                            },
+                            { "type": "null" }
+                          ]
+                        },
+                        "failureCode": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["BACKUP_FAILED"] },
+                            { "type": "null" }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups/{backupId}/download": {
+      "get": {
+        "operationId": "downloadDatabaseBackup",
+        "tags": ["backup"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "backupId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": { "schema": { "format": "binary", "type": "string" } }
+            }
+          },
+          "default": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["schemaVersion", "error"],
+                  "properties": {
+                    "schemaVersion": {
+                      "description": "Runtime contract schema version",
+                      "type": "string",
+                      "enum": ["1"]
+                    },
+                    "error": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["status", "code", "message", "requestId"],
+                      "properties": {
+                        "status": { "minimum": 400, "maximum": 599, "type": "integer" },
+                        "code": {
+                          "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        "message": { "minLength": 1, "maxLength": 1000, "type": "string" },
+                        "requestId": {
+                          "title": "INSIGHT UUID v1",
+                          "format": "uuid",
+                          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                          "type": "string"
+                        },
+                        "issues": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": ["path", "code", "message"],
+                            "properties": {
+                              "path": { "maxLength": 512, "type": "string" },
+                              "code": {
+                                "pattern": "^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$",
+                                "maxLength": 100,
+                                "type": "string"
+                              },
+                              "message": { "minLength": 1, "maxLength": 1000, "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups/{backupId}/manifest": {
+      "get": {
+        "operationId": "downloadDatabaseBackupManifest",
+        "tags": ["backup"],
+        "parameters": [
+          {
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "backupId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "schemaVersion",
+                    "backupId",
+                    "applicationVersion",
+                    "postgresMajor",
+                    "migrationHead",
+                    "createdAt",
+                    "byteLength",
+                    "sha256",
+                    "dumpFilename"
+                  ],
+                  "properties": {
+                    "schemaVersion": { "type": "string", "enum": ["1"] },
+                    "backupId": {
+                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                      "type": "string"
+                    },
+                    "applicationVersion": { "type": "string" },
+                    "postgresMajor": { "type": "integer" },
+                    "migrationHead": { "type": "integer" },
+                    "createdAt": { "format": "date-time", "type": "string" },
+                    "byteLength": { "minimum": 1, "type": "integer" },
+                    "sha256": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+                    "dumpFilename": { "type": "string" }
                   }
                 }
               }

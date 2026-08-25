@@ -100,6 +100,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/backups": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["startDatabaseBackup"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/backups/{backupId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getDatabaseBackupStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/backups/{backupId}/download": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["downloadDatabaseBackup"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/backups/{backupId}/manifest": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["downloadDatabaseBackupManifest"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/login": {
     parameters: {
       query?: never;
@@ -1278,7 +1342,7 @@ export interface operations {
         eventType?: string;
         from?: string;
         to?: string;
-        targetType?: "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
+        targetType?: "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT" | "BACKUP";
       };
       header?: never;
       path?: never;
@@ -1301,7 +1365,7 @@ export interface operations {
               actorUserId: string | null;
               target: null | {
                 /** @enum {string} */
-                type: "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
+                type: "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT" | "BACKUP";
                 id: string;
                 version: string | null;
               };
@@ -1414,6 +1478,272 @@ export interface operations {
               limit: number;
               total: number;
             };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  startDatabaseBackup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            backup: {
+              id: string;
+              status: "RUNNING" | "COMPLETED" | "FAILED";
+              /** Format: date-time */
+              createdAt: string;
+              completedAt: string | null;
+              manifest: {
+                /** @enum {string} */
+                schemaVersion: "1";
+                backupId: string;
+                applicationVersion: string;
+                postgresMajor: number;
+                migrationHead: number;
+                /** Format: date-time */
+                createdAt: string;
+                byteLength: number;
+                sha256: string;
+                dumpFilename: string;
+              } | null;
+              failureCode: "BACKUP_FAILED" | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  getDatabaseBackupStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backupId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            backup: {
+              id: string;
+              status: "RUNNING" | "COMPLETED" | "FAILED";
+              /** Format: date-time */
+              createdAt: string;
+              completedAt: string | null;
+              manifest: {
+                /** @enum {string} */
+                schemaVersion: "1";
+                backupId: string;
+                applicationVersion: string;
+                postgresMajor: number;
+                migrationHead: number;
+                /** Format: date-time */
+                createdAt: string;
+                byteLength: number;
+                sha256: string;
+                dumpFilename: string;
+              } | null;
+              failureCode: "BACKUP_FAILED" | null;
+            };
+          };
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  downloadDatabaseBackup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backupId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Default Response */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * @description Runtime contract schema version
+             * @enum {string}
+             */
+            schemaVersion: "1";
+            error: {
+              status: number;
+              code: string;
+              message: string;
+              /**
+               * INSIGHT UUID v1
+               * Format: uuid
+               */
+              requestId: string;
+              issues?: {
+                path: string;
+                code: string;
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  downloadDatabaseBackupManifest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backupId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Default Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            schemaVersion: "1";
+            backupId: string;
+            applicationVersion: string;
+            postgresMajor: number;
+            migrationHead: number;
+            /** Format: date-time */
+            createdAt: string;
+            byteLength: number;
+            sha256: string;
+            dumpFilename: string;
           };
         };
       };

@@ -51,7 +51,10 @@ const operationalEventSchema = {
           additionalProperties: false,
           required: ["type", "id", "version"],
           properties: {
-            type: { type: "string", enum: ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT"] },
+            type: {
+              type: "string",
+              enum: ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT", "BACKUP"],
+            },
             id: { type: "string" },
             version: { anyOf: [{ type: "string" }, { type: "null" }] },
           },
@@ -150,7 +153,7 @@ export function auditRoutes(pool: Pool, sessionFor: SessionResolver): FastifyPlu
               ...paginationProperties,
               targetType: {
                 type: "string",
-                enum: ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT"],
+                enum: ["USER", "DEPLOYMENT_EVIDENCE", "MODEL_ENDPOINT", "BACKUP"],
               },
             },
           },

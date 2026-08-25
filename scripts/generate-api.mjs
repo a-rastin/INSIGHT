@@ -13,6 +13,11 @@ const prettierOptions = (await resolveConfig("prettier.config.mjs")) ?? {};
 
 const app = buildApp({
   authentication: { pool: {} },
+  backup: {
+    root: "backups",
+    databaseUrl: "postgresql://localhost/insight",
+    applicationVersion: "0.1.0",
+  },
   patient: {
     officialIdentifier: {
       type: "CONFIGURED_OFFICIAL_ID",

@@ -2579,6 +2579,55 @@ export const migrations: readonly Migration[] = Object.freeze([
       FOR EACH ROW EXECUTE FUNCTION insight.reject_artifact_metadata_mutation();
     `,
   },
+  {
+    version: 36,
+    name: "manual_database_backups",
+    sql: `
+      CREATE TABLE insight.database_backups (
+        id uuid PRIMARY KEY,
+        status text NOT NULL CHECK (status IN ('RUNNING', 'COMPLETED', 'FAILED')),
+        created_by_user_id uuid NOT NULL REFERENCES insight.users(id),
+        request_id uuid NOT NULL,
+        application_version text NOT NULL CHECK (
+          application_version = btrim(application_version) AND application_version <> ''
+        ),
+        postgres_major integer NOT NULL CHECK (postgres_major > 0),
+        migration_head integer NOT NULL CHECK (migration_head > 0),
+        created_at timestamptz NOT NULL,
+        completed_at timestamptz,
+        dump_filename text NOT NULL UNIQUE CHECK (dump_filename = id::text || '.dump'),
+        byte_length bigint CHECK (byte_length > 0),
+        sha256 character(64) CHECK (sha256 ~ '^[0-9a-f]{64}$'),
+        failure_code text CHECK (failure_code = 'BACKUP_FAILED'),
+        CHECK (
+          (status = 'RUNNING' AND completed_at IS NULL AND byte_length IS NULL
+            AND sha256 IS NULL AND failure_code IS NULL)
+          OR (status = 'COMPLETED' AND completed_at IS NOT NULL AND byte_length IS NOT NULL
+            AND sha256 IS NOT NULL AND failure_code IS NULL)
+          OR (status = 'FAILED' AND completed_at IS NOT NULL AND byte_length IS NULL
+            AND sha256 IS NULL AND failure_code = 'BACKUP_FAILED')
+        )
+      );
+
+      CREATE TABLE insight.database_backup_audit_events (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_type text NOT NULL CHECK (event_type IN (
+          'DATABASE_BACKUP_STARTED', 'DATABASE_BACKUP_COMPLETED', 'DATABASE_BACKUP_FAILED',
+          'DATABASE_BACKUP_DOWNLOADED', 'DATABASE_BACKUP_INTEGRITY_FAILED'
+        )),
+        backup_id uuid NOT NULL REFERENCES insight.database_backups(id),
+        actor_user_id uuid REFERENCES insight.users(id) ON DELETE SET NULL,
+        request_id uuid NOT NULL,
+        metadata jsonb CHECK (metadata IS NULL OR jsonb_typeof(metadata) = 'object'),
+        occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+      );
+      CREATE INDEX database_backup_audit_occurred_idx
+        ON insight.database_backup_audit_events (occurred_at DESC, id DESC);
+      CREATE TRIGGER database_backup_audit_events_immutable
+      BEFORE UPDATE OR DELETE ON insight.database_backup_audit_events
+      FOR EACH ROW EXECUTE FUNCTION insight.reject_audit_row_mutation();
+    `,
+  },
 ]);
 
 export function prepareMigrations(

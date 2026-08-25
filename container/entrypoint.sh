@@ -42,8 +42,10 @@ chmod 0750 "$artifact_dir" "$backup_dir"
 
 gosu postgres sh -c "probe='$database_dir/.write-probe'; : > \"\$probe\" && rm -f \"\$probe\"" \
   || fail "database volume directory is unwritable"
-gosu insight sh -c "probe='$artifact_dir/.write-probe'; : > \"\$probe\" && rm -f \"\$probe\"" \
-  || fail "artifact volume directory is unwritable"
+for data_dir in "$artifact_dir" "$backup_dir"; do
+  gosu insight sh -c "probe='$data_dir/.write-probe'; : > \"\$probe\" && rm -f \"\$probe\"" \
+    || fail "application volume directory is unwritable"
+done
 
 fresh_database=0
 if [ -e "$database_dir/PG_VERSION" ]; then

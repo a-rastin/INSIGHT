@@ -5,7 +5,7 @@ export interface OperationalAuditActor {
   readonly role: "ADMINISTRATOR" | "PSYCHIATRIST";
 }
 
-export type OperationalTargetType = "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT";
+export type OperationalTargetType = "USER" | "DEPLOYMENT_EVIDENCE" | "MODEL_ENDPOINT" | "BACKUP";
 
 export interface OperationalAuditEvent {
   readonly id: string;
@@ -110,7 +110,11 @@ export async function queryOperationalAuditEvents(
               configuration_id::text, configuration_version::text,
               NULL::jsonb, NULL::jsonb, request_id, occurred_at
        FROM insight.model_endpoint_audit_events
-     )
+       UNION ALL
+       SELECT id, event_type, actor_user_id, 'BACKUP', backup_id::text, NULL::text,
+              NULL::jsonb, metadata, request_id, occurred_at
+       FROM insight.database_backup_audit_events
+      )
      SELECT *, count(*) OVER()::text AS total_count
      FROM events
      WHERE ($1::text IS NULL OR event_type = $1)

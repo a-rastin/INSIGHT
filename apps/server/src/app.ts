@@ -23,6 +23,7 @@ import type { Pool } from "pg";
 import { adverseEffectCatalogRoutes } from "./adverse-effect-catalog/http.js";
 import { assessmentRoutes } from "./assessment/http.js";
 import { auditRoutes } from "./audit/http.js";
+import { databaseBackupRoutes, type BackupOptions } from "./backup.js";
 import { bnModelRoutes } from "./bn-model/http.js";
 import { comorbidityKnowledgeRoutes } from "./comorbidity-knowledge/http.js";
 import { ddiSourceRoutes } from "./ddi-source/http.js";
@@ -73,6 +74,7 @@ export interface AppOptions {
   readonly readinessChecks?: () => Promise<ReadinessResponse["checks"]>;
   readonly authentication?: AuthenticationHttpOptions & { readonly pool: Pool };
   readonly modelEndpoint?: Omit<ModelEndpointHttpOptions, "pool">;
+  readonly backup?: Omit<BackupOptions, "pool">;
   readonly patient?: {
     readonly officialIdentifier: OfficialIdentifierConfiguration;
     readonly artifactRoot?: string;
@@ -277,6 +279,14 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       auditRoutes(options.authentication.pool, (request) => requestSessions.get(request)),
       { prefix: API_PREFIX },
     );
+    if (options.backup) {
+      void app.register(
+        databaseBackupRoutes({ pool: options.authentication.pool, ...options.backup }, (request) =>
+          requestSessions.get(request),
+        ),
+        { prefix: API_PREFIX },
+      );
+    }
     void app.register(
       authenticationRoutes(options.authentication, (request) => requestSessions.get(request)),
       { prefix: API_PREFIX },
