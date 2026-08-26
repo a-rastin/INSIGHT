@@ -232,7 +232,10 @@ test("synthetic reviewed pathway replay is pinned and deterministic", async () =
         ]);
         assert.equal(longActing.evidence.calibrationStatus, "UNCALIBRATED");
         assert.equal(longActing.evidence.clinicalReviewStatus, "NOT_ESTABLISHED");
-        assert.match(longActing.evidence.limitations.join(" "), /does not establish LAI eligibility/);
+        assert.match(
+          longActing.evidence.limitations.join(" "),
+          /does not establish LAI eligibility/,
+        );
         assert.deepEqual(clozapineTrs.requestedOutputNodeRefs, [
           "TreatmentResistanceStatus",
           "ClozapineEligibility",
@@ -292,9 +295,12 @@ test("synthetic reviewed pathway replay is pinned and deterministic", async () =
             ),
           );
           assert.equal(parsed.ok, true);
-          const tables = parsed.file.networks[0].definitions.map((definition) => ({
-            nodeRef: definition.for,
-            probabilities: definition.table,
+          const definitions = new Map(
+            parsed.file.networks[0].definitions.map((definition) => [definition.for, definition]),
+          );
+          const tables = contract.nodes.map(({ nodeRef }) => ({
+            nodeRef,
+            probabilities: definitions.get(nodeRef).table,
           }));
           const snapshot = await submitCptSnapshot(pool, execution, contract, tables);
           const first = await runBnInference(

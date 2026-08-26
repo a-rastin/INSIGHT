@@ -305,20 +305,13 @@ test("continuing-medication route fails closed on ambiguity and pinned hash mism
 });
 
 test("long-acting injectable route uses only current-regimen nonadherence history", () => {
-  const active = [
-    pharmacotherapy,
-    treatmentSetting,
-    longActingAntipsychotic,
-    clozapineSuicideRisk,
-  ];
+  const active = [pharmacotherapy, treatmentSetting, longActingAntipsychotic, clozapineSuicideRisk];
   const route = (medicationHistory, currentRegimen = facts.currentRegimen) =>
     evaluateBnRouting(
       { ...facts, medicationHistory, currentRegimen },
       INITIAL_BN_ROUTING_ARTIFACT,
       active,
-    ).selectedModels.some(
-      ({ pathwayIdentity }) => pathwayIdentity === "LONG_ACTING_ANTIPSYCHOTIC",
-    );
+    ).selectedModels.some(({ pathwayIdentity }) => pathwayIdentity === "LONG_ACTING_ANTIPSYCHOTIC");
   assert.equal(
     route([{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: false }]),
     true,
@@ -349,9 +342,7 @@ test("long-acting injectable route uses only current-regimen nonadherence histor
 test("long-acting injectable route fails closed on ambiguity and pinned hash mismatch", () => {
   const laiFacts = {
     ...facts,
-    medicationHistory: [
-      { canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: false },
-    ],
+    medicationHistory: [{ canonicalMedicationId: "RX-ARIPIPRAZOLE", adequateAdherence: false }],
   };
   const duplicateRule = INITIAL_BN_ROUTING_ARTIFACT.rules.find(
     ({ pathwayIdentity }) => pathwayIdentity === "LONG_ACTING_ANTIPSYCHOTIC",

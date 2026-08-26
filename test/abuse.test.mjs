@@ -248,18 +248,23 @@ test("model tool arguments and endpoint duration are bounded", async () => {
     ...pin,
     settings: { ...pin.settings, timeoutMilliseconds: 5 },
   };
-  await assert.rejects(
-    runModelAgent({
-      pin: timeoutPin,
-      gateway,
-      assertCurrentRevision: async () => true,
-      fetch: async (_url, init) =>
-        new Promise((_resolve, reject) => {
-          init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true });
-        }),
-    }),
-    (error) => error instanceof ModelAgentError && error.code === "ENDPOINT_EXHAUSTED",
-  );
+  const keepAlive = globalThis.setTimeout(() => {}, 1_000);
+  try {
+    await assert.rejects(
+      runModelAgent({
+        pin: timeoutPin,
+        gateway,
+        assertCurrentRevision: async () => true,
+        fetch: async (_url, init) =>
+          new Promise((_resolve, reject) => {
+            init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true });
+          }),
+      }),
+      (error) => error instanceof ModelAgentError && error.code === "ENDPOINT_EXHAUSTED",
+    );
+  } finally {
+    globalThis.clearTimeout(keepAlive);
+  }
   assert.ok(Date.now() - startedAt < 1_000);
 });
 

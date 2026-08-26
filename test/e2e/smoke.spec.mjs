@@ -67,6 +67,7 @@ test("backend roles own gateway navigation and refresh restores safe state", asy
   await expect(row).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Sign in" })).toBeVisible();
   await page.getByRole("textbox", { name: "Username" }).fill(username);
   await page.getByRole("textbox", { name: /^Password/ }).fill("initial-password");
   await page.getByRole("button", { name: "Sign in" }).click();

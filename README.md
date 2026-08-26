@@ -51,6 +51,11 @@ This all-in-one deployment is single-instance only. Do not horizontally scale it
 
 ## Verification
 
+The 2026-08-26 synthetic engineering acceptance passed, but clinical/research activation remains a
+no-go because clinical approval, calibration, DDI permission/legal/clinical review, and evaluable DDI
+coverage are absent. See `docs/operations/release-acceptance-2026-08-26.md` for evidence, accepted
+risks, rollback readiness, and activation gates.
+
 Run full local checks with:
 
 ```sh

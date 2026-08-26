@@ -22,7 +22,7 @@
     "typecheck": "tsc -b",
     "test": "npm run test:unit",
     "test:unit": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test test/*.test.mjs && npm test --workspace @insight/web",
-    "test:integration": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test test/*.integration.mjs",
+    "test:integration": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test --test-concurrency=1 test/*.integration.mjs",
     "test:e2e": "npm run test:e2e:vertical && playwright test",
     "test:e2e:vertical": "npm run build --workspace @insight/contracts && npm run build --workspace @insight/server && node --test test/vertical-slice.e2e.mjs",
     "test:e2e:roles": "playwright test --config playwright.role-navigation.config.mjs",
@@ -34,7 +34,7 @@
     "db:migrate": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js migrate",
     "db:migration:head": "npm run build --workspace @insight/server && node .tsbuild/server/database/cli.js status",
     "db:restore": "npm run build --workspace @insight/server && node .tsbuild/server/database/restore-cli.js restore",
-    "db:migrate:test": "npm run build --workspace @insight/server && node --test test/*.integration.mjs",
+    "db:migrate:test": "npm run build --workspace @insight/server && node --test --test-concurrency=1 test/*.integration.mjs",
     "secret-log:scan": "npm run build --workspace @insight/server && node --test test/database.test.mjs",
     "build": "npm run build --workspaces --if-present",
     "ci": "node scripts/run-local-only.mjs node scripts/run-ci.mjs"

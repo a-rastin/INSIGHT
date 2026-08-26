@@ -153,11 +153,7 @@ export async function buildDdiArchiveInventory() {
     reportSha256: batch2Report.reportSha256,
     status: "blocked",
     reviewerRecord: null,
-    reasons: [
-      "missing_permission_record",
-      "missing_legal_approval",
-      "missing_clinical_review",
-    ],
+    reasons: ["missing_permission_record", "missing_legal_approval", "missing_clinical_review"],
     note: "No reviewer identity or approval is inferred or fabricated.",
   };
   const batch2Review = {
@@ -198,11 +194,7 @@ export async function buildDdiArchiveInventory() {
     reportSha256: batch3Report.reportSha256,
     status: "blocked",
     reviewerRecord: null,
-    reasons: [
-      "missing_permission_record",
-      "missing_legal_approval",
-      "missing_clinical_review",
-    ],
+    reasons: ["missing_permission_record", "missing_legal_approval", "missing_clinical_review"],
     note: "No reviewer identity or approval is inferred or fabricated.",
   };
   const batch3Review = {
@@ -243,11 +235,7 @@ export async function buildDdiArchiveInventory() {
     reportSha256: batch4Report.reportSha256,
     status: "blocked",
     reviewerRecord: null,
-    reasons: [
-      "missing_permission_record",
-      "missing_legal_approval",
-      "missing_clinical_review",
-    ],
+    reasons: ["missing_permission_record", "missing_legal_approval", "missing_clinical_review"],
     note: "No reviewer identity or approval is inferred or fabricated.",
   };
   const batch4Review = {
@@ -293,11 +281,7 @@ export async function buildDdiArchiveInventory() {
     reviewerSignOff: {
       status: "blocked",
       reviewerRecord: null,
-      reasons: [
-        "missing_permission_record",
-        "missing_legal_approval",
-        "missing_clinical_review",
-      ],
+      reasons: ["missing_permission_record", "missing_legal_approval", "missing_clinical_review"],
       note: "No eligible reviewed source version exists; no reviewer sign-off is inferred or fabricated.",
     },
   };

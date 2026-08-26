@@ -309,10 +309,10 @@ test("DDI MCP persists exact immutable executions and fails closed on source def
           regimen.slice(0, 2),
         );
         assert.notEqual(conflicted.sourceVersion, final.sourceVersion);
-        assert.deepEqual(
-          conflicted.findings.map(({ severity }) => severity).sort(),
-          ["minor", "serious"],
-        );
+        assert.deepEqual(conflicted.findings.map(({ severity }) => severity).sort(), [
+          "minor",
+          "serious",
+        ]);
         const pinnedExecution = await pool.query(
           `SELECT source_version,findings FROM insight.ddi_executions
            WHERE tool_execution_id=$1 AND purpose='FINAL_RECHECK'`,
@@ -372,7 +372,7 @@ test("DDI MCP persists exact immutable executions and fails closed on source def
           "ALTER TABLE insight.ddi_source_versions DISABLE TRIGGER ddi_source_versions_immutable",
         );
         await pool.query(
-           `UPDATE insight.ddi_source_versions
+          `UPDATE insight.ddi_source_versions
             SET interactions=jsonb_set(interactions,'{0,evidenceReference,sourceSha256}',to_jsonb($1::text))
             WHERE drug_identity='DRUG-C'`,
           ["0".repeat(64)],

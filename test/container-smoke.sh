@@ -224,6 +224,7 @@ docker exec "$success_name" node -e '
 const fs = require("node:fs");
 for (const entry of fs.readdirSync("/proc")) {
   if (!/^\d+$/.test(entry)) continue;
+  if (Number(entry) === process.pid) continue;
   try {
     const command = fs.readFileSync(`/proc/${entry}/cmdline`, "utf8");
     if (command.includes(".tsbuild/server/worker.js")) process.kill(Number(entry), "SIGKILL");

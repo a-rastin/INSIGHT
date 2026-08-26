@@ -55,7 +55,10 @@ test("batch 2 evaluates every frozen entry without fabricating governance record
   );
   assert.deepEqual(batch.entries[0], expected.firstEntry);
   assert.deepEqual(batch.entries.at(-1), expected.lastEntry);
-  assert.deepEqual(report.evaluatedPositions, batch.entries.map(({ position }) => position));
+  assert.deepEqual(
+    report.evaluatedPositions,
+    batch.entries.map(({ position }) => position),
+  );
   assert.equal(report.omissions.length, 32);
   assert.equal(new Set(report.omissions.map(({ path }) => path)).size, 32);
   assert.deepEqual(report.derivedRecords, []);
@@ -89,7 +92,10 @@ test("batch 3 evaluates every frozen entry without changing prior batches", asyn
   );
   assert.deepEqual(batch.entries[0], expected.firstEntry);
   assert.deepEqual(batch.entries.at(-1), expected.lastEntry);
-  assert.deepEqual(report.evaluatedPositions, batch.entries.map(({ position }) => position));
+  assert.deepEqual(
+    report.evaluatedPositions,
+    batch.entries.map(({ position }) => position),
+  );
   assert.deepEqual(
     report.omissions,
     batch.entries.map(({ position, path, blockedReasons }) => ({
@@ -130,7 +136,10 @@ test("batch 4 reconciles final frozen entries without changing prior batches", a
   );
   assert.deepEqual(batch.entries[0], expected.firstEntry);
   assert.deepEqual(batch.entries.at(-1), expected.lastEntry);
-  assert.deepEqual(report.evaluatedPositions, batch.entries.map(({ position }) => position));
+  assert.deepEqual(
+    report.evaluatedPositions,
+    batch.entries.map(({ position }) => position),
+  );
   assert.deepEqual(
     report.omissions,
     batch.entries.map(({ position, path, blockedReasons }) => ({
