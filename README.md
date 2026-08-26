@@ -69,7 +69,7 @@ npm run test:e2e:vertical
 npm run test:e2e
 ```
 
-`test:e2e:vertical` requires `TEST_DATABASE_URL` for a PostgreSQL 16 administrative database. It uses only loopback model traffic and fixtures marked `TEST_ONLY`; it does not activate production research, instrument, DDI, catalog, or model permissions. Identified Patient creation remains disabled when required external deployment evidence is absent.
+`test:e2e:vertical` requires `TEST_DATABASE_URL` for a PostgreSQL 16 administrative database. It uses only loopback model traffic and fixtures marked `TEST_ONLY`; it does not activate production research, instrument, DDI, catalog, or model permissions. Patient creation requires an authenticated Psychiatrist session and valid CSRF token; deployment evidence does not block creation.
 
 Production-shaped container checks run with:
 

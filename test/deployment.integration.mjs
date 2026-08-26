@@ -168,7 +168,7 @@ test("EXT-01 deployment evidence gate", async (suite) => {
     }),
   );
 
-  await suite.test("only Administrators manage evidence and no Patient content is exposed", () =>
+  await suite.test("evidence stays Administrator-only and does not block Patient creation", () =>
     withDeploymentDatabase(async (pool) => {
       await createUser(pool, {
         username: "Researcher",
@@ -193,7 +193,7 @@ test("EXT-01 deployment evidence gate", async (suite) => {
         });
         assert.equal(denied.statusCode, 403);
 
-        const disabledPatientCreation = await app.inject({
+        const patientCreation = await app.inject({
           method: "POST",
           url: "/api/v1/patients",
           headers: {
@@ -202,8 +202,7 @@ test("EXT-01 deployment evidence gate", async (suite) => {
           },
           payload: { identified: true },
         });
-        assert.equal(disabledPatientCreation.statusCode, 403);
-        assert.equal(disabledPatientCreation.json().error.code, "IDENTIFIED_MODE_DISABLED");
+        assert.equal(patientCreation.statusCode, 201);
 
         const created = await app.inject({
           method: "POST",
@@ -242,7 +241,7 @@ test("EXT-01 deployment evidence gate", async (suite) => {
         assert.equal(activated.statusCode, 200);
         assert.equal(activated.json().identifiedMode, "ENABLED");
 
-        const allowedPatientCreation = await app.inject({
+        const patientCreationAfterActivation = await app.inject({
           method: "POST",
           url: "/api/v1/patients",
           headers: {
@@ -251,7 +250,7 @@ test("EXT-01 deployment evidence gate", async (suite) => {
           },
           payload: { identified: true },
         });
-        assert.equal(allowedPatientCreation.statusCode, 201);
+        assert.equal(patientCreationAfterActivation.statusCode, 201);
 
         const adminPatientAccess = await app.inject({
           method: "POST",

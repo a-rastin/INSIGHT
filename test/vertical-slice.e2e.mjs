@@ -106,23 +106,16 @@ test("complete governed synthetic vertical slice", async (suite) => {
         try {
           const session = await login(app, psychiatrist.username, "vertical-psychiatrist-password");
           assert.equal((await getDeploymentGateStatus(pool)).identifiedMode, "DISABLED");
-          const blocked = await app.inject({
+          const createdResponse = await app.inject({
             method: "POST",
             url: "/api/v1/patients",
             headers: { cookie: session.cookie, "x-csrf-token": session.csrfToken },
             payload: patientInput(makeSyntheticPatientIdentity(901)),
           });
-          assert.equal(blocked.statusCode, 403);
-          assert.equal(blocked.json().error.code, "IDENTIFIED_MODE_DISABLED");
+          assert.equal(createdResponse.statusCode, 201);
 
           await saveMedicationCatalog(pool, administrator, governance.medicationCatalog);
-          const created = await createOrOverwritePatient(
-            pool,
-            actor,
-            patientInput(makeSyntheticPatientIdentity(901)),
-            identifierConfiguration,
-            randomUUID(),
-          );
+          const created = createdResponse.json();
           const patientId = created.patient.id;
           const researchCaseId = created.patient.researchCase.id;
           await saveInputs(app, session, patientId);

@@ -28,10 +28,6 @@ import { databaseBackupRoutes, type BackupOptions } from "./backup.js";
 import { bnModelRoutes } from "./bn-model/http.js";
 import { comorbidityKnowledgeRoutes } from "./comorbidity-knowledge/http.js";
 import { ddiSourceRoutes } from "./ddi-source/http.js";
-import {
-  IdentifiedResearchModeDisabledError,
-  assertIdentifiedPatientCreationAllowed,
-} from "./deployment/evidence.js";
 import { deploymentEvidenceRoutes } from "./deployment/http.js";
 import { authenticationRoutes, type AuthenticationHttpOptions } from "./identity/http.js";
 import {
@@ -351,24 +347,6 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           .status(403)
           .send(errorBody(request, 403, "INVALID_CSRF", "Request is not permitted."));
         return;
-      }
-
-      if (request.method === "POST" && path === `${API_PREFIX}/patients`) {
-        try {
-          await assertIdentifiedPatientCreationAllowed(options.authentication!.pool);
-        } catch (error) {
-          if (!(error instanceof IdentifiedResearchModeDisabledError)) throw error;
-          await reply
-            .status(403)
-            .send(
-              errorBody(
-                request,
-                403,
-                "IDENTIFIED_MODE_DISABLED",
-                "Identified Patient creation is disabled.",
-              ),
-            );
-        }
       }
     });
   }
