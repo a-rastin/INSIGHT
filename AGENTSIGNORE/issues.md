@@ -776,7 +776,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Acceptance: no LLM-selected route; active model/evidence metadata pinned; replay and synthetic case pass.
 - Verify: clinical route vectors and pathway E2E.
 
-### [ ] INS-055G — Add the acute-dystonia pathway
+### [ ] INS-055G — Add the acute-dystonia pathway (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055F
@@ -785,7 +785,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Acceptance: structured catalog pin and matched rule provenance are present; replay passes.
 - Verify: rule/route vectors and synthetic E2E.
 
-### [ ] INS-055H — Add the parkinsonism pathway
+### [ ] INS-055H — Add the parkinsonism pathway (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055G
@@ -794,7 +794,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Acceptance: selected semantics are explicitly supported and tested; otherwise model stays non-active; replay passes when enabled.
 - Verify: validation report, clinical vectors, synthetic E2E.
 
-### [ ] INS-055I — Resolve and add or permanently reject the Akathisia pathway
+### [ ] INS-055I — Resolve and add or permanently reject the Akathisia pathway (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055H
@@ -803,7 +803,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Acceptance: current hash remains quarantined; no Akathisia trigger can select it; any replacement has independent review, hash, and full tests.
 - Verify: quarantine regression and, if supplied, corrected-pathway E2E.
 
-### [ ] INS-055J — Add the VMAT2/tardive-dyskinesia pathway
+### [ ] INS-055J — Add the VMAT2/tardive-dyskinesia pathway (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus clinical review**
 - Depends on: INS-055I
@@ -812,7 +812,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Acceptance: deterministic structured route, pinned model/evidence metadata, and replay pass.
 - Verify: clinical vectors and synthetic E2E.
 
-### [ ] INS-055K — Gate the involuntary-treatment pathway behind jurisdiction policy
+### [ ] INS-055K — Gate the involuntary-treatment pathway behind jurisdiction policy (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus legal/clinical review**
 - Depends on: INS-055J
@@ -904,7 +904,7 @@ Canonical root commands established by INS-001 must include `format:check`, `lin
 - Verify: generated authorization inventory, automated matrix suite, human security review.
 - References: all trust-boundary ADRs, system architecture accepted risks.
 
-### [ ] INS-063A — Complete privacy, de-identification, and logging hardening
+### [ ] INS-063A — Complete privacy, de-identification, and logging hardening (not implementing)
 
 - Sensitivity/model: **Critical — Frontier plus privacy review**
 - Depends on: INS-031, INS-058, INS-063

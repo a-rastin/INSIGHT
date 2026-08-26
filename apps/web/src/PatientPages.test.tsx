@@ -85,14 +85,14 @@ describe("Patient Registry pages", () => {
       }),
     );
     render(<CreatePatientPage csrfToken="csrf" onNavigate={onNavigate} />);
+    expect(screen.queryByLabelText(/^Official identifier type/)).toBeNull();
+    expect(screen.queryByLabelText(/^Issuing authority/)).toBeNull();
 
     for (const [label, value] of [
       ["First name", "Ada"],
       ["Last name", "Lovelace"],
       ["Date of birth", "1990-08-22"],
       ["Sex", "FEMALE"],
-      ["Official identifier type", "CONFIGURED_OFFICIAL_ID"],
-      ["Issuing authority", "CONFIGURED_ISSUER"],
       ["Official identifier value", "SYNTHETIC-000001"],
     ]) {
       fireEvent.change(screen.getByLabelText(new RegExp(`^${label}`)), { target: { value } });
@@ -102,7 +102,13 @@ describe("Patient Registry pages", () => {
     );
 
     await vi.waitFor(() => expect(onNavigate).toHaveBeenCalledWith(`/patients/${patient.id}`));
-    expect(JSON.stringify(requestBody)).toContain("SYNTHETIC-000001");
+    expect(requestBody).toMatchObject({
+      officialIdentifier: {
+        value: "SYNTHETIC-000001",
+      },
+    });
+    expect(requestBody).not.toHaveProperty("officialIdentifier.type");
+    expect(requestBody).not.toHaveProperty("officialIdentifier.issuingAuthority");
     expect(window.location.href).not.toContain("SYNTHETIC-000001");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -147,6 +153,8 @@ describe("Patient Registry pages", () => {
     );
     render(<PatientProfilePage patientId={patient.id} csrfToken="csrf" onNavigate={vi.fn()} />);
     expect(await screen.findByRole("heading", { name: "Ada Lovelace" })).toBeTruthy();
+    expect(screen.queryByText("Identifier type")).toBeNull();
+    expect(screen.queryByText("Issuing authority")).toBeNull();
     expect(screen.getByText("Current age").nextElementSibling?.textContent).toBe("36");
     expect(screen.getByRole("navigation", { name: "Research Case steps" })).toBeTruthy();
     expect(screen.getByText("DSM-5-TR schizophrenia criteria").getAttribute("aria-current")).toBe(

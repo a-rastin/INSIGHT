@@ -157,7 +157,7 @@ function officialIdentifierSchema(
   return {
     type: "object",
     additionalProperties: false,
-    required: ["type", "issuingAuthority", "value"],
+    required: normalized ? ["type", "issuingAuthority", "value"] : ["value"],
     properties: {
       type: { type: "string", const: configuration.type },
       issuingAuthority: { type: "string", const: configuration.issuingAuthority },
@@ -459,7 +459,14 @@ export const patientRoutes =
           const result = await createOrOverwritePatient(
             options.pool,
             actor(session),
-            request.body,
+            {
+              ...request.body,
+              officialIdentifier: {
+                type: options.officialIdentifier.type,
+                issuingAuthority: options.officialIdentifier.issuingAuthority,
+                value: request.body.officialIdentifier.value,
+              },
+            },
             options.officialIdentifier,
             request.id,
           );

@@ -210,12 +210,6 @@ export function CreatePatientPage({
     const body: CreatePatientBody = {
       schemaVersion: "1",
       officialIdentifier: {
-        type: String(
-          data.get("identifier-type"),
-        ) as CreatePatientBody["officialIdentifier"]["type"],
-        issuingAuthority: String(
-          data.get("identifier-issuer"),
-        ) as CreatePatientBody["officialIdentifier"]["issuingAuthority"],
         value: String(data.get("identifier-value")),
       },
       firstName: String(data.get("first-name")),
@@ -299,28 +293,6 @@ export function CreatePatientPage({
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
               </select>
-            )}
-          </FormField>
-          <FormField label="Official identifier type" required>
-            {(props) => (
-              <TextInput
-                {...props}
-                name="identifier-type"
-                required
-                maxLength={128}
-                autoComplete="off"
-              />
-            )}
-          </FormField>
-          <FormField label="Issuing authority" required>
-            {(props) => (
-              <TextInput
-                {...props}
-                name="identifier-issuer"
-                required
-                maxLength={256}
-                autoComplete="off"
-              />
             )}
           </FormField>
           <FormField label="Official identifier value" required>
@@ -424,14 +396,6 @@ export function PatientProfilePage({
           <div>
             <dt>Official identifier</dt>
             <dd>{patient.officialIdentifier.value}</dd>
-          </div>
-          <div>
-            <dt>Identifier type</dt>
-            <dd>{patient.officialIdentifier.type}</dd>
-          </div>
-          <div>
-            <dt>Issuing authority</dt>
-            <dd>{patient.officialIdentifier.issuingAuthority}</dd>
           </div>
           <div>
             <dt>Research Case started</dt>

@@ -5572,9 +5572,9 @@ export interface operations {
           schemaVersion: "1";
           officialIdentifier: {
             /** @enum {string} */
-            type: "CONFIGURED_OFFICIAL_ID";
+            type?: "CONFIGURED_OFFICIAL_ID";
             /** @enum {string} */
-            issuingAuthority: "CONFIGURED_ISSUER";
+            issuingAuthority?: "CONFIGURED_ISSUER";
             value: string;
           };
           firstName: string;

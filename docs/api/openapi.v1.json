@@ -9436,7 +9436,7 @@
                   "officialIdentifier": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["type", "issuingAuthority", "value"],
+                    "required": ["value"],
                     "properties": {
                       "type": { "type": "string", "enum": ["CONFIGURED_OFFICIAL_ID"] },
                       "issuingAuthority": { "type": "string", "enum": ["CONFIGURED_ISSUER"] },

@@ -278,7 +278,11 @@ test("two Psychiatrists share keyboard-accessible registry while Administrator i
         );
         const record = {
           id: existing?.id ?? patientId,
-          officialIdentifier: input.officialIdentifier,
+          officialIdentifier: {
+            type: "CONFIGURED_OFFICIAL_ID",
+            issuingAuthority: "CONFIGURED_ISSUER",
+            value: input.officialIdentifier.value,
+          },
           firstName: input.firstName,
           lastName: input.lastName,
           dateOfBirth: input.dateOfBirth,
@@ -314,8 +318,8 @@ test("two Psychiatrists share keyboard-accessible registry while Administrator i
     await page.getByLabel(/^Last name/).fill("Lovelace");
     await page.getByLabel(/^Date of birth/).fill("1990-08-22");
     await page.getByLabel(/^Sex/).selectOption("FEMALE");
-    await page.getByLabel(/^Official identifier type/).fill("CONFIGURED_OFFICIAL_ID");
-    await page.getByLabel(/^Issuing authority/).fill("CONFIGURED_ISSUER");
+    await expect(page.getByLabel(/^Official identifier type/)).toHaveCount(0);
+    await expect(page.getByLabel(/^Issuing authority/)).toHaveCount(0);
     await page.getByLabel(/^Official identifier value/).fill("SYNTHETIC-000001");
     await page.getByLabel(/^Official identifier value/).press("Enter");
   }
